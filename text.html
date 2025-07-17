@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Klassen-, Fächer- und Medien-Auswahl</title>
+    <style>
+        body { font-family: Arial; padding: 40px; }
+        .btn { margin: 8px; padding: 12px 25px; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <h1>Wähle deine Klassenstufe</h1>
+    <div id="buttons"></div>
+    <div id="fächer"></div>
+    <div id="medien"></div>
+
+    <script>
+        // Liste der Fächer
+        const faecher = ["Deutsch", "Mathe", "Englisch", "Physik"];
+        // Liste der digitalen Medien
+        const medien = ["bootM", "LEGO EV3", "Python"];
+
+        let buttonsDiv = document.getElementById("buttons");
+        let faecherDiv = document.getElementById("fächer");
+        let medienDiv  = document.getElementById("medien");
+
+        // Stufe 1: Klassen-Buttons anzeigen
+        for (let klasse = 1; klasse <= 12; klasse++) {
+            let btn = document.createElement("button");
+            btn.innerText = "Klasse " + klasse;
+            btn.className = "btn";
+            btn.onclick = function() {
+                buttonsDiv.style.display = "none";
+                document.querySelector("h1").innerText = "Wähle dein Fach";
+                showFaecher(klasse);
+            };
+            buttonsDiv.appendChild(btn);
+        }
+
+        // Stufe 2: Fächer angezeigt nach Klassenauswahl
+        function showFaecher(klasse) {
+            faecherDiv.innerHTML = "";
+            medienDiv.innerHTML = "";
+            faecher.forEach(function(fach) {
+                let btn = document.createElement("button");
+                btn.innerText = fach;
+                btn.className = "btn";
+                btn.onclick = function() {
+                    faecherDiv.style.display = "none";
+                    document.querySelector("h1").innerText = "Wähle das digitale Medium";
+                    showMedien(klasse, fach);
+                };
+                faecherDiv.appendChild(btn);
+            });
+        }
+
+        // Stufe 3: Medien angezeigt nach Fachwahl
+        function showMedien(klasse, fach) {
+            medienDiv.innerHTML = "";
+            medien.forEach(function(medium) {
+                let btn = document.createElement("button");
+                btn.innerText = medium;
+                btn.className = "btn";
+                btn.onclick = function() {
+                    alert("Du hast '" + medium + "' für " + fach + " in Klasse " + klasse + " gewählt.");
+                    // Hier kannst du im nächsten Schritt Aufgaben einblenden.
+                };
+                medienDiv.appendChild(btn);
+            });
+        }
+    </script>
+</body>
+</html>
