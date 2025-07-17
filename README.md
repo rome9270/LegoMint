@@ -1,2 +1,2 @@
-# LegoMint (Maxi)
-Hier arbeite ich :)
+# LegoMint
+Hier arbeiten alle.
