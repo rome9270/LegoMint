@@ -1,0 +1,15 @@
+body{
+    background-color: rgb(236, 239, 239);
+    
+}
+
+.container{
+    background-color: aliceblue;
+}
+
+
+.btn{
+    border-radius: 10px;
+    color: blue;
+    text-align: center;
+}
