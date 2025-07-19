@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python & Roboter-Simulation mit Pyodide</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 10px;
+        }
+
+        #main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #editorArea {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid #ccc;
+        }
+
+        #editor {
+            flex: 1;
+        }
+
+        #runBtn {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #simArea {
+            width: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #eee;
+        }
+
+        canvas {
+            background: white;
+            border: 2px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Python Coding & Roboter-Simulation (mit Pyodide)</h1>
+
+    <div id="main">
+        <div id="editorArea">
+            <div id="editor"># Beispiel:
+set_motors(1, 1)</div>
+            <button id="runBtn" onclick="runPythonCode()">▶️ Code ausführen</button>
+        </div>
+
+        <div id="simArea">
+            <canvas id="simCanvas" width="400" height="400"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/python");
+
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        class Robot {
+            constructor(x, y, angle) {
+                this.x = x;
+                this.y = y;
+                this.angle = angle;
+                this.leftSpeed = 0;
+                this.rightSpeed = 0;
+            }
+
+            setMotors(left, right) {
+                this.leftSpeed = left;
+                this.rightSpeed = right;
+            }
+
+            update() {
+                const speed = (this.leftSpeed + this.rightSpeed) / 2;
+                this.x += speed * Math.cos(this.angle);
+                this.y += speed * Math.sin(this.angle);
+                this.angle += (this.rightSpeed - this.leftSpeed) * 0.1;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(-10, -10, 20, 20);
+                ctx.restore();
+            }
+        }
+
+        const robot = new Robot(200, 200, 0);
+
+        window.set_motors = (left, right) => {
+            robot.setMotors(left, right);
+        }
+
+        let pyodideReady = false;
+        let pyodide;
+
+        async function loadPyodideAndPackages() {
+            pyodide = await loadPyodide();
+            await pyodide.runPythonAsync(`
+import js
+
+def set_motors(left, right):
+    js.set_motors(left, right)
+            `);
+            pyodideReady = true;
+            console.log("Pyodide geladen");
+        }
+
+        loadPyodideAndPackages();
+
+        async function runPythonCode() {
+            if (!pyodideReady) {
+                alert("Python-Interpreter lädt noch...");
+                return;
+            }
+            const code = editor.getValue();
+            try {
+                await pyodide.runPythonAsync(code);
+            } catch (err) {
+                alert("Fehler im Python-Code: " + err);
+            }
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            robot.update();
+            robot.draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+
+</body>
+
+</html>

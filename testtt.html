@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Roboter Line Follower</title>
+</head>
+<body>
+  <h1>Mein Line Follower Projekt</h1>
+  
+  <label>Python-Code für den Roboter:</label><br>
+  <textarea id="codefeld" rows="12" cols="60">
+# Beispiel:
+print("Der Roboter fährt los!")
+  </textarea><br><br>
+  
+  <button onclick="simuliere()">Simulieren</button>
+  <button onclick="sende()">Auf Roboter senden</button>
+  
+  <div id="ausgabe"></div>
+  
+  <script>
+    function simuliere() {
+      const code = document.getElementById('codefeld').value;
+      document.getElementById('ausgabe').innerText = "Simulation läuft...";
+      fetch('http://localhost:5000/simulate', {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({code})
+      })
+      .then(r => r.json())
+      .then(json => {
+        document.getElementById('ausgabe').innerText = json.message;
+      })
+      .catch(() => document.getElementById('ausgabe').innerText = "Fehler bei der Verbindung!");
+    }
+    
+    function sende() {
+      const code = document.getElementById('codefeld').value;
+      const ip = prompt("Bitte die IP-Adresse vom EV3-Roboter eingeben:");
+      if (!ip) {
+        document.getElementById('ausgabe').innerText = "Abgebrochen.";
+        return;
+      }
+      document.getElementById('ausgabe').innerText = "Sende Code...";
+      fetch('http://localhost:5000/upload', {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          code, 
+          ev3_ip: ip,
+          ev3_user: "robot",
+          ev3_password: "deinPasswort", // z.B. Standardpasswort eintragen
+          remote_path: "/home/robot/code.py"
+        })
+      })
+      .then(r => r.json())
+      .then(json => {
+        document.getElementById('ausgabe').innerText = json.message;
+      })
+      .catch(() => document.getElementById('ausgabe').innerText = "Fehler bei der Verbindung!");
+    }
+  </script>
+</body>
+</html>
