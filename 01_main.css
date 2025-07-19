@@ -7,9 +7,10 @@ body{
     background-color: aliceblue;
 }
 
-
-.btn{
-    border-radius: 10px;
-    color: blue;
+.button{
     text-align: center;
+}
+
+.img{
+    width: 20vw;
 }
