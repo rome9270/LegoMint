@@ -1,2 +1,0 @@
-# LegoMint
-Hier arbeiten alle.

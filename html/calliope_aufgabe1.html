@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Calliope Aufgabe 1 – LED-Herz blinken">
+  <link href="../CSS/01_main.css" rel="stylesheet">
+  <title>Aufgabe 1 – LED-Herz blinken</title>
+  <style>
+    body{max-width:980px;margin:0 auto;padding:1rem;}
+    .muted{color:#6b7280}
+    .card{border:1px solid #e5e7eb;border-radius:12px;padding:1rem;background:#fff}
+    .btn{display:inline-block;padding:.6rem .9rem;border-radius:9999px;text-decoration:none;background:#111827;color:#fff;font-weight:700}
+    .btn.light{background:#f3f4f6;color:#111827}
+    .actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+    .banner{display:none;margin-top:.75rem;padding:.6rem .8rem;border-radius:10px;background:#ecfdf5;color:#065f46;font-weight:600}
+    pre{background:#0b1020;color:#e8e8e8;padding:.75rem;border-radius:10px;overflow:auto}
+  </style>
+</head>
+<body>
+  <h1>Aufgabe 1 – LED-Herz blinken</h1>
+  <section><h2 style="margin-top:0;">Aufgabenstellung</h2>
+    <p>Erstelle ein neues Projekt im Editor und speichere es als <code>VornameNachname_Aufgabe1</code>. Lass das Herz blinken: Herz → Pause 0,5&nbsp;s → aus → Pause 0,5&nbsp;s (immer wieder). Teste im Simulator, lade die <code>.hex</code> herunter und kopiere sie auf das Laufwerk <em>MINI</em>.</p></section>
+
+
+<section>
+<section></section>
+    
+
+        <div class="actions">
+      <button class="btn" id="openEditor">Im Microsoft-Editor öffnen</button>
+      <button class="btn" onclick="history.back()">Zurück</button>
+      <button class="btn light" id="markDone">Geschafft ✓</button>
+      <button class="btn light" id="btnJumpSolutions">Lösungen</button>
+    </div>
+    <div id="ok" class="banner">🎉 Glückwunsch – Aufgabe 1 erledigt!</section>
+
+  <script>
+    const editorURL = 'https://makecode.calliope.cc/#';
+    const openBtn = document.getElementById('openEditor');
+    const doneBtn = document.getElementById('markDone');
+    const ok = document.getElementById('ok');
+    let editorWin = null;
+
+    openBtn?.addEventListener('click', () => {
+      editorWin = window.open(editorURL, '_blank', 'noopener');
+    });
+    doneBtn?.addEventListener('click', () => {
+      ok.style.display = 'block';
+      ok.scrollIntoView({behavior:'smooth', block:'center'});
+    });
+  </script>
+<section>
+  <h2 id="loesungen">Lösungen (zum Aufklappen)</h2>
+
+  <div class="actions" style="margin:.4rem 0 .6rem 0;"><button class="btn light" id="btnShowBlocks">Lösung Blöcke</button> <button class="btn light" id="btnShowPython">Lösung Python</button>
+      <button class="btn light" id="btnJumpSolutions">Lösungen</button>
+    </div><details id="loesung-bloecke">
+    <summary><strong>Lösung (Blöcke – Drag &amp; Drop)</strong></summary>
+    <pre>Dauerhaft:
+  zeige Icon  [ Herz ]
+  pausiere    (500 ms)
+  Bildschirm löschen   (oder: zeige LEDs [leer])
+  pausiere    (500 ms)</pre>
+    <p class="muted">Das ergibt das abwechselnde Blinken: Herz → aus → Herz → aus …</p>
+  </details>
+
+  <details id="loesung-python" style="margin-top:.5rem;">
+    <summary><strong>Lösung (Python)</strong></summary>
+    <pre>from microbit import *
+
+while True:
+    display.show(Image.HEART)
+    sleep(500)
+    display.clear()
+    sleep(500)</pre>
+  </details>
+</section>
+<script>
+  (function(){
+    const b1 = document.getElementById('btnShowBlocks');
+    const b2 = document.getElementById('btnShowPython');
+    function openAndScroll(id){
+      const d = document.getElementById(id);
+      if(!d) return;
+      d.open = true;
+      d.scrollIntoView({behavior:'smooth', block:'start'});
+      // brief highlight
+      d.style.boxShadow = '0 0 0 4px rgba(59,130,246,.35)';
+      setTimeout(()=>{ d.style.boxShadow = ''; }, 900);
+    }
+    b1 && b1.addEventListener('click', ()=>openAndScroll('loesung-bloecke'));
+    b2 && b2.addEventListener('click', ()=>openAndScroll('loesung-python'));
+  })();
+</script>
+<script>
+  (function(){
+    const j = document.getElementById('btnJumpSolutions');
+    function scrollToSolutions(){
+      const h = document.getElementById('loesungen');
+      if(h){ h.scrollIntoView({behavior:'smooth', block:'start'}); }
+    }
+    j && j.addEventListener('click', scrollToSolutions);
+  })();
+</script>
+
+</body>
+</html>

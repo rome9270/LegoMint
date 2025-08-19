@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NwT – Mechanik & Antrieb: Roboter fährt geradeaus oder um Hindernisse (Klasse 5, G8)">
+  <link href="../CSS/01_main.css" rel="stylesheet">
+  <link href="../CSS/02_elementary.css" rel="stylesheet">
+  <title>NwT – Mechanik & Antrieb (Klasse 5)</title>
+  <style>
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; margin: 12px 0; }
+    .badge { display:inline-block; padding:4px 8px; border-radius:12px; background:#eef2ff; margin-right:6px; font-size:0.9em; }
+    .grid { display: grid; gap: 12px; }
+    @media (min-width: 840px){ .grid-2 { grid-template-columns: 1fr 1fr; } }
+    .note { font-size: 0.95em; color: #374151; background:#f9fafb; padding:10px; border-radius:10px; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background:#f3f4f6; padding:2px 6px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <h1>NwT – Mechanik &amp; Antrieb (Klasse 5)</h1>
+  <p>Roboter fährt geradeaus oder um Hindernisse – <strong>ohne Noten</strong>, <strong>ohne Gruppenarbeit</strong>, als <strong>Wettbewerb</strong>.</p>
+  <div class="note">Lehrplanbezug (G8): technische Systeme erkennen und beschreiben; einfache mechanische Antriebe; Sensorik anwenden; Problemlösestrategien entwickeln.</div>
+  <hr/>
+
+  <div class="card">
+    <h2>Fach &amp; Inhalt</h2>
+    <p><span class="badge">Fach: Natur und Technik (NwT)</span> <span class="badge">Klasse: 5</span></p>
+    <ul>
+      <li><strong>Mechanik &amp; Antrieb:</strong> Geradeausfahrt (z. B. 1&nbsp;m) mit sauberem Stopp.</li>
+      <li><strong>Sensorik:</strong> Hinderniserkennung (Ultraschall- oder Tastsensor) und Umfahrung.</li>
+      <li><strong>Programmierung:</strong> Sequenzen, einfache Bedingungen (<span class="kbd">if</span>), Wiederholungen.</li>
+    </ul>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>Durchführung</h3>
+      <ol>
+        <li>Roboter/Plattform wählen (LEGO allgemein/EV3, mBot, Calliope+Motor).</li>
+        <li>Kalibrierung: Motor-Power und Zeit/Distanz abstimmen.</li>
+        <li>Geradeausfahrt programmieren und testen.</li>
+        <li>Hindernis platzieren → Sensorwert auslesen → Ausweichmanöver programmieren.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Material</h3>
+      <ul>
+        <li>Hardware: LEGO allgemein oder EV3/mBot, Motoren, (Ultraschall-/Tast-)Sensoren.</li>
+        <li>Software: EV3 Classroom/EV3 Lab, mBlock (mBot), optional Python-API.</li>
+        <li>Parcours: Klebeband-Bahn, Kegel/Hindernis, Maßband.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Wettbewerbsmodus (ohne Noten)</h2>
+    <ul>
+      <li>Einzelarbeit; Hilfestellung nur durch Lehrkraft.</li>
+      <li>Transparente Kriterien: Ziel erreicht? Hindernis korrekt umfahren? Stabilität der Lösung.</li>
+      <li>Optionale Rangliste (freiwillig einsehbar).</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Erweiterungen (optional)</h2>
+    <ul>
+      <li>90°-Wendung nach Hindernis, Kurvenradius vorgeben.</li>
+      <li>„Box-Stop“: exakter Stopp in markiertem Feld.</li>
+      <li>Python: serielle Sensorwerte loggen; kleines Status-Display (<span class="kbd">print</span>).</li>
+    </ul>
+  </div>
+
+  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
+    <a href="03_grade5.html" class="level-btn btn-back">zurück zu Klasse 5</a>
+  </div>
+</body>
+</html>

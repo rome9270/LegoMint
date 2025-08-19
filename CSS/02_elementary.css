@@ -1,0 +1,55 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 40px;
+}
+
+h1 {
+    margin-bottom: 40px;
+}
+
+p {
+    margin-bottom: 20px;
+}
+
+/* Container für Buttons */
+.level-grid {
+    display: flex;              /* Buttons nebeneinander */
+    gap: 16px;                   /* Abstand zwischen Buttons */
+    justify-content: center;     /* Zentrieren */
+    flex-wrap: wrap;             /* Umbrechen bei wenig Platz */
+    margin-top: 20px;
+}
+
+/* Button-Style */
+.level-btn {
+    display: inline-block;       /* Link als Block in Zeile */
+    height: 50px;               /* feste Höhe */
+    line-height: 50px;          /* Text vertikal zentriert */
+    width: 160px;                 /* Feste Breite → Text bricht automatisch */
+    padding: 12px 24px;          /* Innenabstand */
+    font-size: 18px;             /* Schriftgröße */
+    font-weight: bold;           /* Fett */
+    color: white;                /* Textfarbe */
+    background-color: #4CAF50;   /* Hintergrundfarbe */
+    border-radius: 8px;          /* Abgerundete Ecken */
+    text-decoration: none;       /* Keine Unterstreichung */
+    text-align: center;          /* Text mittig */
+    white-space: normal;         /* Zeilenumbruch erlauben */
+    line-height: 1.88;            /* Angenehmer Zeilenabstand */
+    transition: background-color 0.3s ease, transform 0.15s ease;
+}
+
+/* Hover-Effekt */
+.level-btn:hover {
+    background-color: #45a049;   /* Dunkleres Grün */
+    transform: translateY(-2px); /* Leichtes Anheben */
+}
+/* Zurück-Button in roter Farbe */
+.btn-back {
+    background-color: #aa8b1a; /* Rot */
+}
+
+.btn-back:hover {
+    background-color: #96ae4b; /blau beim Hover */
+}

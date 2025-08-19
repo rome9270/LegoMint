@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="CALLIOPE mini – Projekte & Downloads" />
+  <!-- Basis-Design wie auf deiner Seite -->
+  <link href="../CSS/01_main.css" rel="stylesheet" />
+  <link href="../CSS/02_elementary.css" rel="stylesheet" />
+  <title>CALLIOPE mini – Projekte & Downloads</title>
+  <style>
+    /* sanfte Ergänzungen */
+    .container { max-width: 980px; margin: 0 auto; padding: 1rem; }
+    .grid { display: grid; gap: 1rem; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .card { background: #fff; border-radius: 14px; padding: 1rem 1.2rem; box-shadow: 0 6px 24px rgba(0,0,0,.06); }
+    .card h3 { margin: .25rem 0 .5rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+    .btn { display: inline-block; padding: .6rem .9rem; border-radius: 9999px; text-decoration: none; background: #111827; color: #fff; font-weight: 600; }
+    .btn.outline { background: transparent; border: 2px solid #111827; color: #111827; }
+    .badge { display: inline-block; padding: .25rem .6rem; border-radius: 9999px; background: #eef2ff; color: #3730a3; font-weight: 600; font-size: .85rem; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: .9rem; background: #0b1020; color: #e8e8e8; padding: .75rem; border-radius: 10px; overflow: auto; }
+    .note { font-size: .95rem; color: #374151; }
+    .hero { margin: 1rem 0; }
+    .hero h1 { margin-bottom: .25rem; }
+    .muted { color: #6b7280; }
+    .level-grid a { text-align: center; }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header class="hero">
+      <h1>CALLIOPE mini – Projekte & Downloads</h1>
+      <p class="muted">Block- & JavaScript-Beispiele, plus sichere Downloads auf den Calliope.</p>
+      <hr/>
+    </header>
+
+    <!-- Schnellzugriff -->
+    <div class="grid grid-2" style="margin: 1rem 0 1.25rem;">
+      <a class="level-btn" href="#download">HEX per Drag & Drop</a>
+      <a class="level-btn" href="#webusb">1‑Klick‑Download (WebUSB)</a>
+    </div>
+
+    <!-- Download-Anleitung -->
+    <section id="download" class="card">
+      <h2>So lädst du Programme auf den Calliope</h2>
+      <ol>
+        <li>Verbinde den <strong>CALLIOPE mini</strong> per USB mit dem Rechner. Er erscheint als Laufwerk <em>MINI</em> (manchmal <em>MAINTENANCE</em>).</li>
+        <li>Lade eine <strong>.hex</strong>-Datei (siehe Projekte unten) herunter.</li>
+        <li><strong>Ziehe</strong> die <code>.hex</code> auf das Laufwerk <em>MINI</em>. Die gelbe LED blinkt, danach startet das Programm.</li>
+      </ol>
+      <p class="note">Hinweis: Erstelle am besten einen Ordner <code>hex/</code> neben dieser HTML-Datei und lege dort deine .hex‑Dateien ab. Die Download‑Buttons unten verweisen auf diesen Ordner (Platzhalter‑Namen kannst du einfach ersetzen).</p>
+    </section>
+
+    <!-- WebUSB -->
+    <section id="webusb" class="card" style="margin-top: 1rem;">
+      <h2>Direkt-Flash aus dem Browser (WebUSB)</h2>
+      <p>Mit WebUSB (Chrome/Edge 79+ auf Windows, macOS, Linux, ChromeOS) kannst du aus dem Editor heraus direkt auf den Calliope flashen – ohne Datei‑Zwischenschritt.</p>
+      <div class="actions">
+        <a class="btn" href="https://makecode.calliope.cc/device/usb/webusb" target="_blank" rel="noopener">Verbinden & 1‑Klick‑Download</a>
+        <a class="btn outline" href="https://makecode.calliope.cc/#editor" target="_blank" rel="noopener">MakeCode‑Editor öffnen</a>
+      </div>
+      <p id="webusb-status" class="note" style="margin-top: .5rem;">Prüfe Browser‑Support …</p>
+    </section>
+
+    <!-- Projekte -->
+    <section style="margin-top: 1rem;">
+      <h2>Projekte</h2>
+      <div class="grid grid-2">
+        <!-- Projekt 1 -->
+        <article class="card">
+          <span class="badge">Projekt 1</span>
+          <h3>Namensbadge & Icon</h3>
+          <p class="muted">Lernziele: Ausgabe, Endlosschleife.</p>
+          <pre class="mono">// MakeCode JavaScript
+basic.forever(function () {
+  basic.showString("HALLO")
+  basic.pause(500)
+  basic.showIcon(IconNames.Heart)
+})</pre>
+          <div class="actions">
+            <a class="btn" href="hex/projekt1_namensbadge.hex" download>Download .hex</a>
+            <a class="btn outline" href="https://makecode.calliope.cc/#editor" target="_blank" rel="noopener">Im Editor öffnen</a>
+          </div>
+        </article>
+
+        <!-- Projekt 2 -->
+        <article class="card">
+          <span class="badge">Projekt 2</span>
+          <h3>Button‑Reaktionen (Zähler)</h3>
+          <p class="muted">Lernziele: Variablen, Events.</p>
+          <pre class="mono">let zaehler = 0
+input.onButtonPressed(Button.A, function () {
+  zaehler += 1
+  basic.showNumber(zaehler)
+})
+input.onButtonPressed(Button.B, function () {
+  zaehler = 0
+  basic.showIcon(IconNames.Yes)
+})</pre>
+          <div class="actions">
+            <a class="btn" href="hex/projekt2_button_zaehler.hex" download>Download .hex</a>
+            <a class="btn outline" href="https://makecode.calliope.cc/#editor" target="_blank" rel="noopener">Im Editor öffnen</a>
+          </div>
+        </article>
+
+        <!-- Projekt 3 -->
+        <article class="card">
+          <span class="badge">Projekt 3</span>
+          <h3>Thermometer mit Warnung</h3>
+          <p class="muted">Lernziele: Sensoren, if/else.</p>
+          <pre class="mono">basic.forever(function () {
+  let t = input.temperature()
+  if (t > 25) {
+    basic.showIcon(IconNames.Sad)
+    music.playTone(262, music.beat(BeatFraction.Eighth))
+  } else {
+    basic.showNumber(t)
+  }
+  basic.pause(500)
+})</pre>
+          <div class="actions">
+            <a class="btn" href="hex/projekt3_thermo_warnung.hex" download>Download .hex</a>
+            <a class="btn outline" href="https://makecode.calliope.cc/#editor" target="_blank" rel="noopener">Im Editor öffnen</a>
+          </div>
+        </article>
+
+        <!-- Projekt 4 -->
+        <article class="card">
+          <span class="badge">Projekt 4</span>
+          <h3>Schrittzähler (Shake)</h3>
+          <p class="muted">Lernziele: Gesten‑Events, Zählvariable.</p>
+          <pre class="mono">let schritte = 0
+input.onGesture(Gesture.Shake, function () {
+  schritte += 1
+  basic.showNumber(schritte)
+})
+input.onButtonPressed(Button.AB, function () {
+  schritte = 0
+  basic.showIcon(IconNames.Square)
+})</pre>
+          <div class="actions">
+            <a class="btn" href="hex/projekt4_schrittzaehler.hex" download>Download .hex</a>
+            <a class="btn outline" href="https://makecode.calliope.cc/#editor" target="_blank" rel="noopener">Im Editor öffnen</a>
+          </div>
+        </article>
+
+        <!-- Projekt 5 -->
+        <article class="card">
+          <span class="badge">Projekt 5</span>
+          <h3>Mini‑Alarmanlage (Licht)</h3>
+          <p class="muted">Lernziele: Booleans, logische Operatoren.</p>
+          <pre class="mono">let scharf = false
+input.onButtonPressed(Button.A, function () {
+  scharf = true
+  basic.showIcon(IconNames.Lock)
+})
+input.onButtonPressed(Button.B, function () {
+  scharf = false
+  basic.showIcon(IconNames.Unlock)
+})
+basic.forever(function () {
+  if (scharf && input.lightLevel() > 150) {
+    music.startMelody(music.builtInMelody(Melodies.PowerUp), MelodyOptions.Once)
+    basic.showIcon(IconNames.No)
+    basic.pause(1000)
+  }
+})</pre>
+          <div class="actions">
+            <a class="btn" href="hex/projekt5_alarm.hex" download>Download .hex</a>
+            <a class="btn outline" href="https://makecode.calliope.cc/#editor" target="_blank" rel="noopener">Im Editor öffnen</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- FAQ / Hinweise -->
+    <section class="card" style="margin-top: 1rem;">
+      <h2>Tipps &amp; Hinweise</h2>
+      <ul>
+        <li><strong>Kein Download?</strong> Prüfe USB‑Kabel (Datenkabel!), Port wechseln, Reset drücken.</li>
+        <li><strong>MAINTENANCE‑Laufwerk:</strong> Hex auf <em>MAINTENANCE</em> kopieren, danach wird es wieder zu <em>MINI</em>.</li>
+        <li><strong>WebUSB:</strong> In Chrome/Edge nutzbar; bei Problemen Editor neu laden und neu koppeln.</li>
+      </ul>
+    </section>
+
+    <!-- Zurück-Button -->
+    <div style="margin-top: 20px;">
+      <a href="02_middle.html" class="level-btn btn-back">zurück</a>
+    </div>
+  </div>
+
+  <script>
+    // Einfacher Support-Check für WebUSB
+    (function(){
+      var el = document.getElementById('webusb-status');
+      if (!el) return;
+      var ok = 'usb' in navigator;
+      el.textContent = ok ? 'WebUSB wird von deinem Browser unterstützt ✅' : 'WebUSB wird von diesem Browser nicht unterstützt ❌ – nutze Chrome/Edge oder Drag & Drop (.hex).';
+    })();
+  </script>
+</body>
+</html>
