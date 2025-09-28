@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EV3 · Schritt 4 – Ultraschall mit Reglern (Threshold & Hindernis)</title>
+
+<style>
+/* ===== Deine CSS (unverändert, mit Bugfix) ===== */
+/* Basislayout */
+body { font-family: Arial, sans-serif; text-align: center; padding: 60px; }
+h1 { margin-bottom: 30px; }
+p  { margin-bottom: 30px; }
+hr  { margin: 40px 0; }
+
+/* Startseiten-Grid (Themen-Auswahl) */
+.link-grid{
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  padding: 20px 24px;        /* ✅ Bugfix */
+  background: #fff;
+  margin-top: 40px;
+}
+.link-grid > a.topic,
+.link-grid > button.topic{
+  display: block; width: 100%; margin: 0; text-align: center;
+  padding: 18px 24px; border-radius: 24px; background: #3fb257; color: #fff; font-weight: 700;
+}
+.link-grid.debug > *{ outline: 2px dashed #f0f; }
+
+.level-grid { display:flex; flex-wrap:wrap; justify-content:center; column-gap:16px; row-gap:16px; margin-top:20px; }
+.level-btn{
+  display: inline-block; width: 260px; padding: 18px 28px; font-size: 20px; font-weight: bold;
+  color: #fff; background: #4CAF50; border-radius: 12px; text-decoration: none; text-align: center;
+  transition: background-color .3s, transform .2s; cursor: pointer; border: none;
+}
+.level-btn:hover{ background:#45a049; transform: translateY(-3px); }
+
+/* Mobile Feinschliff */
+@media (max-width: 640px){
+  body{ padding: 32px 16px; }
+  .level-btn{ width: 100%; max-width: 360px; }
+}
+
+/* ===== Zusatzstyles für Karte/Editor/Ausgabe/Simulator ===== */
+main { max-width: 1100px; margin: 0 auto; }
+.card { background:#fff; border: 1px solid #e7e7e7; border-radius:16px; padding:18px; text-align:left; box-shadow: 0 6px 24px rgba(0,0,0,.06); }
+.card h2 { margin: 0 0 10px; }
+.small, .status { color:#666; font-size:14px; }
+.row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+
+textarea{
+  width:100%; min-height: 280px; border:1px solid #ddd; border-radius:12px; padding:14px;
+  font:14px/1.45 Consolas, ui-monospace, Menlo, Monaco, "Liberation Mono", monospace;
+}
+pre{
+  margin:0; padding:12px; min-height:140px; background:#f7f7f7; border:1px solid #e7e7e7; border-radius:12px;
+  white-space: pre-wrap; word-break: break-word;
+}
+.result{ font-weight:700; }
+.ok{ color:#2e7d32; }
+.fail{ color:#c62828; }
+
+/* Simulator */
+.sim-wrap { margin-top: 14px; }
+#sim {
+  width: 100%;
+  height: 360px;
+  display: block;
+  background: #fff;
+  border: 1px solid #e7e7e7;
+  border-radius: 12px;
+}
+.sim-legend { margin-top: 6px; font-size: 13px; color:#666; }
+
+/* Regler-Zeile */
+.controls { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin: 12px 0; }
+.ctrl { background:#fff; border:1px solid #e7e7e7; border-radius:12px; padding:10px; }
+.ctrl label { display:block; font-size:14px; color:#333; margin-bottom:6px; }
+.ctrl output { font-weight:bold; }
+</style>
+</head>
+
+<body>
+  <main>
+    <h1>EV3 · Schritt 4: Ultraschall mit Reglern</h1>
+    <p>Stelle die <b>Schwelle</b> und die <b>Hindernis-Position</b> ein. Schreibe dann den Code so, dass der Roboter vor dem Hindernis anhält, <b>zurücksetzt</b> und <b>abbiegt</b>.</p>
+
+    <section class="card">
+      <h2 style="margin:0 0 8px">Kurs-Parameter</h2>
+      <div class="controls">
+        <div class="ctrl">
+          <label>THRESHOLD (mm): <output id="thrVal">150</output></label>
+          <input id="thr" type="range" min="50" max="300" step="10" value="150" />
+          <div class="small">Vorgabe für den Abstand: <code>THRESHOLD</code> im Code sollte dazu passen (±10&nbsp;mm).</div>
+        </div>
+        <div class="ctrl">
+          <label>Hindernis vor Start (mm): <output id="obsVal">400</output></label>
+          <input id="obs" type="range" min="200" max="800" step="20" value="400" />
+          <div class="small">Wird im Simulator gesetzt (roter Kreis).</div>
+        </div>
+        <div class="ctrl">
+          <label>Fahrgeschwindigkeit (sim) mm/s: <output id="spdVal">150</output></label>
+          <input id="spd" type="range" min="50" max="400" step="10" value="150" />
+          <div class="small">Nur für die Animation (hat keinen Einfluss auf den Checker).</div>
+        </div>
+      </div>
+      <div class="row">
+        <button id="applyThr" class="level-btn" style="background:#3fb257">THRESHOLD in Editor setzen</button>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <h2 style="margin:0 0 8px">Dein Code</h2>
+      <p class="status">Tipp: <code>ultra = UltrasonicSensor(Port.S4)</code> · <code>robot.drive(150,0)</code> + <code>while ultra.distance() &gt; THRESHOLD</code> · dann <code>robot.stop()</code>, <code>robot.straight(-...)</code>, <code>robot.turn(...)</code></p>
+
+      <textarea id="code" spellcheck="false">#!/usr/bin/env pybricks-micropython
+
+
+"""
+EV3 Grundgerüst – 3 Motoren & 4 Basissensoren
+Nutze dieses Template für ALLE Aufgaben.
+Füge deine Logik im Bereich 'HAUPTPROGRAMM' hinzu.
+"""
+
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import (Motor, ColorSensor, UltrasonicSensor, GyroSensor, TouchSensor)
+from pybricks.parameters import Port, Direction, Stop
+from pybricks.robotics import DriveBase
+from pybricks.tools import wait
+
+# --- EV3 Zentrale ---
+ev3 = EV3Brick()
+
+# --- Motoren ---
+left_motor   = Motor(Port.C, positive_direction=Direction.CLOCKWISE)
+right_motor  = Motor(Port.B, positive_direction=Direction.CLOCKWISE)
+aux_motor    = Motor(Port.A, positive_direction=Direction.CLOCKWISE)   
+
+# --- DriveBase (Werte anpassen!) ---
+WHEEL_DIAMETER_MM = 56
+AXLE_TRACK_MM     = 114
+robot = DriveBase(left_motor, right_motor,wheel_diameter=WHEEL_DIAMETER_MM,axle_track=AXLE_TRACK_MM)
+
+# --- Sensoren ---
+color_sensor = ColorSensor(Port.S1)        # Reflektion/Farbe
+ultra_sensor = UltrasonicSensor(Port.S2)   # Abstand
+gyro_sensor  = GyroSensor(Port.S3)         # Lage/Winkel
+touch_sensor = TouchSensor(Port.S4)        # Taster
+
+# --- Hilfsfunktionen ---
+def read_all():
+    """Gibt alle Sensorwerte gesammelt zurück."""
+    return {
+        "reflected": color_sensor.reflection(),
+        "color":     color_sensor.color(),
+        "distance":  ultra_sensor.distance(),
+        "angle":     gyro_sensor.angle(),
+        "pressed":   touch_sensor.pressed(),
+    }
+
+def stop_all(brake=True):
+    """Alle Motoren stoppen."""
+    mode = Stop.BRAKE if brake else Stop.COAST
+    left_motor.stop(mode)
+    right_motor.stop(mode)
+    aux_motor.stop(mode)
+    robot.stop()
+
+def beep(freq=600, dur=100):
+    """Kurzer Signalton."""
+    ev3.speaker.beep(frequency=freq, duration=dur)
+
+# --- HAUPTPROGRAMM ---
+def main():
+    ev3.speaker.say("Programm startet")
+    gyro_sensor.reset_angle(0)
+
+    try:
+        # Beispiel: Geradeaus 300 mm
+        robot.straight(300)
+
+        # Beispiel: Zusatzmotor einmal drehen
+        aux_motor.run_angle(400, 180)
+
+        # Beispiel: Sensorwerte lesen
+        s = read_all()
+        print("Sensors:", s)
+
+        # TODO: hier deine aufgabenspezifische Logik einfügen
+        # z.B. Linefollower, Förderbandsteuerung, etc.
+
+    except KeyboardInterrupt:
+        pass
+    finally:
+        stop_all()
+        ev3.speaker.say("Programm Ende")
+
+# --- Start ---
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+    
+</textarea>
+
+      <div class="row" style="margin-top:10px">
+        <button id="run" class="level-btn">Simulation ausführen</button>
+        <button id="check" class="level-btn" style="background:#3fb257">Aufgabe prüfen</button>
+        <button id="download" class="level-btn" style="background:#3fb257">Als main.py herunterladen</button>
+        <button id="next" class="level-btn" disabled>Nächster Schritt ▷</button>
+        <span id="status" class="status">Bereit (Schnellmodus)</span>
+      </div>
+
+      <div class="sim-wrap">
+        <canvas id="sim"></canvas>
+        <div class="sim-legend">Simulator: Maßstab <b>1&nbsp;px = 1&nbsp;mm</b> · Start in der Mitte · Hindernis rot</div>
+      </div>
+
+      <h3>Ausgabe</h3>
+      <pre id="out" aria-live="polite"></pre>
+      <p class="result" id="result"></p>
+    </section>
+  </main>
+
+<script>
+/* ===== Web Audio (für Beeps, falls genutzt) ===== */
+let audioCtx;
+async function ensureAudio(){
+  if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+  if(audioCtx.state === 'suspended'){ try { await audioCtx.resume(); } catch(_){} }
+}
+function playBeep(duration=120, freq=880, volume=0.15){
+  const ctx = audioCtx;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'square'; osc.frequency.value = freq; gain.gain.value = volume;
+  osc.connect(gain); gain.connect(ctx.destination);
+  const t = ctx.currentTime; osc.start(t); osc.stop(t + duration/1000);
+}
+
+/* ===== Regler ===== */
+const thr = document.getElementById('thr');
+const obs = document.getElementById('obs');
+const spd = document.getElementById('spd');
+const thrVal = document.getElementById('thrVal');
+const obsVal = document.getElementById('obsVal');
+const spdVal = document.getElementById('spdVal');
+const applyThrBtn = document.getElementById('applyThr');
+[thr,obs,spd].forEach(el=>{
+  const out = el===thr?thrVal:el===obs?obsVal:spdVal;
+  const update = ()=> out.textContent = el.value;
+  el.addEventListener('input', update); update();
+});
+
+/* ===== DOM ===== */
+const codeEl = document.getElementById('code');
+const outEl  = document.getElementById('out');
+const resEl  = document.getElementById('result');
+const nextBtn= document.getElementById('next');
+function clearOut(){ outEl.textContent=''; resEl.textContent=''; resEl.className='result'; }
+
+/* ===== Simulator (Canvas) ===== */
+const canvas = document.getElementById('sim');
+const ctx = canvas.getContext('2d', { alpha: false });
+
+function setupCanvas(){
+  const dpr = window.devicePixelRatio || 1;
+  const cssHeight = parseFloat(getComputedStyle(canvas).height);
+  const cssWidth  = canvas.clientWidth;
+  canvas.width  = Math.round(cssWidth * dpr);
+  canvas.height = Math.round(cssHeight * dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize', ()=>{ setupCanvas(); drawAll(); });
+
+const STATE = {
+  scale: 1,                 // 1 px = 1 mm
+  x: 0, y: 0, theta: 0,     // Pose
+  path: [],
+  obstacle: { x: 0, y: 0, r: 30 }
+};
+
+function resetSim(){
+  setupCanvas();
+  STATE.x = canvas.clientWidth / 2;
+  STATE.y = canvas.clientHeight / 2;
+  STATE.theta = 0; // nach rechts
+  STATE.path = [];
+  STATE.obstacle.x = STATE.x + parseInt(obs.value,10);
+  STATE.obstacle.y = STATE.y;
+  drawAll();
+}
+
+function drawGrid(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.save(); ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+  for(let x=0; x<=w; x+=50){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+  for(let y=0; y<=h; y+=50){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+  ctx.strokeStyle = '#ddd';
+  ctx.beginPath(); ctx.moveTo(0,h/2); ctx.lineTo(w,h/2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(w/2,0); ctx.lineTo(w/2,h); ctx.stroke();
+  ctx.restore();
+}
+function drawPath(){
+  ctx.save(); ctx.strokeStyle = '#3fb257'; ctx.lineWidth = 2;
+  for(const [x1,y1,x2,y2] of STATE.path){ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+  ctx.restore();
+}
+function drawRobot(){
+  const r=8, L=18, a=STATE.theta, x=STATE.x, y=STATE.y;
+  ctx.save();
+  ctx.fillStyle = '#4CAF50'; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  const tipX = x + Math.cos(a) * (r + L);
+  const tipY = y - Math.sin(a) * (r + L);
+  const leftX= x + Math.cos(a + Math.PI*0.75) * r;
+  const leftY= y - Math.sin(a + Math.PI*0.75) * r;
+  const rightX=x + Math.cos(a - Math.PI*0.75) * r;
+  const rightY=y - Math.sin(a - Math.PI*0.75) * r;
+  ctx.beginPath(); ctx.moveTo(tipX, tipY); ctx.lineTo(leftX, leftY); ctx.lineTo(rightX, rightY); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawObstacle(){
+  const o = STATE.obstacle;
+  ctx.save(); ctx.fillStyle = '#e53935';
+  ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function drawAll(){ drawGrid(); drawPath(); drawObstacle(); drawRobot(); }
+
+function forwardMM(mm){
+  const dx = Math.cos(STATE.theta) * mm * STATE.scale;
+  const dy = -Math.sin(STATE.theta) * mm * STATE.scale;
+  const x1 = STATE.x, y1 = STATE.y;
+  STATE.x += dx; STATE.y += dy;
+  STATE.path.push([x1,y1, STATE.x, STATE.y]);
+  drawAll();
+}
+function turnDeg(deg){ STATE.theta += (deg * Math.PI / 180); drawAll(); }
+
+/* ===== Parser & Ablauf ===== */
+function extractConfig(src){
+  let sensorName = 'ultra';
+  const s = src.match(/([A-Za-z_]\w*)\s*=\s*UltrasonicSensor\s*\(/);
+  if(s) sensorName = s[1];
+
+  // Threshold: Bevorzugt THRESHOLD = X; sonst while ultra.distance() > X; sonst GUI
+  let threshold = null;
+  const t2 = src.match(/THRESHOLD\s*=\s*(\d+)/);
+  if(t2) threshold = parseInt(t2[1],10);
+  if(threshold === null){
+    const re = new RegExp(sensorName.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&') + String.raw`\\s*\\.\\s*distance\\(\\)\\s*>\\s*(\\d+)`);
+    const t1 = src.match(re);
+    if(t1) threshold = parseInt(t1[1],10);
+  }
+  if(threshold === null) threshold = parseInt(thr.value,10); // Fallback: GUI
+
+  // Rücksetzlänge & Drehwinkel
+  let back = 120; const b = src.match(/robot\.straight\(\s*(-\d+)\s*\)/); if(b) back = Math.abs(parseInt(b[1],10));
+  let turn = 90;  const a = src.match(/robot\.turn\(\s*(-?\d+)\s*\)/);  if(a) turn = parseInt(a[1],10);
+
+  // Drive speed (nur Log/Animation)
+  let speed = parseInt(spd.value,10);
+  const d = src.match(/robot\.drive\(\s*(\d+)\s*,\s*0\s*\)/); if(d) speed = parseInt(d[1],10);
+
+  return { sensorName, threshold, back, turn, speed };
+}
+
+function runSimulatorFromCode(src){
+  resetSim();
+  outEl.textContent = '';
+  const { threshold, back, turn, speed } = extractConfig(src);
+
+  // Beeps (optional)
+  let t = 0;
+  const beeps = (src.match(/speaker\.beep\(\)/g) || []).length;
+  ensureAudio().then(()=>{ for(let i=0;i<beeps;i++){ setTimeout(()=>{ playBeep(); outEl.textContent += '[BEEP]\n'; }, t); t += 180; }});
+
+  // Vorrollen bis zum Stoppunkt (entlang X)
+  const stopX = STATE.obstacle.x - threshold;
+  const travel = Math.max(0, Math.round(stopX - STATE.x));
+
+  setTimeout(()=>{ outEl.textContent += `[DRIVE ${speed}mm/s, 0°/s]\n`; }, t);
+  const seg = Math.max(200, Math.min(1600, travel*2 * (150/Math.max(50,speed)))); // simple Skalierung nach speed
+  setTimeout(()=>{ forwardMM(travel); outEl.textContent += `[APPROACH ${travel}mm → Abstand ≈ ${threshold}mm]\n`; }, t);
+  t += seg;
+
+  setTimeout(()=>{ outEl.textContent += '[STOP]\n'; }, t); t += 100;
+  setTimeout(()=>{ forwardMM(-back); outEl.textContent += `[STRAIGHT -${back}mm]\n`; }, t);
+  t += Math.max(200, Math.min(1200, back*2));
+  setTimeout(()=>{ turnDeg(turn); outEl.textContent += `[TURN ${turn}°]\n`; }, t);
+}
+
+/* ===== Checker ===== */
+function checkTask(){
+  const code = codeEl.value;
+  const wantThr = parseInt(thr.value,10);
+
+  const hasUltra = /UltrasonicSensor\s*\(/.test(code);
+  // Variablennamen des Sensors feststellen
+  const varMatch = code.match(/([A-Za-z_]\w*)\s*=\s*UltrasonicSensor\s*\(/);
+  let condOK = false, thrInCode = null;
+  if(varMatch){
+    const v = varMatch[1].replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const m = code.match(new RegExp(v + String.raw`\\s*\\.\\s*distance\\(\\)\\s*>\\s*(\\d+)`));
+    if(m){ condOK = true; thrInCode = parseInt(m[1],10); }
+  } else {
+    condOK = /distance\(\)\s*>\s*\d+/.test(code);
+  }
+
+  // Explizites THRESHOLD = X im Code?
+  const thrAssign = code.match(/THRESHOLD\s*=\s*(\d+)/);
+  if(thrAssign) thrInCode = parseInt(thrAssign[1],10);
+
+  // Stop + Back + Turn vorhanden?
+  const hasStop = /robot\.stop\s*\(\s*\)/.test(code);
+  const backMatch = code.match(/robot\.straight\(\s*-(\d+)\s*\)/);
+  const hasBack = !!backMatch;
+  const backVal = hasBack ? parseInt(backMatch[1],10) : null;
+  const hasTurn = /robot\.turn\(\s*-?\d+\s*\)/.test(code);
+
+  // Threshold-Toleranz ±10 mm
+  const thrOK = (thrInCode !== null) ? (Math.abs(thrInCode - wantThr) <= 10) : false;
+
+  const ok = hasUltra && condOK && hasStop && hasBack && hasTurn && thrOK;
+
+  if(ok){
+    resEl.textContent = `✔︎ Aufgabe erfüllt – THRESHOLD≈${wantThr} mm, Stop/Back/Turn korrekt.`;
+    resEl.className = 'result ok';
+    nextBtn.disabled = false;
+  }else{
+    const miss = [];
+    if(!hasUltra) miss.push('UltrasonicSensor fehlt');
+    if(!condOK)  miss.push('while … distance() > THRESHOLD fehlt/inkorrekt');
+    if(!hasStop) miss.push('robot.stop() fehlt');
+    if(!hasBack) miss.push('Rückwärts (robot.straight(-…)) fehlt');
+    if(hasBack && (backVal < 60 || backVal > 300)) miss.push('Rückwärtsstrecke unplausibel (60–300 mm)');
+    if(!hasTurn) miss.push('robot.turn(…) fehlt');
+    if(!thrOK)  miss.push(`THRESHOLD passt nicht (soll ≈ ${wantThr} mm)`);
+    resEl.textContent = 'Noch nicht ganz: ' + miss.join(', ') + '.';
+    resEl.className = 'result fail';
+    nextBtn.disabled = true;
+  }
+}
+
+/* ===== Download als main.py ===== */
+function downloadMain(){
+  const blob = new Blob([codeEl.value], {type:'text/x-python'});
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'main.py'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ===== Editor-Helfer: THRESHOLD aus Regler in den Code schreiben ===== */
+applyThrBtn.addEventListener('click', ()=>{
+  const t = parseInt(thr.value,10);
+  const lines = codeEl.value.split(/\n/);
+  let done = false;
+  for(let i=0;i<lines.length;i++){
+    if(/^\\s*THRESHOLD\\s*=/.test(lines[i])){ lines[i] = `THRESHOLD = ${t}  # per Regler`; done = true; break; }
+  }
+  if(!done){
+    // nach der Ultrasonic-Zeile einfügen
+    const idx = lines.findIndex(l=>/UltrasonicSensor\s*\(/.test(l));
+    const ins = (idx>=0 ? idx+1 : 0);
+    lines.splice(ins, 0, `THRESHOLD = ${t}  # per Regler`);
+  }
+  codeEl.value = lines.join('\\n');
+});
+
+/* ===== UI Events ===== */
+document.getElementById('run').addEventListener('click', ()=>{
+  clearOut();
+  runSimulatorFromCode(codeEl.value);
+});
+document.getElementById('check').addEventListener('click', checkTask);
+document.getElementById('download').addEventListener('click', downloadMain);
+nextBtn.addEventListener('click', ()=> alert('Weiter: Schritt 5 – Linienfolge (Schwellwert) oder kleine Challenge?'));
+
+/* Init */
+resetSim();
+</script>
+</body>
+</html>

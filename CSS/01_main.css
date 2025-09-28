@@ -1,45 +1,147 @@
-body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    padding: 40px;
+/* =========================
+   Basis / Variablen
+   ========================= */
+:root{
+  --font-sans: Arial, sans-serif;
+  --space-xxl: 60px;
+  --space-xl: 40px;
+  --space-lg: 30px;
+  --space-md: 20px;
+  --space-sm: 16px;
+
+  --radius-lg: 24px;
+  --radius-md: 12px;
+
+  --color-bg: #fff;
+  --color-text: #111;
+
+  --color-primary: #4CAF50;    /* Level-Buttons */
+  --color-primary-hover: #45a049;
+  --color-topic: #3fb257;      /* Topic-Buttons in der Grid */
+  --color-focus: #2e7d32;
 }
 
-h1 {
-    margin-bottom: 40px;
+@media (prefers-color-scheme: dark){
+  :root{
+    --color-bg: #111;
+    --color-text: #f5f5f5;
+  }
 }
 
-p {
-    margin-bottom: 20px;
+/* Motion-Reduktion respektieren */
+@media (prefers-reduced-motion: reduce){
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
 
-/* Container für Buttons */
-.level-grid {
-    display: flex;              /* Buttons nebeneinander */
-    gap: 16px;                   /* Abstand zwischen Buttons */
-    justify-content: center;     /* Zentrieren */
-    flex-wrap: wrap;             /* Umbrechen bei wenig Platz */
-    margin-top: 20px;
+/* =========================
+   Globales Layout
+   ========================= */
+body{
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  text-align: center;
+  padding: var(--space-xxl);
+  background: var(--color-bg);
 }
 
-/* Button-Style */
-.level-btn {
-    display: inline-block;       /* Link als Block in Zeile */
-    width: 160px;                 /* Feste Breite → Text bricht automatisch */
-    padding: 12px 24px;          /* Innenabstand */
-    font-size: 18px;             /* Schriftgröße */
-    font-weight: bold;           /* Fett */
-    color: white;                /* Textfarbe */
-    background-color: #4CAF50;   /* Hintergrundfarbe */
-    border-radius: 8px;          /* Abgerundete Ecken */
-    text-decoration: none;       /* Keine Unterstreichung */
-    text-align: center;          /* Text mittig */
-    white-space: normal;         /* Zeilenumbruch erlauben */
-    line-height: 1.3;            /* Angenehmer Zeilenabstand */
-    transition: background-color 0.3s ease, transform 0.15s ease;
+h1{ margin-bottom: var(--space-lg); }
+p { margin-bottom: var(--space-lg); }
+hr{ margin: var(--space-xl) 0; }
+
+/* =========================
+   Startseiten-Grid (Themen-Auswahl)
+   ========================= */
+.link-grid{
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  padding: 20px 24px;               /* ✅ Bugfix: px ergänzt */
+  background: var(--color-bg);
+  margin-top: var(--space-xl);
 }
 
-/* Hover-Effekt */
-.level-btn:hover {
-    background-color: #45a049;   /* Dunkleres Grün */
-    transform: translateY(-2px); /* Leichtes Anheben */
+/* Debug-Helfer – bei Bedarf aktivieren */
+.link-grid.debug > *{ outline: 2px dashed #f0f; }
+
+/* =========================
+   Gemeinsame Button-Basis
+   (gilt für .level-btn + .link-grid > *.topic)
+   ========================= */
+:where(.level-btn, .link-grid > a.topic, .link-grid > button.topic){
+  display: inline-block;
+  padding: 18px 28px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color .25s ease, transform .15s ease;
+}
+
+/* Fokus klar sichtbar (A11y) */
+:where(.level-btn, .link-grid > a.topic, .link-grid > button.topic):focus-visible{
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Aktionsfeedback */
+:where(.level-btn, .link-grid > a.topic, .link-grid > button.topic):hover{
+  transform: translateY(-3px);
+}
+:where(.level-btn, .link-grid > a.topic, .link-grid > button.topic):active{
+  transform: translateY(0);
+}
+
+/* Disabled-Zustand (falls Buttons deaktiviert werden) */
+:where(.level-btn, .link-grid > a.topic, .link-grid > button.topic)[disabled],
+:where(.level-btn, .link-grid > a.topic, .link-grid > button.topic).is-disabled{
+  opacity: .6;
+  pointer-events: none;
+  transform: none;
+}
+
+/* =========================
+   Spezifische Varianten
+   ========================= */
+/* Topic-Karten im Grid: füllen die Zelle */
+.link-grid > a.topic,
+.link-grid > button.topic{
+  display: block;
+  width: 100%;
+  margin: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-topic);
+}
+.link-grid > a.topic:hover,
+.link-grid > button.topic:hover{ background: #34a24c; } /* leicht dunkler */
+
+/* Level-Buttons: feste Breite (wie vorher) */
+.level-btn{
+  width: 260px;
+  background: var(--color-primary);
+  border-radius: var(--radius-md);
+}
+.level-btn:hover{ background: var(--color-primary-hover); }
+
+/* =========================
+   Level-Grid (Container für Level-Buttons)
+   ========================= */
+.level-grid{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 16px;  /* horizontal */
+  row-gap: 16px;     /* vertikal */
+  margin-top: var(--space-md);
+}
+
+/* =========================
+   Mobile Feinschliff
+   ========================= */
+@media (max-width: 640px){
+  body{ padding: 32px 16px; }
+  .level-btn{ width: 100%; max-width: 360px; }
 }

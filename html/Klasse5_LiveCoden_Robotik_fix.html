@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Klasse 5 – Robotics LiveCoding</title>
+
+  <!-- Dein globales CSS -->
+  <link rel="stylesheet" href="../CSS/01_main.css" />
+
+  <!-- Skulpt (Python-in-Browser) -->
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+
+  <style>
+    /* du kannst das in deine CSS übernehmen */
+    .layout { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px; }
+    .card { border:1px solid #ddd; border-radius:10px; padding:14px; background:#fff; }
+    textarea { width:100%; height:240px; font-family:monospace; border:1px solid #ccc; border-radius:6px; }
+    pre { background:#f9fafb; border:1px solid #ddd; border-radius:6px; padding:10px; min-height:120px; }
+    .row { display:flex; gap:10px; margin-bottom:10px; }
+    .btn { padding:8px 14px; border:1px solid #bbb; border-radius:6px; cursor:pointer; background:#f3f3f3; }
+    .btn.primary { background:#e0e7ff; }
+    .checkbar { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid #ddd; border-radius:999px; background:#f9fafb; }
+    .checkbar .dot { width:10px; height:10px; border-radius:50%; background:#999; }
+    .checkbar.passed .dot { background:#10b981; }
+    .checkbar.failed .dot { background:#ef4444; }
+    .nav-row { display:flex; justify-content:space-between; margin-top:20px; }
+    dialog { border:0; border-radius:10px; max-width:500px; }
+    .modal-header { font-weight:bold; margin-bottom:10px; }
+    /* <<< NEU: Fläche für Turtle-Grafik >>> */
+    .turtle-box { width: 420px; height: 420px; border: 1px solid #ddd; background:#fff; }
+  </style>
+</head>
+<body>
+  <h1>Klasse 5 – Robotics LiveCoding</h1>
+  <p>Übe Python direkt im Browser – mit Checks, Tipps und Lösung.</p>
+
+  <main class="layout">
+    <!-- Editor -->
+    <section class="card">
+      <h2>Editor</h2>
+      <div class="row">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+      </div>
+      <textarea id="editor" spellcheck="false"></textarea>
+    </section>
+
+    <!-- Output -->
+    <section class="card">
+      <h2>Output</h2>
+      <pre id="output"></pre>
+      <div id="error" style="color:#b91c1c;"></div>
+      <h3>Canvas (turtle)</h3>
+      <!-- <<< NEU: Ziel-Container für Skulpt-Turtle >>> -->
+      <div id="turtle-canvas" class="turtle-box" aria-label="turtle graphics area"></div>
+
+      <h3>Check</h3>
+      <div id="checkbar" class="checkbar">
+        <span class="dot"></span><span id="checkmsg">No check yet</span>
+      </div>
+    </section>
+  </main>
+
+  <div class="nav-row">
+    <a href="02_python_overview.html" class="btn">← Back</a>
+    <a href="next_task.html" class="btn primary">Next →</a>
+  </div>
+
+  <!-- Tips modal -->
+  <dialog id="tips-modal">
+    <div class="modal-header">Tips</div>
+    <ul id="tips-list"></ul>
+    <button class="btn" id="close-tips">Close</button>
+  </dialog>
+
+  <!-- Solution modal -->
+  <dialog id="solution-modal">
+    <div class="modal-header">Solution</div>
+    <pre id="solution-code"></pre>
+    <div class="row">
+      <button class="btn" id="copy-solution">Insert</button>
+      <button class="btn" id="close-solution">Close</button>
+    </div>
+  </dialog>
+
+  <script>
+    // -------- Konfiguration (pro Aufgabe anpassen) --------
+    const TASK = {
+      title: "Task: Print your name",
+      description: "Write a Python program that prints <code>Hello, Alice!</code>.",
+      starterCode: "",
+      expectedOutputRegex: /^Hello,\s+[A-Za-z]+!$/m,
+      tips: ["Use print()", "Put text in quotes", "Don't forget !"],
+      solution: 'print("Hello, Alice!")',
+      filename: "task_hello.py"
+    };
+
+    // --------- Element-Verbindungen ---------
+    const els = {
+      editor: document.getElementById("editor"),
+      run: document.getElementById("run-btn"),
+      reset: document.getElementById("reset-btn"),
+      save: document.getElementById("save-btn"),
+      output: document.getElementById("output"),
+      error: document.getElementById("error"),
+      checkbar: document.getElementById("checkbar"),
+      checkmsg: document.getElementById("checkmsg"),
+      tipsModal: document.getElementById("tips-modal"),
+      tipsList: document.getElementById("tips-list"),
+      closeTips: document.getElementById("close-tips"),
+      solutionModal: document.getElementById("solution-modal"),
+      solutionCode: document.getElementById("solution-code"),
+      copySolution: document.getElementById("copy-solution"),
+      closeSolution: document.getElementById("close-solution")
+    };
+
+    // Inhalte füllen
+    document.title = TASK.title;
+    // (Titel/Beschreibung im Header sind hier statisch – kann man bei Bedarf auch dynamisch setzen)
+    els.solutionCode.textContent = TASK.solution;
+    els.tipsList.innerHTML = TASK.tips.map(t=>"<li>"+t+"</li>").join("");
+    setCheckIdle();
+
+    function setCheckIdle(){ els.checkbar.className="checkbar"; els.checkmsg.textContent="No check yet"; }
+    function setCheckPassed(){ els.checkbar.className="checkbar passed"; els.checkmsg.textContent="Passed"; }
+    function setCheckFailed(){ els.checkbar.className="checkbar failed"; els.checkmsg.textContent="Not matched"; }
+
+    // --------- Skulpt Setup ---------
+    function builtinRead(x){
+      if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+        throw "File not found: '" + x + "'";
+      return Sk.builtinFiles["files"][x];
+    }
+
+    async function runCode(){
+      els.output.textContent=""; els.error.textContent=""; setCheckIdle();
+
+      // <<< NEU: Turtle-Canvas leeren >>>
+      const tdiv = document.getElementById("turtle-canvas");
+      if (tdiv) tdiv.innerHTML = "";
+
+      Sk.configure({
+        output: t => els.output.textContent += t,
+        read: builtinRead,
+        __future__: Sk.python3,
+        inputfun: (p) => window.prompt(p || "Input:") ?? "",
+        inputfunTakesPrompt: true,
+        execLimit: 10000
+      });
+
+      // <<< NEU: Turtle-Target setzen >>>
+      (Sk.TurtleGraphics || (Sk.TurtleGraphics = {})).target = 'turtle-canvas';
+
+      try {
+        await Sk.misceval.asyncToPromise(() =>
+          Sk.importMainWithBody("<stdin>", false, els.editor.value, true)
+        );
+        const out = els.output.textContent.trim();
+        if (TASK.expectedOutputRegex.test(out)){ setCheckPassed(); }
+        else { setCheckFailed(); }
+      } catch(e){
+        els.error.textContent = e.toString();
+        setCheckFailed();
+      }
+    }
+
+    function reset(){ els.editor.value = TASK.starterCode; els.output.textContent=""; els.error.textContent=""; setCheckIdle(); }
+    function save(){ const b=new Blob([els.editor.value],{type:"text/plain"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=TASK.filename; a.click(); }
+
+    // --------- Button Aktionen ---------
+    document.getElementById("run-btn").onclick = runCode;
+    document.getElementById("reset-btn").onclick = reset;
+    document.getElementById("save-btn").onclick = save;
+    document.getElementById("close-tips").onclick = () => els.tipsModal.close();
+    document.getElementById("close-solution").onclick = () => els.solutionModal.close();
+    document.getElementById("copy-solution").onclick = () => { els.editor.value = TASK.solution; els.solutionModal.close(); setCheckIdle(); }
+  </script>
+</body>
+</html>

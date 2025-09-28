@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EV3 · Schritt 5 – Linienfolger (Schwellwert + P-Regler)</title>
+
+<style>
+/* ===== Deine CSS (hell), mit Bugfix bei padding ===== */
+/* Basislayout */
+body{font-family:Arial,sans-serif;text-align:center;padding:60px}
+h1{margin-bottom:30px}
+p{margin-bottom:30px}
+hr{margin:40px 0}
+
+/* Startseiten-Grid (falls später genutzt) */
+.link-grid{
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:24px;
+  padding:20px 24px;   /* px ergänzt */
+  background:#fff;
+  margin-top:40px;
+}
+.link-grid>button.topic,.link-grid>a.topic{
+  display:block;width:100%;margin:0;text-align:center;padding:18px 24px;border-radius:24px;background:#3fb257;color:#fff;font-weight:700
+}
+.link-grid.debug>*{outline:2px dashed #f0f}
+
+/* Buttons */
+.level-grid{display:flex;flex-wrap:wrap;justify-content:center;column-gap:16px;row-gap:16px;margin-top:20px}
+.level-btn{display:inline-block;width:260px;padding:18px 28px;font-size:20px;font-weight:700;color:#fff;background:#4CAF50;border-radius:12px;text-decoration:none;text-align:center;transition:background-color .3s,transform .2s;cursor:pointer;border:none}
+.level-btn:hover{background:#45a049;transform:translateY(-3px)}
+
+/* Mobile */
+@media (max-width:640px){body{padding:32px 16px}.level-btn{width:100%;max-width:360px}}
+
+/* ===== Zusatz-UI für Karte/Editor/Ausgabe/Simulator ===== */
+main{max-width:1100px;margin:0 auto}
+.card{background:#fff;border:1px solid #e7e7e7;border-radius:16px;padding:18px;text-align:left;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+.card h2{margin:0 0 10px}
+.small,.status{color:#666;font-size:14px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+textarea{width:100%;min-height:280px;border:1px solid #ddd;border-radius:12px;padding:14px;font:14px/1.45 Consolas,ui-monospace,Menlo,Monaco,"Liberation Mono",monospace}
+pre{margin:0;padding:12px;min-height:140px;background:#f7f7f7;border:1px solid #e7e7e7;border-radius:12px;white-space:pre-wrap;word-break:break-word}
+.result{font-weight:700}.ok{color:#2e7d32}.fail{color:#c62828}
+
+/* Simulator */
+.sim-wrap{margin-top:14px}
+#sim{width:100%;height:360px;display:block;background:#fff;border:1px solid #e7e7e7;border-radius:12px}
+.sim-legend{margin-top:6px;font-size:13px;color:#666}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:12px 0}
+.ctrl{background:#fff;border:1px solid #e7e7e7;border-radius:12px;padding:10px}
+.ctrl label{display:block;font-size:14px;color:#333;margin-bottom:6px}
+.ctrl output{font-weight:700}
+.badge{font-size:12px;color:#555;background:#f3f5f7;border:1px solid #e5e7eb;border-radius:10px;padding:4px 8px}
+</style>
+</head>
+
+<body>
+<main>
+  <h1>EV3 · Schritt 5: Linienfolger (Schwellwert + P)</h1>
+  <p>ColorSensor-Reflexion 0–100 → <b>THRESHOLD</b>. Regler: <code>turn = Kp * (THRESHOLD - reflection)</code>. Fahren mit <code>robot.drive(speed, turn)</code>.</p>
+
+  <section class="card">
+    <h2 style="margin:0 0 8px">Kurs-Parameter</h2>
+    <div class="controls">
+      <div class="ctrl">
+        <label>THRESHOLD (Reflexion): <output id="thrVal">50</output></label>
+        <input id="thr" type="range" min="20" max="80" step="1" value="50" />
+      </div>
+      <div class="ctrl">
+        <label>Linien-Position (Y, mm): <output id="lineVal">80</output></label>
+        <input id="line" type="range" min="-120" max="120" step="5" value="80" />
+      </div>
+      <div class="ctrl">
+        <label>Fahrgeschwindigkeit (sim) mm/s: <output id="spdVal">120</output></label>
+        <input id="spd" type="range" min="60" max="300" step="10" value="120" />
+      </div>
+      <div class="ctrl">
+        <label>Kp (Proportionalfaktor): <output id="kpVal">1.2</output></label>
+        <input id="kp" type="range" min="0.2" max="3.0" step="0.1" value="1.2" />
+      </div>
+    </div>
+    <div class="row">
+      <button id="applyThr" class="level-btn" style="background:#3fb257">THRESHOLD in Editor setzen</button>
+      <button id="applyKp" class="level-btn" style="background:#3fb257">Kp in Editor setzen</button>
+      <span class="badge" id="dbg">REF – ERR – TURN</span>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:14px">
+    <h2 style="margin:0 0 8px">Dein Code</h2>
+    <p class="status">Beispiel (anpassbar): P-Regler in Endlosschleife.</p>
+
+<textarea id="code" spellcheck="false">#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, ColorSensor
+from pybricks.parameters import Port
+from pybricks.robotics import DriveBase
+from pybricks.tools import wait
+
+left = Motor(Port.B); right = Motor(Port.C)
+robot = DriveBase(left, right, wheel_diameter=56, axle_track=114)
+color = ColorSensor(Port.S3)
+
+THRESHOLD = 50
+Kp = 1.2
+SPEED = 120
+
+while True:
+    r = color.reflection()
+    error = THRESHOLD - r
+    turn = Kp * error
+    robot.drive(SPEED, turn)
+    wait(10)
+</textarea>
+
+    <div class="row" style="margin-top:10px">
+      <button id="run" class="level-btn">Simulation ausführen</button>
+      <button id="reset" class="level-btn" style="background:#3fb257">Reset</button>
+      <button id="check" class="level-btn" style="background:#3fb257">Aufgabe prüfen</button>
+      <button id="download" class="level-btn" style="background:#3fb257">Als main.py herunterladen</button>
+      <button id="next" class="level-btn" disabled>Nächster Schritt ▷</button>
+      <span id="status" class="status">Bereit (Schnellmodus)</span>
+    </div>
+
+    <div class="sim-wrap">
+      <canvas id="sim"></canvas>
+      <div class="sim-legend">Simulator: <b>1px = 1mm</b> · Schwarze Linie quer · Debug oben rechts.</div>
+    </div>
+
+    <h3>Ausgabe</h3>
+    <pre id="out" aria-live="polite"></pre>
+    <p class="result" id="result"></p>
+  </section>
+</main>
+
+<script>
+/* --- Regler-UI --- */
+const thr  = document.getElementById('thr');
+const line = document.getElementById('line');
+const spd  = document.getElementById('spd');
+const kp   = document.getElementById('kp');
+const thrVal  = document.getElementById('thrVal');
+const lineVal = document.getElementById('lineVal');
+const spdVal  = document.getElementById('spdVal');
+const kpVal   = document.getElementById('kpVal');
+
+[thr,line,spd,kp].filter(Boolean).forEach(el=>{
+  const out = el===thr?thrVal : el===line?lineVal : el===spd?spdVal : kpVal;
+  const update = ()=> out && (out.textContent = el.value);
+  el.addEventListener('input', update); update();
+});
+
+/* --- DOM --- */
+const codeEl = document.getElementById('code');
+const outEl  = document.getElementById('out');
+const resEl  = document.getElementById('result');
+const nextBtn= document.getElementById('next');
+const dbgEl  = document.getElementById('dbg');
+function clearOut(){ if(outEl) outEl.textContent=''; if(resEl){ resEl.textContent=''; resEl.className='result'; } }
+
+/* --- Canvas --- */
+const canvas = document.getElementById('sim');
+const ctx = canvas.getContext('2d', {alpha:false});
+function setupCanvas(){
+  const dpr = window.devicePixelRatio || 1;
+  const cssH = parseFloat(getComputedStyle(canvas).height) || 360;
+  const cssW = canvas.clientWidth || 640;
+  canvas.width = Math.round(cssW*dpr); canvas.height = Math.round(cssH*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize', ()=>{ setupCanvas(); drawAll(); });
+
+/* --- Welt --- */
+const LINE = { yOffset: 80, width: 28 };     /* Linie ruhig etwas breiter */
+const STATE = { scale:1, x:0, y:0, theta:0, path:[], running:false, timer:null };
+
+function resetSim(){
+  setupCanvas();
+  STATE.x = canvas.clientWidth*0.25; STATE.y = canvas.clientHeight/2;
+  STATE.theta = 0; STATE.path = []; STATE.running=false;
+  if(line) LINE.yOffset = parseInt(line.value,10) || 80;
+  drawAll();
+}
+function drawGrid(){
+  const w=canvas.clientWidth,h=canvas.clientHeight;
+  ctx.save(); ctx.clearRect(0,0,w,h); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#eee'; for(let x=0;x<=w;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+  for(let y=0;y<=h;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+  ctx.strokeStyle='#ddd'; ctx.beginPath();ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(w/2,0);ctx.lineTo(w/2,h);ctx.stroke(); ctx.restore();
+}
+function drawLine(){
+  const w=canvas.clientWidth,h=canvas.clientHeight,y=h/2+LINE.yOffset;
+  ctx.save(); ctx.fillStyle='#000'; ctx.fillRect(0,y-LINE.width/2,w,LINE.width); ctx.restore();
+}
+function drawPath(){
+  ctx.save(); ctx.strokeStyle='#3fb257'; ctx.lineWidth=2;
+  for(const [x1,y1,x2,y2] of STATE.path){ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+  ctx.restore();
+}
+function drawRobot(){
+  const r=8,L=18,a=STATE.theta,x=STATE.x,y=STATE.y;
+  ctx.save();
+  ctx.fillStyle='#4CAF50'; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  const tipX=x+Math.cos(a)*(r+L), tipY=y-Math.sin(a)*(r+L);
+  const leftX=x+Math.cos(a+Math.PI*0.75)*r, leftY=y-Math.sin(a+Math.PI*0.75)*r;
+  const rightX=x+Math.cos(a-Math.PI*0.75)*r, rightY=y-Math.sin(a-Math.PI*0.75)*r;
+  ctx.beginPath(); ctx.moveTo(tipX,tipY); ctx.lineTo(leftX,leftY); ctx.lineTo(rightX,rightY); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawAll(){ drawGrid(); drawLine(); drawPath(); drawRobot(); }
+
+/* --- „Sensor“ mit Offset vor dem Bot (20 mm) --- */
+function simulatedReflection(){
+  const SENSOR_OFFSET = 20;
+  const sx = STATE.x + Math.cos(STATE.theta) * SENSOR_OFFSET;
+  const sy = STATE.y - Math.sin(STATE.theta) * SENSOR_OFFSET;
+
+  const lineY = canvas.clientHeight/2 + LINE.yOffset;
+  const d = Math.abs(sy - lineY);
+
+  const WHITE=80, BLACK=15, sigma = LINE.width/2;
+  const darkGain = Math.exp(- (d*d) / (2*sigma*sigma));
+  const refl = Math.round(WHITE - (WHITE - BLACK) * darkGain);
+  return Math.max(0, Math.min(100, refl));
+}
+
+/* --- Config aus Code oder UI --- */
+function extractLFConfig(src){
+  let threshold = (src.match(/THRESHOLD\s*=\s*(\d+)/i)||[])[1];
+  let Kp = (src.match(/\b(Kp|KP|kp)\s*=\s*([0-9]*\.?[0-9]+)/)||[])[2];
+  let speed = (src.match(/SPEED\s*=\s*(\d+)/)||[])[1] || (src.match(/robot\.drive\(\s*(\d+)/)||[])[1];
+  threshold = threshold?parseInt(threshold,10):(thr?parseInt(thr.value,10):50);
+  Kp = Kp?parseFloat(Kp):(kp?parseFloat(kp.value):1.2);
+  speed = speed?parseInt(speed,10):(spd?parseInt(spd.value,10):120);
+  return {threshold,Kp,speed};
+}
+
+/* --- Simulation (setInterval, stabil) --- */
+function runSimulatorFromCode(src){
+  resetSim(); clearOut();
+  const {threshold,Kp,speed} = extractLFConfig(src);
+  const dt = 0.02; // 20 ms
+  let t = 0;
+  if(STATE.timer) { clearInterval(STATE.timer); STATE.timer=null; }
+  STATE.running = true;
+  STATE.timer = setInterval(()=>{
+    if(!STATE.running){ clearInterval(STATE.timer); STATE.timer=null; return; }
+
+    // Sensor lesen + Regler
+    const r = simulatedReflection();
+    const error = threshold - r;
+    const turnRate = Math.max(-360, Math.min(360, -Kp * error));  // °/s (Minus wg. Canvas-Richtung)
+
+    // Kinematik
+    const w = turnRate * Math.PI/180; // rad/s
+    STATE.theta += w*dt;
+    const v = speed;
+    const dx = Math.cos(STATE.theta)*v*dt;
+    const dy = -Math.sin(STATE.theta)*v*dt;
+    const x1=STATE.x,y1=STATE.y; STATE.x+=dx; STATE.y+=dy; STATE.path.push([x1,y1,STATE.x,STATE.y]);
+
+    if(outEl && (Math.round(t*10)%5)===0){ // alle 100 ms
+      outEl.textContent += `[REF ${r}] [ERR ${error}] [TURN ${turnRate.toFixed(1)}] [SPEED ${speed}]\n`;
+    }
+    if(dbgEl){ dbgEl.textContent = `REF ${r} • ERR ${error} • TURN ${turnRate.toFixed(1)}`; }
+
+    drawAll(); t += dt;
+    if(t >= 8){ STATE.running=false; clearInterval(STATE.timer); STATE.timer=null; if(outEl) outEl.textContent += '[END]\n'; }
+  }, dt*1000);
+}
+
+/* --- Checker --- */
+function checkTask(){
+  const code = codeEl.value || '';
+  const hasColor = /ColorSensor\s*\(/.test(code);
+  const hasReflection = /\.reflection\s*\(\s*\)/.test(code);
+  const hasLoop = /while\s+True|while\s+.+:/.test(code);
+  const usesDrive = /robot\.drive\s*\(\s*[^,]+,\s*[^)]+\)/.test(code);
+  const wantThr = thr ? parseInt(thr.value,10) : 50;
+  const thrMatch = code.match(/THRESHOLD\s*=\s*(\d+)/i);
+  const thrOK = thrMatch ? Math.abs(parseInt(thrMatch[1],10)-wantThr)<=5 : false;
+  const ok = hasColor && hasReflection && hasLoop && usesDrive && thrOK;
+  if(resEl){
+    if(ok){ resEl.textContent=`✔︎ Aufgabe erfüllt – THRESHOLD≈${wantThr}, P-Regler vorhanden.`; resEl.className='result ok'; if(nextBtn) nextBtn.disabled=false; }
+    else{
+      const miss=[]; if(!hasColor)miss.push('ColorSensor fehlt'); if(!hasReflection)miss.push('reflection() fehlt');
+      if(!hasLoop)miss.push('Schleife fehlt'); if(!usesDrive)miss.push('robot.drive(...) fehlt'); if(!thrOK)miss.push(`THRESHOLD ungleich ${wantThr}`);
+      resEl.textContent='Noch nicht ganz: '+miss.join(', ')+'.'; resEl.className='result fail'; if(nextBtn) nextBtn.disabled=true;
+    }
+  }
+}
+
+/* --- Download & Editor-Helfer --- */
+function downloadMain(){
+  const blob = new Blob([codeEl.value||''], {type:'text/x-python'});
+  const url = URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='main.py'; a.click(); URL.revokeObjectURL(url);
+}
+document.getElementById('applyThr').addEventListener('click', ()=>{
+  const t=(thr?parseInt(thr.value,10):50);
+  const lines=(codeEl.value||'').split(/\n/); let done=false;
+  for(let i=0;i<lines.length;i++){ if(/^\s*THRESHOLD\s*=/.test(lines[i])){ lines[i]=`THRESHOLD = ${t}  # per Regler`; done=true; break; } }
+  if(!done){ const idx=lines.findIndex(l=>/ColorSensor\s*\(/.test(l)); lines.splice(idx>=0?idx+1:0,0,`THRESHOLD = ${t}  # per Regler`); }
+  codeEl.value=lines.join('\n');
+});
+document.getElementById('applyKp').addEventListener('click', ()=>{
+  const val=(kp?parseFloat(kp.value):1.2).toFixed(1);
+  const lines=(codeEl.value||'').split(/\n/); let done=false;
+  for(let i=0;i<lines.length;i++){ if(/^\s*(Kp|KP|kp)\s*=/.test(lines[i])){ lines[i]=`Kp = ${val}  # per Regler`; done=true; break; } }
+  if(!done){ const idx=lines.findIndex(l=>/THRESHOLD\s*=/.test(l)); lines.splice(idx>=0?idx+1:0,0,`Kp = ${val}  # per Regler`); }
+  codeEl.value=lines.join('\n');
+});
+
+/* --- Event-Listener --- */
+document.getElementById('run').addEventListener('click', ()=> runSimulatorFromCode(codeEl.value||''));
+document.getElementById('reset').addEventListener('click', resetSim);
+document.getElementById('check').addEventListener('click', checkTask);
+document.getElementById('download').addEventListener('click', downloadMain);
+
+/* Startzustand */
+resetSim();
+</script>
+</body>
+</html>

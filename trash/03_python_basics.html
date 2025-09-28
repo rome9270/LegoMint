@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Python Basics – Skulpt Template</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <!-- Skulpt (Python-in-the-browser| interpreter and bibs) -->
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+</head>
+
+<body>
+   <header class="site-header">
+    <div class="task-meta">
+      <h1 id="task-title">Task: Print Your Name</h1>
+      <p id="task-desc">
+        Write a Python program that prints <code>Hello, Alice!</code>
+        (Replace <code>Alice</code> with any name you like.)
+      </p>
+    </div>
+    <div class="nav-buttons">
+      <button id="back-btn" class="btn ghost" type="button" title="Go to previous task">← Back</button>
+      <button id="next-btn" class="btn primary" type="button" title="Go to next task">Next →</button>
+    </div>
+  </header>
+
+  <!-- Main split layout -->
+  <main class="layout">
+    <!-- Left: Editor -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Editor</h2>
+        <div class="panel-actions">
+          <button id="reset-btn" class="btn ghost small" type="button">Reset</button>
+          <button id="stuck-btn" class="btn ghost small" type="button">I’m stuck</button>
+          <button id="run-btn" class="btn success small" type="button">Run ▶</button>
+        </div>
+      </div>
+      <textarea id="editor" spellcheck="false" aria-label="Python editor"></textarea>
+      <div class="hints">
+        <p class="hint-note">Tip: Use <code>print()</code> to show text.</p>
+      </div>
+    </section>
+
+    <!-- Right: Output -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Output</h2>
+        <div class="panel-actions">
+          <span id="status-dot" class="status-dot" title="Status"></span>
+        </div>
+      </div>
+      <pre id="output" aria-live="polite"></pre>
+      <div id="error" class="error" hidden></div>
+    </section>
+  </main>
+
+  <!-- Bottom: Tips -->
+  <section class="tips">
+    <h3>Tips</h3>
+    <ul id="tips-list">
+      <li>Strings go in quotes: <code>"Hello"</code></li>
+      <li>Use <code>print("Hello, Alice!")</code> to display text.</li>
+      <li>Don’t forget parentheses in Python 3: <code>print(...)</code></li>
+    </ul>
+  </section>
+
+  <!-- Success Modal -->
+  <dialog id="success-modal" class="modal">
+    <div class="modal-card">
+      <div class="confetti" aria-hidden="true"></div>
+      <h2>Great job! 🎉</h2>
+      <p>You solved this task successfully.</p>
+      <div class="modal-actions">
+        <button class="btn ghost" id="close-success">Close</button>
+        <button class="btn primary" id="success-next">Next task →</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Solution / Help Modal -->
+  <dialog id="solution-modal" class="modal">
+    <div class="modal-card">
+      <h2>Need a hand?</h2>
+      <p>Here’s one way to solve it:</p>
+      <pre id="solution-code"></pre>
+      <div class="modal-actions">
+        <button class="btn ghost" id="close-solution">Close</button>
+        <button class="btn" id="fill-solution">Fill in editor</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    /* --------------------------
+       1) TASK CONFIG (edit per task)
+       -------------------------- */
+    const TASK = {
+      title: "Task: Print Your Name",
+      description:
+        'Write a Python program that prints <code>Hello, Alice!</code> (Replace <code>Alice</code> with any name you like.)',
+      starterCode:
+`# TODO: Print "Hello, Alice!"
+# Replace Alice with any name you like
+print("Hello, Alice!")`,
+      // Match expected output (case-sensitive). Adjust as needed.
+      expectedOutputRegex: /^Hello, [A-Za-z]+!?$/m,
+
+      // Optional: custom validator (output string => boolean)
+      // validate: (out) => out.trim() === "Hello, Alice!",
+
+      tips: [
+        'Use the print function like this: <code>print("Hello, Alice!")</code>.',
+        "Text must be in quotes.",
+        "No extra spaces or lines needed."
+      ],
+      solution:
+`# Simple solution
+print("Hello, Alice!")`,
+      // Where Back/Next should go (replace with your real pages)
+      prevUrl: "#",
+      nextUrl: "#"
+    };
+
+    /* --------------------------
+       2) PAGE WIRING / STATE
+       -------------------------- */
+    const els = {
+      title: document.getElementById("task-title"),
+      desc: document.getElementById("task-desc"),
+      editor: document.getElementById("editor"),
+      output: document.getElementById("output"),
+      error: document.getElementById("error"),
+      tipsList: document.getElementById("tips-list"),
+      statusDot: document.getElementById("status-dot"),
+      toast: document.getElementById("toast"),
+      successModal: document.getElementById("success-modal"),
+      solutionModal: document.getElementById("solution-modal"),
+      solutionCode: document.getElementById("solution-code"),
+      // Buttons
+      run: document.getElementById("run-btn"),
+      reset: document.getElementById("reset-btn"),
+      stuck: document.getElementById("stuck-btn"),
+      closeSuccess: document.getElementById("close-success"),
+      successNext: document.getElementById("success-next"),
+      closeSolution: document.getElementById("close-solution"),
+      fillSolution: document.getElementById("fill-solution"),
+      back: document.getElementById("back-btn"),
+      next: document.getElementById("next-btn"),
+    };
+
+    // Fill header and content from TASK
+    function initTask() {
+      els.title.textContent = TASK.title;
+      els.desc.innerHTML = TASK.description;
+      els.editor.value = TASK.starterCode;
+      els.output.textContent = "";
+      els.error.hidden = true;
+      els.error.textContent = "";
+
+      // Tips
+      els.tipsList.innerHTML = "";
+      TASK.tips.forEach(t => {
+        const li = document.createElement("li");
+        li.innerHTML = t;
+        els.tipsList.appendChild(li);
+      });
+
+      // Solution content
+      els.solutionCode.textContent = TASK.solution;
+
+      // Nav buttons
+      els.back.onclick = () => {
+        if (TASK.prevUrl && TASK.prevUrl !== "#") location.href = TASK.prevUrl;
+        else toast("No previous task set yet.");
+      };
+      els.next.onclick = () => {
+        if (TASK.nextUrl && TASK.nextUrl !== "#") location.href = TASK.nextUrl;
+        else toast("No next task set yet.");
+      };
+      els.successNext.onclick = els.next.onclick;
+
+      // Reset editor
+      els.reset.onclick = () => {
+        els.editor.value = TASK.starterCode;
+        clearOutput();
+        setIdle();
+        toast("Editor reset.");
+      };
+
+      // Stuck -> show solution
+      els.stuck.onclick = () => openSolution();
+
+      // Close modals
+      els.closeSuccess.onclick = () => els.successModal.close();
+      els.closeSolution.onclick = () => els.solutionModal.close();
+
+      // Fill solution into editor
+      els.fillSolution.onclick = () => {
+        els.editor.value = TASK.solution;
+        els.solutionModal.close();
+        toast("Solution pasted to editor.");
+      };
+
+      // Run code
+      els.run.onclick = runCode;
+
+      // Auto help if idle or repeated failures
+      setupAutoHelpTimers();
+    }
+
+    /* --------------------------
+       3) RUNNING PYTHON (Skulpt)
+       -------------------------- */
+    function builtinRead(x) {
+      if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined) {
+        throw "File not found: '" + x + "'";
+      }
+      return Sk.builtinFiles["files"][x];
+    }
+
+    function clearOutput() {
+      els.output.textContent = "";
+      els.error.hidden = true;
+      els.error.textContent = "";
+    }
+
+    function setRunning() {
+      els.statusDot.dataset.state = "running";
+      els.statusDot.title = "Running…";
+    }
+    function setSuccess() {
+      els.statusDot.dataset.state = "success";
+      els.statusDot.title = "Success";
+    }
+    function setError() {
+      els.statusDot.dataset.state = "error";
+      els.statusDot.title = "Error";
+    }
+    function setIdle() {
+      els.statusDot.dataset.state = "idle";
+      els.statusDot.title = "Idle";
+    }
+
+    let failureCount = 0;
+    let lastRunAt = Date.now();
+
+    function runCode() {
+      setRunning();
+      clearOutput();
+      lastRunAt = Date.now();
+
+      const code = els.editor.value;
+      Sk.configure({
+        output: (text) => { els.output.textContent += text; },
+        read: builtinRead,
+        __future__: Sk.python3,
+        execLimit: 10000 // 10s
+      });
+
+      const promise = Sk.misceval.asyncToPromise(() =>
+        Sk.importMainWithBody("<stdin>", false, code, true)
+      );
+
+      promise.then(() => {
+        // Validate success
+        const out = els.output.textContent.trim();
+        const ok =
+          (typeof TASK.validate === "function" && TASK.validate(out)) ||
+          (TASK.expectedOutputRegex && TASK.expectedOutputRegex.test(out));
+
+        if (ok) {
+          setSuccess();
+          failureCount = 0;
+          openSuccess();
+        } else {
+          setError();
+          failureCount++;
+          showError(`Output didn’t match the expected pattern.\nExpected pattern: ${TASK.expectedOutputRegex}\nActual output:\n${out || "(empty)"}`);
+          maybeAutoSolution();
+        }
+      }).catch(err => {
+        setError();
+        failureCount++;
+        showError(err.toString());
+        maybeAutoSolution();
+      });
+    }
+
+    function showError(msg) {
+      els.error.hidden = false;
+      els.error.textContent = msg;
+    }
+
+    /* --------------------------
+       4) HELPERS: Modals, Toasts, Auto-help
+       -------------------------- */
+    function openSuccess() {
+      // Confetti reset (retrigger animation)
+      const confetti = document.querySelector(".confetti");
+      confetti.classList.remove("play");
+      void confetti.offsetWidth; // reflow
+      confetti.classList.add("play");
+
+      els.successModal.showModal();
+    }
+
+    function openSolution() {
+      els.solutionModal.showModal();
+    }
+
+    function toast(message) {
+      els.toast.textContent = message;
+      els.toast.hidden = false;
+      els.toast.classList.add("show");
+      setTimeout(() => {
+        els.toast.classList.remove("show");
+        setTimeout(() => (els.toast.hidden = true), 200);
+      }, 2200);
+    }
+
+    function setupAutoHelpTimers() {
+      // 1) Idle timer: if no run in ~90s, show solution modal
+      setInterval(() => {
+        const idleMs = Date.now() - lastRunAt;
+        if (idleMs > 90000) {
+          lastRunAt = Date.now(); // prevent spamming
+          openSolution();
+          toast("Here’s a hint/solution to help you continue.");
+        }
+      }, 5000);
+    }
+
+    function maybeAutoSolution() {
+      if (failureCount >= 3) {
+        openSolution();
+        toast("Let’s look at a solution together.");
+        failureCount = 0; // reset after showing once
+      }
+    }
+
+    // Boot
+    initTask();
+    setIdle();
+  </script>
+</body>
+</html>

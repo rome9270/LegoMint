@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pyodide Starter – Browser-Python</title>
+  <!-- Pyodide: using the current stable version per docs -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js"></script>
+  <style>
+    :root{
+      --bg: #0b0f14;
+      --card: #121821;
+      --muted: #8aa0b2;
+      --acc: #4CAF50;
+      --acc-hover: #45a049;
+      --radius: 16px;
+    }
+    *{ box-sizing: border-box; }
+    body{
+      margin:0; padding:60px; font-family: Arial, sans-serif; color:#e8eef4; background:var(--bg);
+      text-align:center;
+    }
+    h1{ margin-bottom: 30px; }
+    p { margin-bottom: 30px; color: var(--muted); }
+    main{ max-width: 1100px; margin: 0 auto; }
+
+    /* Grid aus deiner CSS-Idee: drei große Start-Buttons */
+    .link-grid{
+      display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:24px; padding:20px 24px; background:transparent; margin-top: 20px;
+    }
+    .link-grid > a.topic,
+    .link-grid > button.topic{
+      display:block; width:100%; margin:0; text-align:center; padding:18px 24px; border-radius:24px; background:var(--acc); color:#fff; font-weight:700; cursor:pointer; text-decoration:none;
+      transition: background-color .25s ease, transform .15s ease;
+    }
+    .link-grid > a.topic:hover,
+    .link-grid > button.topic:hover{ background: var(--acc-hover); transform: translateY(-3px); }
+
+    /* REPL-Karte */
+    .card{ background: var(--card); border-radius: var(--radius); padding: 18px; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+    .layout{ display:grid; grid-template-columns: 1fr 1fr; gap:18px; align-items: stretch; }
+    .col{ display:flex; flex-direction:column; gap:12px; }
+
+    textarea{
+      width:100%; min-height: 360px; background:#0e141c; color:#e8eef4; border: 1px solid #1e2a38; border-radius: 12px; padding: 14px; font: 14px/1.45 Consolas, Monaco, ui-monospace, SFMono-Regular, Menlo, "Liberation Mono", monospace;
+    }
+    pre{
+      margin:0; padding: 14px; min-height: 360px; background:#0e141c; border: 1px solid #1e2a38; border-radius: 12px; overflow:auto; white-space: pre-wrap; word-break: break-word;
+    }
+
+    .row{ display:flex; gap:12px; align-items:center; }
+    .btn{ display:inline-block; padding:12px 18px; border-radius: 12px; background: var(--acc); color:#fff; font-weight:700; cursor:pointer; border:none; }
+    .btn:hover{ background: var(--acc-hover); }
+
+    .status{ font-size: 14px; color: var(--muted); }
+    .kbd{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; background:#0e141c; border:1px solid #1e2a38; border-radius:8px; padding: 2px 6px; }
+
+    .footer{ margin-top: 18px; font-size: 14px; color: var(--muted); text-align: left; }
+
+    @media (max-width: 900px){
+      body{ padding: 32px 16px; }
+      .layout{ grid-template-columns: 1fr; }
+      textarea, pre{ min-height: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Pyodide im Browser – Live REPL</h1>
+    <p>Schreibe Python in das linke Feld und führe es im Browser (WebAssembly) aus. Bewährte Shortcuts: <span class="kbd">Ctrl/⌘ + Enter</span> zum Ausführen.</p>
+
+    <section class="card">
+      <div class="layout">
+        <div class="col">
+          <label for="code" class="status">Python-Code</label>
+          <textarea id="code"># Beispiel: NumPy laden und eine kleine Rechnung
+import sys
+print("Python:", sys.version)
+
+import micropip
+await micropip.install("numpy")
+import numpy as np
+
+A = np.arange(9).reshape(3,3)
+print("A =")
+print(A)
+print("A.T @ A =")
+print(A.T @ A)
+
+"Fertig!"  # letzter Ausdruck wird als Ergebnis zurückgegeben
+</textarea>
+          <div class="row">
+            <button id="run" class="btn">Ausführen</button>
+            <button id="clear" class="btn" title="Ausgabe leeren">Leeren</button>
+            <span id="status" class="status">Lade Pyodide …</span>
+          </div>
+        </div>
+        <div class="col">
+          <label class="status">Ausgabe</label>
+          <pre id="output" aria-live="polite"></pre>
+        </div>
+      </div>
+      <div class="footer">
+        Tipp: Imports werden automatisch nachinstalliert, wenn möglich (<code>pyodide.loadPackagesFromImports</code> / <code>micropip</code>). Für lange Jobs nutze <code>runPythonAsync</code>.
+      </div>
+    </section>
+
+    <div class="link-grid" style="margin-top:24px">
+      <button class="topic" id="example_dom">DOM aus Python</button>
+      <button class="topic" id="example_plot">Matplotlib Inline</button>
+      <button class="topic" id="example_pandas">Pandas Mini</button>
+    </div>
+  </main>
+
+  <script>
+    const outputEl = document.getElementById('output');
+    const statusEl = document.getElementById('status');
+    const codeEl = document.getElementById('code');
+    const runBtn = document.getElementById('run');
+    const clearBtn = document.getElementById('clear');
+
+    // Helper: print to output pane
+    function writeOut(text){
+      outputEl.textContent += text + "\n";
+      outputEl.scrollTop = outputEl.scrollHeight;
+    }
+
+    // Load Pyodide once
+    let pyodidePromise;
+    async function getPyodide(){
+      if(!pyodidePromise){
+        pyodidePromise = loadPyodide({
+          // indexURL wird seit 0.21 automatisch vom CDN-Pfad abgeleitet
+        }).then(async (pyodide) => {
+          statusEl.textContent = 'Pyodide bereit';
+          return pyodide;
+        }).catch((e)=>{
+          statusEl.textContent = 'Fehler beim Laden';
+          console.error(e);
+          throw e;
+        });
+      }
+      return pyodidePromise;
+    }
+
+    // Execute Python safely (async)
+    async function runPython(code){
+      const pyodide = await getPyodide();
+      // Auto-download std packages required by imports
+      try{
+        await pyodide.loadPackagesFromImports(code);
+      }catch(err){
+        // Not all imports come from the pyodide repo; we ignore here and allow micropip later
+      }
+      // Capture stdout/stderr
+      const py = pyodide.pyimport;
+      const sys = pyodide.runPython(`import sys\nsys`);
+      const stdout = [];
+      const stderr = [];
+      const write = (arr)=> (s)=> { arr.push(s); };
+      const origOut = sys.stdout;
+      const origErr = sys.stderr;
+      pyodide.runPython(`
+import sys, io
+class _CapIO(io.TextIOBase):
+    def __init__(self):
+        self.buf = []
+    def write(self, s):
+        self.buf.append(s)
+        return len(s)
+stdout_cap = _CapIO()
+stderr_cap = _CapIO()
+sys.stdout = stdout_cap
+sys.stderr = stderr_cap
+`);
+      try{
+        const result = await pyodide.runPythonAsync(code);
+        // Flush captures
+        const out = pyodide.runPython('"".join(stdout_cap.buf)');
+        const err = pyodide.runPython('"".join(stderr_cap.buf)');
+        if(out) writeOut(out.trimEnd());
+        if(err) writeOut(err.trimEnd());
+        if(result !== undefined) writeOut(String(result));
+      }catch(e){
+        writeOut('❌ ' + (e && e.message ? e.message : String(e)));
+      }finally{
+        // restore stdio
+        pyodide.runPython('import sys\nsys.stdout = None; sys.stderr = None');
+      }
+    }
+
+    runBtn.addEventListener('click', ()=> runPython(codeEl.value));
+    clearBtn.addEventListener('click', ()=> outputEl.textContent = '');
+    codeEl.addEventListener('keydown', (e)=>{
+      if((e.metaKey || e.ctrlKey) && e.key === 'Enter'){
+        e.preventDefault();
+        runPython(codeEl.value);
+      }
+    });
+
+    // Example snippets
+    document.getElementById('example_dom').addEventListener('click', ()=>{
+      codeEl.value = `import js\n
+note = js.document.createElement('div')\nnote.innerHTML = '<b>Hallo vom Python-Teil ✨</b>'\nnote.style.cssText = 'padding:8px 12px;border-radius:12px;background:#243140;margin:6px 0'\njs.document.querySelector('main').prepend(note)\n"DOM aktualisiert"`;
+    });
+
+    document.getElementById('example_plot').addEventListener('click', ()=>{
+      codeEl.value = `import micropip\nawait micropip.install('matplotlib')\nimport matplotlib.pyplot as plt\nimport numpy as np\n
+x = np.linspace(0, 2*np.pi, 200)\ny = np.sin(x)\n
+plt.plot(x, y)\nplt.title('Sinus in Pyodide')\nplt.show()\n'Plot erzeugt'`;
+    });
+
+    document.getElementById('example_pandas').addEventListener('click', ()=>{
+      codeEl.value = `import micropip\nawait micropip.install('pandas')\nimport pandas as pd\n
+df = pd.DataFrame({'Stadt':['Berlin','München','Köln'], 'Einwohner':[3.85, 1.59, 1.09]})\nprint(df)\ndf.describe()`;
+    });
+
+    // Preload engine
+    getPyodide();
+  </script>
+</body>
+</html>

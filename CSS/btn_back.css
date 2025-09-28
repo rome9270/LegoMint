@@ -1,0 +1,18 @@
+/* overview.css — ONLY back button */
+
+/* Farbe + Position links oben */
+.btn--back{
+  /* Farbe (passt zum grünen Stil): */
+  --bg: #64748b;
+  background: #17498e !important;
+  border-color: #64748b !important;
+  color: #867d7d;
+
+  /* Platzierung: oben links, immer sichtbar */
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1000;
+}
+
+.btn--back:hover { filter: brightness(1.05); }

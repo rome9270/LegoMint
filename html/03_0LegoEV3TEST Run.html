@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EV3 · Check A/B normal & C nur 10° · Sensoren S1–S4</title>
+<style>
+body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f7f7f7}
+main{max-width:900px;margin:0 auto;padding:32px}
+h1{margin:0 0 12px}
+p{margin:0 0 16px;color:#333}
+.card{background:#fff;border:1px solid #e7e7e7;border-radius:12px;padding:16px}
+textarea{width:100%;min-height:440px;border:1px solid #ddd;border-radius:10px;padding:12px;
+  font:14px/1.45 Consolas,ui-monospace,Menlo,Monaco,monospace}
+.btn{display:inline-block;margin-top:12px;padding:10px 16px;border:0;border-radius:10px;
+  background:#4CAF50;color:#fff;font-weight:700;cursor:pointer}
+.btn:hover{filter:brightness(.95)}
+.small{color:#666;font-size:13px;margin-left:8px}
+</style>
+</head>
+<body>
+<main>
+  <h1>EV3 · Motoren testen (A/B normal, C nur 10°) &amp; Sensoren S1–S4</h1>
+  <p>Einfaches, robustes Pybricks-Programm (ohne f-Strings / ohne <code>speaker.say()</code>). Keine Simulation – nur Editor &amp; Download.</p>
+  <div class="card">
+<textarea id="code" spellcheck="false">#!/usr/bin/env pybricks-micropython
+# EV3 – Check: Motor A/B vor+zurück, Motor C nur 10°, Sensoren S1..S4 einmal lesen
+# Kompatibel mit älteren Pybricks-Versionen (keine f-Strings, kein speaker.say())
+
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, ColorSensor, UltrasonicSensor, GyroSensor, TouchSensor
+from pybricks.parameters import Port, Direction, Stop
+from pybricks.tools import wait
+
+ev3 = EV3Brick()
+
+# ---- kleine Helfer ----
+def beep(freq=800, dur=100):
+    try:
+        ev3.speaker.beep(freq, dur)
+    except:
+        pass
+
+def init_motor(port):
+    try:
+        return Motor(port, positive_direction=Direction.CLOCKWISE)
+    except:
+        return None
+
+def init_sensor(CLS, port):
+    try:
+        return CLS(port)
+    except:
+        return None
+
+# ---- Geräte anlegen (Auto-Detect: wenn nicht vorhanden -> None) ----
+mA = init_motor(Port.A)
+mB = init_motor(Port.B)
+mC = init_motor(Port.C)
+
+sT = init_sensor(TouchSensor, Port.S1)
+sC = init_sensor(ColorSensor, Port.S2)
+sG = init_sensor(GyroSensor,  Port.S3)
+sU = init_sensor(UltrasonicSensor, Port.S4)
+
+# ---- Motor-Tests ----
+def test_motor_AB(m, label):
+    """A/B: kurzer Vor-/Zurücktest (run_angle)."""
+    if m is None:
+        print("Motor "+label+": nicht gefunden")
+        return
+    try:
+        start = m.angle()
+        m.run_angle(300, 180); wait(150)
+        m.run_angle(300,-180); wait(150)
+        end = m.angle()
+        delta = abs(end - start)
+        ok = delta >= 120  # grobe Plausibilität
+        print("Motor "+label+": delta="+str(int(delta))+" -> "+("OK" if ok else "FAIL"))
+        m.stop(Stop.BRAKE)
+    except Exception as e:
+        print("Motor "+label+": Fehler: "+str(e))
+
+def test_motor_C_10deg(m):
+    """C: exakt 10° drehen (wie gewünscht)."""
+    if m is None:
+        print("Motor C: nicht gefunden")
+        return
+    try:
+        SPEED_DPS = 100
+        ANGLE_DEG = 10   # für Gegenrichtung: -10
+        m.run_angle(SPEED_DPS, ANGLE_DEG); wait(100)
+        m.stop(Stop.BRAKE)
+        print("Motor C: 10 Grad OK")
+    except Exception as e:
+        print("Motor C: Fehler: "+str(e))
+
+# ---- Sensoren einmal lesen ----
+def read_sensors_once():
+    # Touch
+    if sT: print("Touch S1 pressed:", sT.pressed())
+    else:  print("Touch S1: nicht gefunden")
+
+    # Color
+    if sC:
+        try:
+            print("Color S2 reflection:", sC.reflection())
+            print("Color S2 color:", sC.color())
+        except Exception as e:
+            print("Color S2 Fehler:", e)
+    else:
+        print("Color S2: nicht gefunden")
+
+    # Gyro
+    if sG:
+        try:
+            sG.reset_angle(0); wait(150)
+            print("Gyro S3 angle:", sG.angle())
+        except Exception as e:
+            print("Gyro S3 Fehler:", e)
+    else:
+        print("Gyro S3: nicht gefunden")
+
+    # Ultrasonic
+    if sU:
+        try:
+            d = sU.distance()
+            print("Ultrasonic S4 distance(mm):", d if d is not None else "None")
+        except Exception as e:
+            print("Ultrasonic S4 Fehler:", e)
+    else:
+        print("Ultrasonic S4: nicht gefunden")
+
+# ---- Ablauf ----
+def main():
+    beep(900,120)
+    print("== Start: Check A/B & C(10°) ==")
+
+    test_motor_AB(mA, "A")
+    test_motor_AB(mB, "B")
+    test_motor_C_10deg(mC)
+
+    read_sensors_once()
+
+    beep(1000,120)
+    print("== Ende ==")
+
+if __name__ == "__main__":
+    try:
+        main()
+    finally:
+        try:
+            if mA: mA.stop(Stop.BRAKE)
+            if mB: mB.stop(Stop.BRAKE)
+            if mC: mC.stop(Stop.BRAKE)
+        except Exception:
+            pass
+</textarea>
+    <button id="download" class="btn">Als main.py herunterladen</button><span class="small">Pybricks-Firmware erforderlich</span>
+  </div>
+</main>
+<script>
+document.getElementById('download').addEventListener('click', ()=>{
+  const src = document.getElementById('code').value;
+  const blob = new Blob([src], {type:'text/x-python'});
+  const url  = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='main.py'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),0);
+});
+</script>
+</body>
+</html>

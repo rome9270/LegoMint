@@ -15,7 +15,7 @@ p {
 /* Container für Buttons */
 .level-grid {
     display: flex;              /* Buttons nebeneinander */
-    gap: 16px;                   /* Abstand zwischen Buttons */
+    gap: 26px;                   /* Abstand zwischen Buttons */
     justify-content: center;     /* Zentrieren */
     flex-wrap: wrap;             /* Umbrechen bei wenig Platz */
     margin-top: 20px;

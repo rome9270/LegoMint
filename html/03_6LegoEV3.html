@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EV3 · Schritt 6 – Mini-Challenge: S-Kurve & Zieltor</title>
+
+<style>
+/* ===== Deine CSS (hell) + kleine Zusatzstyles ===== */
+body{font-family:Arial,sans-serif;text-align:center;padding:60px}
+h1{margin-bottom:30px} p{margin-bottom:30px} hr{margin:40px 0}
+.link-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;padding:20px 24px;background:#fff;margin-top:40px}
+.link-grid>button.topic,.link-grid>a.topic{display:block;width:100%;margin:0;text-align:center;padding:18px 24px;border-radius:24px;background:#3fb257;color:#fff;font-weight:700}
+.level-grid{display:flex;flex-wrap:wrap;justify-content:center;column-gap:16px;row-gap:16px;margin-top:20px}
+.level-btn{display:inline-block;width:260px;padding:18px 28px;font-size:20px;font-weight:700;color:#fff;background:#4CAF50;border-radius:12px;text-decoration:none;text-align:center;transition:background-color .3s,transform .2s;cursor:pointer;border:none}
+.level-btn:hover{background:#45a049;transform:translateY(-3px)}
+@media (max-width:640px){body{padding:32px 16px}.level-btn{width:100%;max-width:360px}}
+
+main{max-width:1100px;margin:0 auto}
+.card{background:#fff;border:1px solid #e7e7e7;border-radius:16px;padding:18px;text-align:left;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+.card h2{margin:0 0 10px}
+.small,.status{color:#666;font-size:14px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+textarea{width:100%;min-height:280px;border:1px solid #ddd;border-radius:12px;padding:14px;font:14px/1.45 Consolas,ui-monospace,Menlo,Monaco,"Liberation Mono",monospace}
+pre{margin:0;padding:12px;min-height:120px;background:#f7f7f7;border:1px solid #e7e7e7;border-radius:12px;white-space:pre-wrap;word-break:break-word}
+.result{font-weight:700}.ok{color:#2e7d32}.fail{color:#c62828}
+
+.sim-wrap{margin-top:14px}
+#sim{width:100%;height:420px;display:block;background:#fff;border:1px solid #e7e7e7;border-radius:12px}
+.sim-legend{margin-top:6px;font-size:13px;color:#666}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:12px 0}
+.ctrl{background:#fff;border:1px solid #e7e7e7;border-radius:12px;padding:10px}
+.ctrl label{display:block;font-size:14px;color:#333;margin-bottom:6px}
+.ctrl output{font-weight:700}
+.badge{font-size:12px;color:#555;background:#f3f5f7;border:1px solid #e5e7eb;border-radius:10px;padding:4px 8px}
+.score{font-weight:700}
+</style>
+</head>
+
+<body>
+<main>
+  <h1>EV3 · Schritt 6: Mini-Challenge – folge der S-Kurve ins Ziel</h1>
+  <p>Schreibe einen <b>P-/PID-Regler</b> für den <b>ColorSensor</b> und fahre durch das <b>Zieltor</b>.
+     Bewertet werden <b>Zeit</b> und <b>Abweichung</b>. Je glatter & schneller, desto besser.</p>
+
+  <section class="card">
+    <h2 style="margin:0 0 8px">Kurs-Parameter</h2>
+    <div class="controls">
+      <div class="ctrl">
+        <label>THRESHOLD (Reflexion): <output id="thrVal">50</output></label>
+        <input id="thr" type="range" min="20" max="80" step="1" value="50" />
+      </div>
+      <div class="ctrl">
+        <label>Fahrgeschwindigkeit (sim) mm/s: <output id="spdVal">140</output></label>
+        <input id="spd" type="range" min="60" max="300" step="10" value="140" />
+      </div>
+      <div class="ctrl">
+        <label>Kp: <output id="kpVal">1.1</output></label>
+        <input id="kp" type="range" min="0.2" max="3.0" step="0.1" value="1.1" />
+      </div>
+      <div class="ctrl">
+        <label>Ki: <output id="kiVal">0.0</output></label>
+        <input id="ki" type="range" min="0.0" max="1.5" step="0.05" value="0.0" />
+      </div>
+      <div class="ctrl">
+        <label>Kd: <output id="kdVal">0.0</output></label>
+        <input id="kd" type="range" min="0.0" max="2.5" step="0.05" value="0.0" />
+      </div>
+    </div>
+    <div class="row">
+      <button id="applyThr" class="level-btn" style="background:#3fb257">THRESHOLD in Editor setzen</button>
+      <button id="applyPID" class="level-btn" style="background:#3fb257">Kp/Ki/Kd in Editor setzen</button>
+      <span class="badge" id="dbg">REF – ERR – TURN</span>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:14px">
+    <h2 style="margin:0 0 8px">Dein Code</h2>
+    <p class="status">Beispiel (P → optional PID):</p>
+<textarea id="code" spellcheck="false">#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, ColorSensor
+from pybricks.parameters import Port
+from pybricks.robotics import DriveBase
+from pybricks.tools import wait
+
+left = Motor(Port.B); right = Motor(Port.C)
+robot = DriveBase(left, right, wheel_diameter=56, axle_track=114)
+color = ColorSensor(Port.S3)
+
+THRESHOLD = 50
+SPEED = 140
+
+# P oder PID:
+Kp = 1.1
+Ki = 0.0
+Kd = 0.0
+
+integral = 0
+prev_error = 0
+
+while True:
+    r = color.reflection()
+    error = THRESHOLD - r
+    integral += error
+    derivative = error - prev_error
+    turn = Kp*error + Ki*integral + Kd*derivative
+    robot.drive(SPEED, turn)
+    prev_error = error
+    wait(10)
+</textarea>
+
+    <div class="row" style="margin-top:10px">
+      <button id="run" class="level-btn">Simulation starten</button>
+      <button id="reset" class="level-btn" style="background:#3fb257">Reset</button>
+      <button id="check" class="level-btn" style="background:#3fb257">Aufgabe prüfen</button>
+      <button id="download" class="level-btn" style="background:#3fb257">Als main.py herunterladen</button>
+      <span id="status" class="status">Bereit (Challenge-Modus)</span>
+      <span class="score" id="score"></span>
+    </div>
+
+    <div class="sim-wrap">
+      <canvas id="sim"></canvas>
+      <div class="sim-legend">Simulator: <b>1px = 1mm</b> · S-Kurve (schwarz) · Zieltor rechts (grün) · Debug oben rechts.</div>
+    </div>
+
+    <h3>Logs</h3>
+    <pre id="out" aria-live="polite"></pre>
+    <p class="result" id="result"></p>
+  </section>
+</main>
+
+<script>
+/* ===== Regler-UI ===== */
+const thr = document.getElementById('thr'), spd=document.getElementById('spd'),
+      kp=document.getElementById('kp'), ki=document.getElementById('ki'), kd=document.getElementById('kd');
+const thrVal=document.getElementById('thrVal'), spdVal=document.getElementById('spdVal'),
+      kpVal=document.getElementById('kpVal'), kiVal=document.getElementById('kiVal'), kdVal=document.getElementById('kdVal');
+[thr,spd,kp,ki,kd].forEach(el=>{
+  const map = new Map([[thr,thrVal],[spd,spdVal],[kp,kpVal],[ki,kiVal],[kd,kdVal]]);
+  const update = ()=> map.get(el).textContent = el.value;
+  el.addEventListener('input', update); update();
+});
+
+/* ===== DOM ===== */
+const codeEl = document.getElementById('code');
+const outEl  = document.getElementById('out');
+const resEl  = document.getElementById('result');
+const statusEl = document.getElementById('status');
+const scoreEl = document.getElementById('score');
+const dbgEl  = document.getElementById('dbg');
+
+/* ===== Canvas / Welt ===== */
+const canvas = document.getElementById('sim');
+const ctx = canvas.getContext('2d', {alpha:false});
+function setupCanvas(){
+  const dpr = window.devicePixelRatio || 1;
+  const cssH = parseFloat(getComputedStyle(canvas).height) || 420;
+  const cssW = canvas.clientWidth || 800;
+  canvas.width = Math.round(cssW*dpr); canvas.height = Math.round(cssH*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize', ()=>{ setupCanvas(); drawAll(); });
+
+const TRACK = {
+  width: 26,                // Linienstärke (mm)
+  amp: 80,                  // Amplitude der S-Kurve (mm)
+  periods: 1.6              // Anzahl Schwingungen bis zum Tor
+};
+const STATE = { x:0,y:0,theta:0, path:[], running:false, timer:null, time:0, errInt:0 };
+let FINISH_X = 0;
+
+function lineYAt(x){
+  const h = canvas.clientHeight;
+  const w = canvas.clientWidth;
+  const phase = (x / w) * (Math.PI * 2 * TRACK.periods);
+  return h/2 + TRACK.amp * Math.sin(phase);
+}
+function drawTrack(){
+  const w = canvas.clientWidth, step = 2;
+  ctx.save();
+  ctx.fillStyle = '#000';
+  for(let x=0; x<w; x+=step){
+    const y = lineYAt(x);
+    ctx.fillRect(x, y - TRACK.width/2, step+1, TRACK.width);
+  }
+  ctx.restore();
+}
+function drawGrid(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.save(); ctx.clearRect(0,0,w,h); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#eee'; for(let x=0;x<=w;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+  for(let y=0;y<=h;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+  ctx.restore();
+}
+function drawPath(){
+  ctx.save(); ctx.strokeStyle='#3fb257'; ctx.lineWidth=2;
+  for(const [x1,y1,x2,y2] of STATE.path){ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+  ctx.restore();
+}
+function drawRobot(){
+  const r=8,L=18,a=STATE.theta,x=STATE.x,y=STATE.y;
+  ctx.save();
+  ctx.fillStyle='#4CAF50'; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  const tipX=x+Math.cos(a)*(r+L), tipY=y-Math.sin(a)*(r+L);
+  const leftX=x+Math.cos(a+Math.PI*0.75)*r, leftY=y-Math.sin(a+Math.PI*0.75)*r;
+  const rightX=x+Math.cos(a-Math.PI*0.75)*r, rightY=y-Math.sin(a-Math.PI*0.75)*r;
+  ctx.beginPath(); ctx.moveTo(tipX,tipY); ctx.lineTo(leftX,leftY); ctx.lineTo(rightX,rightY); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawFinish(){
+  const w=canvas.clientWidth,h=canvas.clientHeight;
+  const gateW=10, gateH=120;
+  FINISH_X = Math.floor(w*0.88);
+  const gateY = lineYAt(FINISH_X) - gateH/2;
+  ctx.save();
+  ctx.fillStyle = '#22c55e'; // grün
+  ctx.fillRect(FINISH_X, gateY, gateW, gateH);
+  ctx.restore();
+}
+function drawAll(){ drawGrid(); drawTrack(); drawFinish(); drawPath(); drawRobot(); }
+
+function resetSim(){
+  setupCanvas();
+  STATE.x = canvas.clientWidth*0.08; STATE.y = lineYAt(STATE.x); // Start auf der Linie
+  STATE.theta = 0; STATE.path=[]; STATE.running=false; STATE.time=0; STATE.errInt=0;
+  drawAll();
+}
+
+/* ===== Sensor (20 mm vor dem Bot) & Reflexion ===== */
+function simulatedReflection(){
+  const SENSOR_OFFSET = 20;
+  const sx = STATE.x + Math.cos(STATE.theta) * SENSOR_OFFSET;
+  const sy = STATE.y - Math.sin(STATE.theta) * SENSOR_OFFSET;
+  const d = Math.abs(sy - lineYAt(sx));
+  // Weiß ≈80, Schwarz ≈15, Gauß über Linienstärke
+  const WHITE=80, BLACK=15, sigma=TRACK.width/2;
+  const dark = Math.exp(-(d*d)/(2*sigma*sigma));
+  return Math.round(WHITE - (WHITE-BLACK)*dark);
+}
+
+/* ===== Parameter aus Code/Slidern (PID unterstützt) ===== */
+function extractConfig(src){
+  const findNum = (re, def)=>{ const m = src.match(re); return m? parseFloat(m[1]) : def; };
+  const THR = findNum(/THRESHOLD\s*=\s*([0-9.]+)/i, parseFloat(thr.value));
+  const SPEED = findNum(/SPEED\s*=\s*([0-9.]+)/i, parseFloat(spd.value));
+  const Kp = findNum(/\bKp\s*=\s*([0-9.]+)/, parseFloat(kp.value));
+  const Ki = findNum(/\bKi\s*=\s*([0-9.]+)/, parseFloat(ki.value));
+  const Kd = findNum(/\bKd\s*=\s*([0-9.]+)/, parseFloat(kd.value));
+  return {THR,SPEED,Kp,Ki,Kd};
+}
+
+/* ===== Simulation / Ablauf ===== */
+function runSimulatorFromCode(src){
+  resetSim();
+  outEl.textContent = ''; scoreEl.textContent=''; resEl.textContent='';
+  const {THR,SPEED,Kp,Ki,Kd} = extractConfig(src);
+  const dt = 0.02; // 20 ms
+  let integral=0, prevErr=0;
+
+  if(STATE.timer){ clearInterval(STATE.timer); STATE.timer=null; }
+  STATE.running=true; STATE.time=0; STATE.errInt=0;
+
+  STATE.timer = setInterval(()=>{
+    if(!STATE.running){ clearInterval(STATE.timer); STATE.timer=null; return; }
+
+    // Sensor/Regler
+    const r = simulatedReflection();
+    const err = THR - r;
+    integral += err;
+    const deriv = err - prevErr;
+    let turn = Kp*err + Ki*integral + Kd*deriv;          // °/s
+    // Canvas-Richtung: "Minus", ansonsten driftet er weg
+    turn = Math.max(-360, Math.min(360, -turn));
+
+    // Kinematik
+    const w = turn * Math.PI/180; // rad/s
+    STATE.theta += w*dt;
+    const v = SPEED;
+    const dx = Math.cos(STATE.theta)*v*dt;
+    const dy = -Math.sin(STATE.theta)*v*dt;
+    const x1=STATE.x,y1=STATE.y; STATE.x+=dx; STATE.y+=dy; STATE.path.push([x1,y1,STATE.x,STATE.y]);
+
+    // Metriken/Logs
+    STATE.time += dt;
+    STATE.errInt += Math.abs(err)*dt;
+    if ((Math.round(STATE.time*10)%5)===0){
+      outEl.textContent += `[t ${STATE.time.toFixed(1)}s] REF ${r}  ERR ${err}  TURN ${turn.toFixed(1)}  v ${SPEED}\n`;
+      dbgEl.textContent = `REF ${r} • ERR ${err} • TURN ${turn.toFixed(1)}`;
+    }
+
+    // Ziel erreicht?
+    const gateY = lineYAt(FINISH_X);
+    const inGate = (STATE.x >= FINISH_X) && (Math.abs(STATE.y - gateY) <= 60);
+    const outOfBounds = (STATE.y < 0 || STATE.y > canvas.clientHeight);
+    drawAll();
+
+    if(inGate || outOfBounds || STATE.time > 20){
+      STATE.running=false; clearInterval(STATE.timer); STATE.timer=null;
+      const timeScore = Math.max(0, 20 - STATE.time) * 50;               // schneller → mehr Punkte
+      const errScore  = Math.max(0, 100 - STATE.errInt);                 // kleinere Abweichung → mehr
+      const bonus     = inGate ? 150 : 0;
+      const score     = Math.round(timeScore + errScore + bonus);
+      const status    = inGate ? '🎉 Ziel erreicht!' : (outOfBounds ? '❌ Abseits' : '⏱️ Zeit abgelaufen');
+      scoreEl.textContent = `${status}  |  Zeit: ${STATE.time.toFixed(2)} s  ·  Abweichung: ${STATE.errInt.toFixed(1)}  ·  Score: ${score}`;
+      if(inGate){ resEl.textContent = '✔︎ Aufgabe bestanden – durch das Tor!'; resEl.className='result ok'; }
+      else{ resEl.textContent = 'Noch nicht ganz – stabiler regeln (Kp/Ki/Kd) oder langsamer fahren.'; resEl.className='result fail'; }
+    }
+
+    prevErr = err;
+  }, dt*1000);
+}
+
+/* ===== Checker (Formalitäten) ===== */
+function checkTask(){
+  const code = codeEl.value;
+  const hasColor = /ColorSensor\s*\(/.test(code);
+  const hasLoop  = /while\s+True|while\s+.+:/.test(code);
+  const readsRef = /\.reflection\s*\(\s*\)/.test(code);
+  const usesDrive = /robot\.drive\s*\(\s*[^,]+,\s*[^)]+\)/.test(code);
+  const thrIn = (code.match(/THRESHOLD\s*=\s*(\d+)/i)||[])[1];
+  const thrOK = thrIn ? Math.abs(parseInt(thrIn,10) - parseInt(thr.value)) <= 5 : false;
+  const ok = hasColor && hasLoop && readsRef && usesDrive && thrOK;
+  if(ok){ resEl.textContent='✔︎ Formell ok – jetzt zählt die Performance im Simulator!'; resEl.className='result ok'; }
+  else{
+    const miss=[]; if(!hasColor)miss.push('ColorSensor fehlt'); if(!hasLoop)miss.push('Schleife fehlt');
+    if(!readsRef)miss.push('reflection() wird nicht gelesen'); if(!usesDrive)miss.push('robot.drive(speed, turn) fehlt');
+    if(!thrOK)miss.push(`THRESHOLD passt nicht (soll ≈ ${thr.value})`);
+    resEl.textContent='Noch nicht ganz: '+miss.join(', '); resEl.className='result fail';
+  }
+}
+
+/* ===== Download & Helpers ===== */
+function downloadMain(){
+  const blob = new Blob([codeEl.value||''], {type:'text/x-python'});
+  const url = URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='main.py'; a.click(); URL.revokeObjectURL(url);
+}
+document.getElementById('applyThr').addEventListener('click', ()=>{
+  const t = parseInt(thr.value,10);
+  const lines=codeEl.value.split(/\n/); let done=false;
+  for(let i=0;i<lines.length;i++){ if(/^\s*THRESHOLD\s*=/.test(lines[i])){ lines[i]=`THRESHOLD = ${t}  # per Regler`; done=true; break; } }
+  if(!done){ const idx=lines.findIndex(l=>/ColorSensor\s*\(/.test(l)); lines.splice(idx>=0?idx+1:0,0,`THRESHOLD = ${t}  # per Regler`); }
+  codeEl.value = lines.join('\n');
+});
+document.getElementById('applyPID').addEventListener('click', ()=>{
+  const KpV=parseFloat(kp.value).toFixed(2), KiV=parseFloat(ki.value).toFixed(2), KdV=parseFloat(kd.value).toFixed(2);
+  const lines=codeEl.value.split(/\n/);
+  const setOrInsert = (name,val)=>{
+    const re = new RegExp('^\\s*'+name+'\\s*=');
+    const i = lines.findIndex(l=>re.test(l));
+    if(i>=0) lines[i] = `${name} = ${val}  # per Regler`;
+    else lines.splice(lines.findIndex(l=>/SPEED\s*=/.test(l))+1,0,`${name} = ${val}  # per Regler`);
+  };
+  setOrInsert('Kp',KpV); setOrInsert('Ki',KiV); setOrInsert('Kd',KdV);
+  codeEl.value = lines.join('\n');
+});
+
+/* ===== Buttons ===== */
+document.getElementById('run').addEventListener('click', ()=> runSimulatorFromCode(codeEl.value||''));
+document.getElementById('reset').addEventListener('click', resetSim);
+document.getElementById('check').addEventListener('click', checkTask);
+document.getElementById('download').addEventListener('click', downloadMain);
+
+/* Init */
+resetSim();
+</script>
+</body>
+</html>

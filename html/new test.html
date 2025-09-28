@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 Python Lernseite – Schritt für Schritt</title>
+  <!-- Pyodide nur für die lokale Python-Ausführung (Simulation) -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js"></script>
+  <style>
+    /* ===== Basislayout (übernommen & verfeinert) ===== */
+    :root{
+      --bg: #0b0f14; --card:#121821; --muted:#8aa0b2; --acc:#4CAF50; --acc2:#3fb257; --acc-hover:#45a049; --focus:#2e7d32;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 60px;                     /* großzügige Außenabstände */
+      margin:0; color:#e8eef4; background:var(--bg);
+    }
+
+    h1 { margin-bottom: 30px; }
+    p  { margin-bottom: 30px; color: var(--muted); }
+    hr  { margin: 40px 0; border:0; border-top:1px solid #223042; }
+
+    main{ max-width: 1200px; margin:0 auto; }
+
+    /* Startseiten-Grid (Themen-Auswahl) */
+    .link-grid{
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;                 /* horizontal + vertikal Abstand */
+      padding: 20px 24px;        /* ✅ Bugfix */
+      background: transparent;
+      margin-top: 20px;
+    }
+
+    .link-grid > a.topic,
+    .link-grid > button.topic{
+      display: block;
+      width: 100%;
+      margin: 0;                 /* neutralisiert evtl. globale Button-Margins */
+      text-align: center;
+      padding: 18px 24px;
+      border-radius: 24px;
+      background: var(--acc2);   /* Button-Farbe */
+      color: #fff;
+      font-weight: 700; cursor:pointer; text-decoration:none;
+      transition: background-color .25s, transform .15s;
+    }
+    .link-grid > a.topic:hover,
+    .link-grid > button.topic:hover{ background:#34a24c; transform: translateY(-3px); }
+
+    .level-grid { display:flex; flex-wrap:wrap; justify-content:center; column-gap:16px; row-gap:16px; margin-top:20px; }
+
+    .level-btn{
+      display:inline-block; width:260px; padding:18px 28px; font-size:20px; font-weight:bold; color:#fff; background: var(--acc);
+      border-radius:12px; text-decoration:none; text-align:center; transition: background-color .25s, transform .15s; cursor:pointer; border:none;
+    }
+    .level-btn:hover{ background:#45a049; transform: translateY(-3px); }
+
+    /* Karten/Editor */
+    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:18px; align-items:start; }
+    .card{ background:var(--card); border-radius:16px; padding:18px; text-align:left; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+    .card h2{ margin:0 0 8px; }
+    .small{ color: var(--muted); font-size:14px; }
+
+    textarea{ width:100%; min-height: 380px; background:#0e141c; color:#e8eef4; border:1px solid #1e2a38; border-radius:12px; padding:14px; font:14px/1.45 Consolas, ui-monospace, Menlo, Monaco, "Liberation Mono", monospace; }
+    pre{ margin:0; padding:14px; min-height: 380px; background:#0e141c; color:#e8eef4; border:1px solid #1e2a38; border-radius:12px; overflow:auto; white-space: pre-wrap; word-break: break-word; }
+
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .btn{ display:inline-block; padding:10px 14px; border-radius:12px; background: var(--acc); color:#fff; font-weight:700; cursor:pointer; border:none; }
+    .btn:hover{ background: var(--acc-hover); }
+    .btn.secondary{ background:#2b3b50; }
+    .btn.secondary:hover{ background:#32455e; }
+
+    .checklist{ list-style: none; padding:0; margin: 10px 0 0 0; }
+    .checklist li{ margin:6px 0; }
+
+    .footer{ margin-top:12px; color: var(--muted); font-size: 14px; }
+
+    @media (max-width: 980px){
+      body{ padding: 32px 16px; }
+      .grid{ grid-template-columns: 1fr; }
+      textarea, pre{ min-height: 280px; }
+      .level-btn{ width:100%; max-width:360px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>EV3 mit Python lernen – Schritt für Schritt</h1>
+    <p>Programmiere in Python, probiere die Logik im Browser aus (Simulation) und lade die Datei als <code>main.py</code> herunter, um sie später auf den EV3 zu übertragen.</p>
+
+    <div class="link-grid">
+      <button class="topic" data-topic="intro">1 · Hallo EV3</button>
+      <button class="topic" data-topic="motor">2 · Motor & Fahren</button>
+      <button class="topic" data-topic="sensor">3 · Sensoren</button>
+    </div>
+
+    <hr />
+
+    <section class="grid">
+      <article class="card">
+        <h2 id="lesson-title">Lektion: Hallo EV3</h2>
+        <p class="small" id="lesson-desc">Piepsen, Text am Display & einfache Pausen.</p>
+
+        <div class="row" style="margin:8px 0 12px">
+          <button id="load-task-a" class="btn secondary">Aufgabe A laden</button>
+          <button id="load-task-b" class="btn secondary">Aufgabe B laden</button>
+          <button id="load-task-c" class="btn secondary">Aufgabe C laden</button>
+        </div>
+
+        <label class="small" for="code">Python-Code (EV3 / Pybricks-MicroPython)</label>
+        <textarea id="code" spellcheck="false"></textarea>
+        <div class="row" style="margin-top:10px">
+          <button id="run" class="btn">Logik testen (Simulation)</button>
+          <button id="download" class="btn">Als main.py herunterladen</button>
+          <span class="small" id="status">Pyodide wird geladen…</span>
+        </div>
+      </article>
+
+      <aside class="card">
+        <h2>Ausgabe</h2>
+        <pre id="output" aria-live="polite"></pre>
+        <div class="footer">Hinweis: Die Browser-Simulation versteht keine echten <code>pybricks.*</code>-Imports. Sie prüft Syntax, führt grundlegende Python-Logik aus und simuliert EV3-Calls (z. B. <code>ev3.speaker.beep()</code> → "[BEEP]").</div>
+      </aside>
+    </section>
+
+    <section class="card" style="margin-top:18px; text-align:left">
+      <h2>Schrittweise Aufgaben</h2>
+      <div class="level-grid">
+        <button class="level-btn" data-task="intro-a">A · Zwei Beeps & Name</button>
+        <button class="level-btn" data-task="motor-a">B · Geradeaus & zurück</button>
+        <button class="level-btn" data-task="square">C · Quadrat fahren</button>
+        <button class="level-btn" data-task="sensor-a">D · Stop bei Hindernis</button>
+      </div>
+      <ul class="checklist" id="tips">
+        <li>🔌 Späterer Transfer: Lade <strong>main.py</strong> herunter und verschiebe sie in dein VS-Code-EV3-Projekt, dann „Run/Download“ auf den Brick.</li>
+        <li>⚠️ In der Simulation werden pybricks-Aufrufe nur geloggt, nicht ausgeführt.</li>
+      </ul>
+    </section>
+  </main>
+
+  <script>
+    // ---------- Pyodide (für Syntaxcheck & generische Python-Logik) ----------
+    let pyodideReady;
+    async function ensurePyodide(){
+      if(!pyodideReady){
+        pyodideReady = loadPyodide().then(py => {
+          document.getElementById('status').textContent = 'Bereit';
+          return py;
+        }).catch(e=>{
+          document.getElementById('status').textContent = 'Ladefehler';
+          console.error(e); throw e;
+        });
+      }
+      return pyodideReady;
+    }
+
+    // ---------- Unterrichtslogik ----------
+    const codeEl = document.getElementById('code');
+    const outEl = document.getElementById('output');
+    const statusEl = document.getElementById('status');
+
+    function log(msg){ outEl.textContent += msg + "\n"; outEl.scrollTop = outEl.scrollHeight; }
+    function clearOut(){ outEl.textContent = ''; }
+
+    // Minimaler EV3/Pybricks-Simulator: ersetzt Aufrufe durch Logs
+    const simPreamble = `\nclass _Speaker:\n    def beep(self):\n        print('[BEEP]')\n\nclass _Screen:\n    def print(self, *args):\n        print('[SCREEN]', *args)\n    def draw_text(self, x, y, text):\n        print(f'[SCREEN@{x},{y}]', text)\n\nclass EV3Brick:\n    def __init__(self):\n        self.speaker = _Speaker()\n        self.screen = _Screen()\n\nimport builtins\nprint('[SIM] Pybricks-Stub aktiv')\n`;
+
+    // Aufgaben-Vorlagen (echter Pybricks-Code, aber in der Sim geloggt)
+    const TASKS = {
+      'intro-a': `#!/usr/bin/env pybricks-micropython\nfrom pybricks.hubs import EV3Brick\nfrom pybricks.tools import wait\nev3 = EV3Brick()\nev3.speaker.beep()\nwait(500)\nev3.speaker.beep()\nev3.screen.print('Hallo, ich bin …')\nwait(1000)\n`,
+      'motor-a': `#!/usr/bin/env pybricks-micropython\nfrom pybricks.ev3devices import Motor\nfrom pybricks.parameters import Port\nfrom pybricks.robotics import DriveBase\nleft = Motor(Port.B)\nright = Motor(Port.C)\nrobot = DriveBase(left, right, wheel_diameter=56, axle_track=114)\nrobot.straight(300)\nrobot.straight(-300)\n`,
+      'square': `#!/usr/bin/env pybricks-micropython\nfrom pybricks.ev3devices import Motor\nfrom pybricks.parameters import Port\nfrom pybricks.robotics import DriveBase\nrobot = DriveBase(Motor(Port.B), Motor(Port.C), wheel_diameter=56, axle_track=114)\nfor _ in range(4):\n    robot.straight(200)\n    robot.turn(90)\n`,
+      'sensor-a': `#!/usr/bin/env pybricks-micropython\nfrom pybricks.ev3devices import Motor, UltrasonicSensor\nfrom pybricks.parameters import Port\nfrom pybricks.robotics import DriveBase\nfrom pybricks.tools import wait\nleft = Motor(Port.B); right = Motor(Port.C)\nrobot = DriveBase(left, right, wheel_diameter=56, axle_track=114)\nultra = UltrasonicSensor(Port.S4)\nrobot.drive(150, 0)\n# (Echtbetrieb: while ultra.distance() > 150: wait(10))\n# Demo-Ende: Stop, zurück, drehen\nrobot.stop(); robot.straight(-120); robot.turn(90)\n`
+    };
+
+    function loadTask(key){
+      codeEl.value = TASKS[key] || '';
+      clearOut();
+    }
+
+    // Themen-Buttons setzen Titel/Beschreibung & Standardaufgaben
+    const titles = {
+      intro: ['Lektion: Hallo EV3', 'Piepsen, Text & Pausen'],
+      motor: ['Lektion: Motor & Fahren', 'DriveBase: Entfernungen und Drehungen'],
+      sensor: ['Lektion: Sensoren', 'Berührungs- und Ultraschallsensor']
+    };
+    document.querySelectorAll('.topic').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.topic;
+        document.getElementById('lesson-title').textContent = titles[key][0];
+        document.getElementById('lesson-desc').textContent = titles[key][1];
+        if(key==='intro') loadTask('intro-a');
+        if(key==='motor') loadTask('motor-a');
+        if(key==='sensor') loadTask('sensor-a');
+      });
+    });
+
+    // Level-Buttons
+    document.querySelectorAll('[data-task]').forEach(btn => btn.addEventListener('click', ()=> loadTask(btn.dataset.task)));
+    document.getElementById('load-task-a').addEventListener('click', ()=> loadTask('intro-a'));
+    document.getElementById('load-task-b').addEventListener('click', ()=> loadTask('motor-a'));
+    document.getElementById('load-task-c').addEventListener('click', ()=> loadTask('square'));
+
+    // Startzustand
+    loadTask('intro-a');
+    ensurePyodide();
+
+    // Simulation ausführen: Ersetzt pybricks-Imports durch Stubs
+    document.getElementById('run').addEventListener('click', async () => {
+      clearOut(); statusEl.textContent = 'Ausführen…';
+      const py = await ensurePyodide();
+      const user = codeEl.value;
+      // 1) Ersetze pybricks-Imports möglichst robust durch no-op (nur Logs)
+      const patched = `\n# --- SIMULATIONSMODUS ---\ntry:\n    ${simPreamble}\nexcept Exception as e:\n    print('[SIM-Init-Fehler]', e)\n\n# --- USER CODE (leicht bereinigt) ---\n` + user
+        .replace(/from\s+pybricks\.[^\n]+\n/g, '')
+        .replace(/import\s+pybricks[^\n]*\n/g, '')
+        .replace(/from\s+pybricks\s+import\s+[^\n]+\n/g,'');
+
+      try{
+        await py.runPythonAsync(patched);
+        statusEl.textContent = 'Fertig';
+      }catch(e){
+        log('❌ ' + (e.message || String(e)));
+        statusEl.textContent = 'Fehler';
+      }
+    });
+
+    // Download als main.py
+    document.getElementById('download').addEventListener('click', () => {
+      const blob = new Blob([codeEl.value], {type:'text/x-python'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'main.py'; a.click();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
