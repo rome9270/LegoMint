@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 · Test motors (A/B normal, C only 10°) & sensors S1–S4</title>
+  <style>
+    :root { --green:#4CAF50; --border:#e7e7e7; --bg:#f7f7f7; --ink:#333; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, Arial, sans-serif; background: var(--bg); color: var(--ink); }
+    .hero { padding: 20px; background: white; border-bottom: 1px solid var(--border); }
+    .hero h1 { margin: 0; font-size: 22px; }
+    .btn { display:inline-block; padding:10px 16px; border:0; border-radius:10px; background:var(--green); color:#fff; font-weight:700; cursor:pointer; text-decoration:none; }
+    .btn:hover { filter: brightness(.95); }
+    .btn--back { background: #3f8ae0; margin: 12px 0 0 20px; }
+    main { max-width: 900px; margin: 0 auto; padding: 24px; }
+    .card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; }
+    h2 { margin: 0 0 12px; }
+    textarea {
+      width:100%; min-height:440px; border:1px solid #ddd; border-radius:10px; padding:12px;
+      font:14px/1.45 Consolas, ui-monospace, Menlo, Monaco, monospace;
+    }
+    .small { color:#666; font-size:13px; margin-left:8px; display:inline-block; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <h1>LEGO EV3 — Function Check</h1>
+  </div>
+
+  <a class="btn btn--back" href="01_main.html">← Back to overview</a>
+
+  <main>
+    <h2>Test motors (A/B normal, C only 10°) & sensors S1–S4</h2>
+    <div class="card">
+<textarea id="code" spellcheck="false">#!/usr/bin/env pybricks-micropython
+# EV3 – Check: motors A/B forward+back, motor C only 10°, read sensors S1..S4 once
+# Compatible with older Pybricks versions (no f-strings, no speaker.say())
+
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, ColorSensor, UltrasonicSensor, GyroSensor, TouchSensor
+from pybricks.parameters import Port, Direction, Stop
+from pybricks.tools import wait
+
+ev3 = EV3Brick()
+
+# ---- small helpers ----
+def beep(freq=800, dur=100):
+    try:
+        ev3.speaker.beep(freq, dur)
+    except:
+        pass
+
+def init_motor(port):
+    try:
+        return Motor(port, positive_direction=Direction.CLOCKWISE)
+    except:
+        return None
+
+def init_sensor(CLS, port):
+    try:
+        return CLS(port)
+    except:
+        return None
+
+# ---- auto-detect devices (None if not plugged in) ----
+mA = init_motor(Port.A)
+mB = init_motor(Port.B)
+mC = init_motor(Port.C)
+
+sT = init_sensor(TouchSensor, Port.S1)
+sC = init_sensor(ColorSensor, Port.S2)
+sG = init_sensor(GyroSensor,  Port.S3)
+sU = init_sensor(UltrasonicSensor, Port.S4)
+
+# ---- motor tests ----
+def test_motor_AB(m, label):
+    """A/B: short forward/backward test."""
+    if m is None:
+        print("Motor "+label+": not found")
+        return
+    try:
+        start = m.angle()
+        m.run_angle(300, 180); wait(150)
+        m.run_angle(300,-180); wait(150)
+        end = m.angle()
+        delta = abs(end - start)
+        ok = delta >= 120  # rough plausibility
+        print("Motor "+label+": delta="+str(int(delta))+" -> "+("OK" if ok else "FAIL"))
+        m.stop(Stop.BRAKE)
+    except Exception as e:
+        print("Motor "+label+": error: "+str(e))
+
+def test_motor_C_10deg(m):
+    """C: exactly 10°."""
+    if m is None:
+        print("Motor C: not found")
+        return
+    try:
+        SPEED_DPS = 100
+        ANGLE_DEG = 10   # use -10 for reverse
+        m.run_angle(SPEED_DPS, ANGLE_DEG); wait(100)
+        m.stop(Stop.BRAKE)
+        print("Motor C: 10 degrees OK")
+    except Exception as e:
+        print("Motor C: error: "+str(e))
+
+# ---- read sensors once ----
+def read_sensors_once():
+    # Touch
+    if sT: print("Touch S1 pressed:", sT.pressed())
+    else:  print("Touch S1: not found")
+
+    # Color
+    if sC:
+        try:
+            print("Color S2 reflection:", sC.reflection())
+            print("Color S2 color:", sC.color())
+        except Exception as e:
+            print("Color S2 error:", e)
+    else:
+        print("Color S2: not found")
+
+    # Gyro
+    if sG:
+        try:
+            sG.reset_angle(0); wait(150)
+            print("Gyro S3 angle:", sG.angle())
+        except Exception as e:
+            print("Gyro S3 error:", e)
+    else:
+        print("Gyro S3: not found")
+
+    # Ultrasonic
+    if sU:
+        try:
+            d = sU.distance()
+            print("Ultrasonic S4 distance(mm):", d if d is not None else "None")
+        except Exception as e:
+            print("Ultrasonic S4 error:", e)
+    else:
+        print("Ultrasonic S4: not found")
+
+# ---- program flow ----
+def main():
+    beep(900,120)
+    print("== Start: check A/B & C(10°) ==")
+
+    test_motor_AB(mA, "A")
+    test_motor_AB(mB, "B")
+    test_motor_C_10deg(mC)
+
+    read_sensors_once()
+
+    beep(1000,120)
+    print("== End ==")
+
+if __name__ == "__main__":
+    try:
+        main()
+    finally:
+        try:
+            if mA: mA.stop(Stop.BRAKE)
+            if mB: mB.stop(Stop.BRAKE)
+            if mC: mC.stop(Stop.BRAKE)
+        except Exception:
+            pass
+</textarea>
+
+      <div style="margin-top:12px;">
+        <button id="download" class="btn">Download as main.py</button>
+        <span class="small">Pybricks firmware on the EV3 is required.</span>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // JS: grabs the text from the editor and saves it as "main.py".
+    document.getElementById('download').addEventListener('click', function () {
+      var src = document.getElementById('code').value;
+      var blob = new Blob([src], {type:'text/x-python'});
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href = url; a.download = 'main.py'; a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 0);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+:root { --green:#4CAF50; --border:#e7e7e7; --bg:#f7f7f7; --ink:#333; }
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.hero {
+  padding: 20px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero h1 { margin: 0; font-size: 22px; }
+
+.btn {
+  display: inline-block;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--green);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:hover { filter: brightness(.95); }
+
+.btn--back { background: #3f8ae0; margin: 12px 0 0 20px; }
+
+main { max-width: 900px; margin: 0 auto; padding: 24px; }
+
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+h2 { margin: 0 0 12px; }
+p  { margin: 0 0 12px; }
+
+textarea {
+  width: 100%;
+  min-height: 440px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px;
+  font: 14px/1.45 Consolas, ui-monospace, Menlo, Monaco, monospace;
+}
+
+.small { color: #666; font-size: 13px; margin-left: 8px; display: inline-block; }
+
+/* replaces the former inline style="margin-top:12px" */
+.actions { margin-top: 12px; }

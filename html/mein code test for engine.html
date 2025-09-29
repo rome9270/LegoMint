@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 · Motor-only check (A/B normal, C only 10°)</title>
+
+  <!-- Use your external stylesheet (same look as before) -->
+  <link rel="stylesheet" href="../css/01_mainEV.css">
+</head>
+<body>
+  <div class="hero">
+    <h1>LEGO EV3 — Motor-only Function Check</h1>
+  </div>
+
+  <a class="btn btn--back" href="01_main.html">← Back to overview</a>
+
+  <main>
+    <h2>Test motors only (A/B normal, C only 10°)</h2>
+    <div class="card">
+<textarea id="code" spellcheck="false">#!/usr/bin/env pybricks-micropython
+# EV3 – Motor-only check: A/B forward+back, C only 10°
+
+#!/usr/bin/env pybricks-micropython
+from pybricks import ev3brick as brick
+from pybricks.ev3devices import Motor, TouchSensor, ColorSensor
+from pybricks.parameters import Port, Button, Color, ImageFile, SoundFile
+from pybricks.tools import wait
+from pybricks.robotics import DriveBase
+
+# Play a sound.
+brick.sound.beep()
+
+
+# Initialize three motors with default settings on Port B and Port C.
+# These will be the left and right motors of the drive base.
+left_motor = Motor(Port.A)
+right_motor = Motor(Port.B)
+middle_motor = Motor(Port.C)
+
+# The wheel diameter of the Robot Educator is 56 millimeters.
+wheel_diameter = 56
+
+# The axle track is the distance between the centers of each of the wheels.
+axle_track = 114
+
+left_motor.run(75)
+wait(1000)
+left_motor.stop()
+
+
+right_motor.run(75)
+wait(1000)
+right_motor.stop()
+
+middle_motor.run(20)
+wait(500)
+middle_motor.stop()
+
+brick.sound.beep()
+
+</textarea>
+
+      <div class="actions">
+        <button id="download" class="btn">Download as main.py</button>
+        <span class="small">Pybricks firmware on the EV3 is required.</span>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // JS: grabs the text from the editor and saves it as "main.py".
+    document.getElementById('download').addEventListener('click', function () {
+      var src = document.getElementById('code').value;
+      var blob = new Blob([src], {type:'text/x-python'});
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href = url; a.download = 'main.py'; a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 0);
+    });
+  </script>
+</body>
+</html>

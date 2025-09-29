@@ -34,7 +34,7 @@
 }
 
 /* =========================
-   Globales Layout
+   Globales Layout für alle Seiten
    ========================= */
 body{
   font-family: var(--font-sans);
@@ -139,7 +139,7 @@ hr{ margin: var(--space-xl) 0; }
 }
 
 /* =========================
-   Mobile Feinschliff
+   Feinschliff
    ========================= */
 @media (max-width: 640px){
   body{ padding: 32px 16px; }
