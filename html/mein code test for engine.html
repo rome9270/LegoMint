@@ -19,45 +19,60 @@
     <h2>Test motors only (A/B normal, C only 10°)</h2>
     <div class="card">
 <textarea id="code" spellcheck="false">#!/usr/bin/env pybricks-micropython
-# EV3 – Motor-only check: A/B forward+back, C only 10°
-
-#!/usr/bin/env pybricks-micropython
-from pybricks import ev3brick as brick
-from pybricks.ev3devices import Motor, TouchSensor, ColorSensor
-from pybricks.parameters import Port, Button, Color, ImageFile, SoundFile
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor
+from pybricks.parameters import Port
 from pybricks.tools import wait
-from pybricks.robotics import DriveBase
 
-# Play a sound.
-brick.sound.beep()
+brick = EV3Brick()
+brick.speaker.beep()
 
-
-# Initialize three motors with default settings on Port B and Port C.
-# These will be the left and right motors of the drive base.
 left_motor = Motor(Port.A)
 right_motor = Motor(Port.B)
 middle_motor = Motor(Port.C)
 
-# The wheel diameter of the Robot Educator is 56 millimeters.
-wheel_diameter = 56
-
-# The axle track is the distance between the centers of each of the wheels.
-axle_track = 114
-
-left_motor.run(75)
-wait(1000)
+# Motor A
+start = left_motor.angle()
+left_motor.run(200)      # 200°/s, damit er sicher anläuft
+wait(2000)
 left_motor.stop()
+if abs(left_motor.angle() - start) > 5:
+    brick.speaker.beep()         
+else:
+    brick.light.on(Color.RED);   wait(3000); brick.light.off()
 
-
-right_motor.run(75)
-wait(1000)
+# Motor B
+start = right_motor.angle()
+right_motor.run(300)
+wait(2000)
 right_motor.stop()
+if abs(right_motor.angle() - start) > 5:
+    brick.speaker.beep()
+else:
+    brick.light.on(Color.RED);   
+    wait(3000); 
+    brick.light.off()
 
-middle_motor.run(20)
+# Motor C
+start = middle_motor.angle()
+middle_motor.run(120)    # etwas höher als 20, damit er anläuft
 wait(500)
 middle_motor.stop()
+if abs(middle_motor.angle() - start) > 5:
+    brick.speaker.beep()
+else:
+    brick.light.on(Color.RED);   wait(3000); brick.light.off()
 
-brick.sound.beep()
+brick.speaker.beep()
+wait(1000)
+brick.speaker.beep()
+wait(1000)
+brick.light.on(Color.RED);   
+wait(3000); 
+brick.light.off()
+wait(1000);
+for _ in range(3):
+    brick.light.on(Color.GREEN); wait(150); brick.light.off(); wait(100)
 
 </textarea>
 
