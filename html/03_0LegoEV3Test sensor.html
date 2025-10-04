@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 · Sensor-only Function Check</title>
+  <link rel="stylesheet" href="../css/01_mainEV.css">
+</head>
+
+<body>
+  <div class="hero">
+    <h1>LEGO EV3 — Sensor Function Check</h1>
+    <hr>
+    <p>Teste die Sensoren: <b>Farbe (S1)</b>, <b>Ultraschall (S2)</b>, <b>Taster (S3)</b>, <b>Gyro (S4)</b>.</p>
+  </div>
+
+  <main>
+    <div class="card">
+      <h2>Dein Programm</h2>
+
+      <!-- 👇 Startet leer bzw. mit minimalem Gerüst -->
+      <textarea id="code" spellcheck="false">#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.parameters import Color
+from pybricks.tools import wait
+
+brick = EV3Brick()
+# Starte dein Sensor-Testprogramm hier:
+</textarea>
+
+      <div class="row" style="margin-top:12px;">
+        <button class="btn primary" id="tips-btn">💡 Tipps</button>
+        <button class="btn" id="solution-btn">✅ Lösung</button>
+        <button class="btn" id="download">💾 Download main.py</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Tipps-Modal -->
+  <dialog id="tips-modal">
+    <div class="modal-header">💡 Tipps</div>
+    <div class="modal-body">
+      <ul>
+        <li>Überprüfe, ob alle Sensoren korrekt an den Ports S1–S4 angeschlossen sind.</li>
+        <li>Verwende <code>try/except</code>, um Fehler beim Auslesen zu vermeiden.</li>
+        <li>Teste nacheinander: ColorSensor, UltrasonicSensor, TouchSensor, GyroSensor.</li>
+        <li>Zeige grün bei OK und rot bei Fehler.</li>
+      </ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips">Schließen</button>
+    </div>
+  </dialog>
+
+  <!-- Lösung-Modal (versteckt, scrollbar) -->
+  <dialog id="solution-modal">
+    <div class="modal-header">✅ Lösung</div>
+    <div class="modal-body">
+      <pre id="solution-text"
+           style="max-height:70vh; overflow:auto; background:#f9f9f9; border:1px solid #ddd;
+                  border-radius:8px; padding:10px; font:14px/1.45 Consolas,ui-monospace,Menlo,Monaco,'Liberation Mono',monospace;">
+#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import ColorSensor, UltrasonicSensor, TouchSensor, GyroSensor
+from pybricks.parameters import Port, Color
+from pybricks.tools import wait
+
+brick = EV3Brick()
+
+brick.light.on(Color.GREEN); wait(5000); brick.light.off(); wait(3000)
+
+# --- S1: Farbe ---
+try:
+    v = ColorSensor(Port.S1).reflection()
+    brick.light.on(Color.GREEN if 0 <= v <= 100 else Color.RED)
+    wait(800); brick.light.off()
+    brick.speaker.say("Sen 1 OK")
+except Exception:
+    brick.light.on(Color.RED); wait(800); brick.light.off()
+    brick.speaker.say("Sen eins nicht OK")
+
+wait(1500)
+
+# --- S2: Ultraschall ---
+try:
+    d = UltrasonicSensor(Port.S2).distance()
+    brick.light.on(Color.GREEN if (d and 20 <= d <= 3000) else Color.RED)
+    wait(800); brick.light.off()
+except Exception:
+    brick.light.on(Color.RED); wait(800); brick.light.off()
+
+wait(1500)
+
+# --- S3: Taster ---
+try:
+    p = TouchSensor(Port.S3).pressed()
+    brick.light.on(Color.GREEN if isinstance(p, bool) else Color.RED)
+    wait(800); brick.light.off()
+except Exception:
+    brick.light.on(Color.RED); wait(800); brick.light.off()
+
+wait(1500)
+
+# --- S4: Gyro ---
+try:
+    g = GyroSensor(Port.S4)
+    wait(300)
+    a = g.angle(); s = g.speed()
+    brick.light.on(Color.GREEN if isinstance(a,int) and isinstance(s,int) else Color.RED)
+    wait(800); brick.light.off()
+except Exception:
+    brick.light.on(Color.RED); wait(800); brick.light.off()
+
+brick.light.on(Color.ORANGE); wait(2000); brick.light.off()
+      </pre>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="insert-solution">Einfügen</button>
+      <button class="btn" id="close-solution">Schließen</button>
+    </div>
+  </dialog>
+
+  <script>
+    const tipsModal = document.getElementById('tips-modal');
+    const solutionModal = document.getElementById('solution-modal');
+    const codeEl = document.getElementById('code');
+    const solutionText = document.getElementById('solution-text');
+
+    // Tipps öffnen/schließen
+    document.getElementById('tips-btn').onclick = () => tipsModal.showModal();
+    document.getElementById('close-tips').onclick = () => tipsModal.close();
+
+    // Lösung öffnen/schließen
+    document.getElementById('solution-btn').onclick = () => solutionModal.showModal();
+    document.getElementById('close-solution').onclick = () => solutionModal.close();
+
+    // Lösung in Editor kopieren
+    document.getElementById('insert-solution').onclick = () => {
+      codeEl.value = solutionText.textContent.trim();
+      solutionModal.close();
+    };
+
+    // Download main.py
+    document.getElementById('download').onclick = () => {
+      const blob = new Blob([codeEl.value], { type: 'text/x-python' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'main.py';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+  </script>
+</body>
+</html>

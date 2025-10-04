@@ -53,8 +53,8 @@ hr{ margin: var(--space-xl) 0; }
    ========================= */
 .link-grid{
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 88px;
   padding: 20px 24px;               /* ✅ Bugfix: px ergänzt */
   background: var(--color-bg);
   margin-top: var(--space-xl);

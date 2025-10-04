@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EV3 · Schritt 1 – Zwei Beeps & Name (ohne Pyodide)</title>
+
+<style>
+/* ===== Deine CSS (unverändert, mit Bugfix) ===== */
+/* Basislayout */
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 60px;                     /* großzügige Außenabstände */
+}
+h1 { margin-bottom: 30px; }
+p  { margin-bottom: 30px; }
+hr  { margin: 40px 0; }
+
+/* Startseiten-Grid (Themen-Auswahl) */
+.link-grid{
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;                 /* horizontal + vertikal Abstand */
+  padding: 20px 24px;        /* ✅ Bugfix: px ergänzt */
+  background: #fff;          /* Kontrast: hier sieht man den Gap wirklich */
+  margin-top: 40px;
+}
+/* Items */
+.link-grid > a.topic,
+.link-grid > button.topic{
+  display: block;
+  width: 100%;
+  margin: 0;                 /* neutralisiert evtl. globale Button-Margins */
+  text-align: center;
+  padding: 18px 24px;
+  border-radius: 24px;
+  background: #3fb257;       /* Button-Farbe */
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Button-Grid (wird überall genutzt) */
+.level-grid { display:flex; flex-wrap:wrap; justify-content:center; column-gap:16px; row-gap:16px; margin-top:20px; }
+.level-btn{
+  display: inline-block;
+  width: 260px;
+  padding: 18px 28px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff;
+  background: #4CAF50;
+  border-radius: 12px;
+  text-decoration: none;
+  text-align: center;
+  transition: background-color .3s, transform .2s;
+  cursor: pointer;
+  border: none;
+}
+.level-btn:hover{ background:#45a049; transform: translateY(-3px); }
+
+/* Mobile Feinschliff */
+@media (max-width: 640px){
+  body{ padding: 32px 16px; }
+  .level-btn{ width: 100%; max-width: 360px; }
+}
+
+/* ===== Kleine Zusatzstyles für Karte/Editor/Ausgabe ===== */
+main { max-width: 1100px; margin: 0 auto; }
+.card { background:#fff; border: 1px solid #e7e7e7; border-radius:16px; padding:18px; text-align:left; box-shadow: 0 6px 24px rgba(0,0,0,.06); }
+.card h2 { margin: 0 0 10px; }
+.small, .status { color:#666; font-size:14px; }
+.row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+textarea{
+  width:100%; min-height: 280px; border:1px solid #ddd; border-radius:12px; padding:14px;
+  font:14px/1.45 Consolas, ui-monospace, Menlo, Monaco, "Liberation Mono", monospace;
+}
+pre{
+  margin:0; padding:12px; min-height:160px; background:#f7f7f7; border:1px solid #e7e7e7; border-radius:12px;
+  white-space: pre-wrap; word-break: break-word;
+}
+.result{ font-weight:700; }
+.ok{ color:#2e7d32; }
+.fail{ color:#c62828; }
+</style>
+</head>
+
+<body>
+  <main>
+    <h1>EV3 · Schritt 1: Zwei Beeps & Name</h1>
+    <p>Aufgabe: Erzeuge <b>zwei Pieptöne</b> mit <b>500&nbsp;ms</b> Abstand und zeige deinen <b>Namen</b> am Display an.</p>
+
+    <section class="card">
+      <h2 style="margin:0 0 8px">Dein Code</h2>
+      <p class="status">Tipp: <code>EV3Brick</code>, <code>wait(ms)</code>, <code>speaker.beep()</code>, <code>screen.print("…")</code>.</p>
+
+      <textarea id="code" spellcheck="false">#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.tools import wait
+
+ev3 = EV3Brick()
+
+# Dein Code hier:
+ev3.speaker.beep()
+wait(500)
+ev3.speaker.beep()
+ev3.screen.print("Hallo, ich bin Alex")
+wait(5000)
+</textarea>
+
+      <div class="row" style="margin-top:10px">
+        <button id="run" class="level-btn">Simulation ausführen</button>
+        <button id="check" class="level-btn" style="background:#3fb257">Aufgabe prüfen</button>
+        <button id="download" class="level-btn" style="background:#3fb257">Als main.py herunterladen</button>
+        <button id="next" class="level-btn" disabled>Nächster Schritt ▷</button>
+        <span id="status" class="status">Bereit (Schnellmodus)</span>
+      </div>
+
+      <h3>Ausgabe</h3>
+      <pre id="out" aria-live="polite"></pre>
+      <p class="result" id="result"></p>
+    </section>
+  </main>
+
+<script>
+  // ========== Web Audio: echter "Beep" bei Simulation ==========
+  let audioCtx;
+  async function ensureAudio(){
+    if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    if(audioCtx.state === 'suspended'){ try { await audioCtx.resume(); } catch(_){} }
+    return audioCtx;
+  }
+  function playBeep(duration=120, freq=880, volume=0.15){
+    const ctx = audioCtx;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = freq;
+    gain.gain.value = volume;
+    osc.connect(gain); gain.connect(ctx.destination);
+    const t = ctx.currentTime;
+    osc.start(t); osc.stop(t + duration/1000);
+  }
+  function playBeeps(n, step=0){
+    // n Beeps leicht versetzt (180ms)
+    if(step >= n) return;
+    playBeep();
+    setTimeout(()=> playBeeps(n, step+1), 180);
+  }
+
+  // ========== DOM Helpers ==========
+  const codeEl = document.getElementById('code');
+  const outEl  = document.getElementById('out');
+  const resEl  = document.getElementById('result');
+  const nextBtn = document.getElementById('next');
+  function clearOut(){ outEl.textContent=''; resEl.textContent=''; resEl.className='result'; }
+
+  // ========== Modus B: Schnell-Simulation (ohne Python) ==========
+  function runFastSim(src){
+    // ganz einfache Parser-Simulation für die drei Kerncalls
+    let beeps = 0;
+    const lines = src.split(/\n/);
+    for(const L of lines){
+      if(/speaker\.beep\(\)/.test(L)){ outEl.textContent += '[BEEP]\n'; beeps++; }
+      else if(/wait\(\s*(\d+)\s*\)/.test(L)){
+        const m = L.match(/wait\(\s*(\d+)\s*\)/);
+        outEl.textContent += `[WAIT ${m[1]}ms]\n`;
+      }
+      else if(/screen\.print\((.+)\)/.test(L)){
+        const m = L.match(/screen\.print\((.+)\)/);
+        outEl.textContent += '[SCREEN] ' + (m ? m[1] : '') + '\n';
+      }
+    }
+    if(beeps){ playBeeps(beeps); }
+  }
+
+  // ========== Checker ==========
+  function checkTask(){
+    const code = codeEl.value;
+    const beeps = (code.match(/speaker\.beep\(\)/g) || []).length;
+    const hasWait500 = /wait\(\s*500\s*\)/.test(code);
+    const nameMatch = code.match(/screen\.print\(([^)]+)\)/);
+    let hasName = false;
+    if(nameMatch){
+      const txt = nameMatch[1].replace(/^([ru]|rb)?["']|["']\s*$/g,'');
+      hasName = /[A-Za-zÄÖÜäöüß]{2,}/.test(txt);
+    }
+    const ok = beeps >= 2 && hasWait500 && hasName;
+    resEl.textContent = ok ? '✔︎ Aufgabe erfüllt – super!' : 'Noch nicht ganz: 2× Beep, 500 ms Pause und Name anzeigen.';
+    resEl.className   = 'result ' + (ok ? 'ok' : 'fail');
+    nextBtn.disabled  = !ok;
+  }
+
+  // ========== Download als main.py ==========
+  function downloadMain(){
+    const blob = new Blob([codeEl.value], {type:'text/x-python'});
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'main.py'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ========== UI Events ==========
+  document.getElementById('run').addEventListener('click', async ()=>{
+    clearOut();
+    await ensureAudio();      // User-Gesture vorhanden -> Audio erlaubt
+    runFastSim(codeEl.value);
+  });
+  document.getElementById('check').addEventListener('click', checkTask);
+  document.getElementById('download').addEventListener('click', downloadMain);
+  nextBtn.addEventListener('click', ()=> alert('Weiter: Schritt 2 – Geradeaus & zurück (auch Schnellmodus).'));
+</script>
+</body>
+</html>

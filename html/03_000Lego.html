@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EV3 · Quadrat fahren</title>
+<link rel="stylesheet" href="../css/01_mainEV.css" />
+<style>
+main { max-width:1100px; margin:0 auto; }
+.card { background:#fff; border:1px solid #e7e7e7; border-radius:16px; padding:18px;
+        text-align:left; box-shadow:0 6px 24px rgba(0,0,0,.06);}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+#sim{width:100%;height:360px;display:block;background:#fff;
+     border:1px solid #ddd;border-radius:12px;margin-top:12px;}
+pre{background:#f9f9f9;padding:10px;border-radius:8px;}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+       align-items:center;justify-content:center;}
+.modal.show{display:flex;}
+.modal .box{background:#fff;border-radius:12px;max-width:800px;width:90%;padding:20px;}
+</style>
+</head>
+
+<body>
+<main>
+  <h1>EV3 · Quadrat fahren</h1>
+  <p>Fahre ein Quadrat: 4 × 300 mm mit 90°-Drehung nach links.<br>
+     Anschließend vergrößere jede Seite um eine LEGO-Einheit (80 mm) und wiederhole.</p>
+
+  <section class="card">
+    <h2>Dein Code</h2>
+    <p class="status">Tipp: Verwende <code>robot.straight(…)</code> und <code>robot.turn(…)</code></p>
+
+<textarea id="code" spellcheck="false" style="width:100%;min-height:280px;font-family:monospace;">
+#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor
+from pybricks.parameters import Port
+from pybricks.robotics import DriveBase
+
+left = Motor(Port.B)
+right = Motor(Port.C)
+robot = DriveBase(left, right, wheel_diameter=56, axle_track=114)
+
+# Quadrat 1
+for i in range(4):
+    robot.straight(300)
+    robot.turn(90)
+
+# Quadrat 2 – vergrößert
+for i in range(4):
+    robot.straight(380)
+    robot.turn(90)
+</textarea>
+
+    <div class="row" style="margin-top:10px;">
+      <button id="run" class="level-btn">▶ Simulation ausführen</button>
+      <button id="check" class="level-btn" style="background:#3fb257;">Aufgabe prüfen</button>
+      <button id="solution-btn" class="level-btn">💡 Tipps & Lösung</button>
+    </div>
+
+    <canvas id="sim"></canvas>
+    <pre id="out"></pre>
+    <p id="result" class="result"></p>
+  </section>
+</main>
+
+<!-- Tipp/Lösung Modal -->
+<div class="modal" id="modal">
+  <div class="box">
+    <h2>💡 Tipps & Lösung</h2>
+    <ul>
+      <li>Nutze eine <code>for</code>-Schleife für Wiederholungen.</li>
+      <li><code>robot.straight(300)</code> fährt 300 mm geradeaus.</li>
+      <li><code>robot.turn(90)</code> dreht 90° nach links.</li>
+    </ul>
+    <p><b>Lösung:</b></p>
+    <pre id="solution">for i in range(4):
+    robot.straight(300)
+    robot.turn(90)</pre>
+    <div style="text-align:right;margin-top:10px;">
+      <button class="level-btn" id="close-modal">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== Simulation ==========
+const canvas=document.getElementById('sim');
+const ctx=canvas.getContext('2d');
+function setupCanvas(){
+  const dpr=window.devicePixelRatio||1;
+  const cssW=canvas.clientWidth, cssH=parseFloat(getComputedStyle(canvas).height);
+  canvas.width=cssW*dpr; canvas.height=cssH*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize',setupCanvas);
+const STATE={x:0,y:0,theta:0,path:[],scale:1};
+function resetSim(){
+  setupCanvas();
+  STATE.x=canvas.clientWidth/2;
+  STATE.y=canvas.clientHeight/2;
+  STATE.theta=0;
+  STATE.path=[];
+  drawAll();
+}
+function drawGrid(){
+  const w=canvas.clientWidth,h=canvas.clientHeight;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#eee';for(let x=0;x<w;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+  for(let y=0;y<h;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+}
+function drawPath(){
+  ctx.strokeStyle='#3fb257';ctx.lineWidth=2;
+  for(const [x1,y1,x2,y2] of STATE.path){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+}
+function drawRobot(){
+  const x=STATE.x,y=STATE.y,a=STATE.theta;
+  ctx.fillStyle='#4CAF50';ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fill();
+  const tipX=x+Math.cos(a)*26,tipY=y-Math.sin(a)*26;
+  const lX=x+Math.cos(a+Math.PI*0.75)*8,lY=y-Math.sin(a+Math.PI*0.75)*8;
+  const rX=x+Math.cos(a-Math.PI*0.75)*8,rY=y-Math.sin(a-Math.PI*0.75)*8;
+  ctx.beginPath();ctx.moveTo(tipX,tipY);ctx.lineTo(lX,lY);ctx.lineTo(rX,rY);ctx.closePath();ctx.fill();
+}
+function drawAll(){drawGrid();drawPath();drawRobot();}
+function forwardMM(mm){
+  const dx=Math.cos(STATE.theta)*mm,dy=-Math.sin(STATE.theta)*mm;
+  const [x1,y1]=[STATE.x,STATE.y];
+  STATE.x+=dx;STATE.y+=dy;STATE.path.push([x1,y1,STATE.x,STATE.y]);
+  drawAll();
+}
+function turnDeg(d){STATE.theta+=d*Math.PI/180;drawAll();}
+
+// ========== Parser ==========
+function runSimulatorFromCode(src){
+  resetSim();
+  const lines=src.split(/\n/);
+  let t=0;
+  for(const L of lines){
+    const straight=L.match(/robot\.straight\(\s*(-?\d+)\s*\)/);
+    if(straight){const d=parseInt(straight[1],10);
+      setTimeout(()=>forwardMM(d),t);t+=Math.abs(d)*3;continue;}
+    const turn=L.match(/robot\.turn\(\s*(-?\d+)\s*\)/);
+    if(turn){const a=parseInt(turn[1],10);
+      setTimeout(()=>turnDeg(a),t);t+=500;continue;}
+  }
+}
+
+// ========== Checker ==========
+function checkTask(){
+  const code=document.getElementById('code').value;
+  const hasLoop=/for\s+i\s+in\s+range/.test(code);
+  const hasStraight=/robot\.straight\(\s*300\s*\)/.test(code);
+  const hasTurn=/robot\.turn\(\s*90\s*\)/.test(code);
+  const ok=hasLoop&&hasStraight&&hasTurn;
+  const res=document.getElementById('result');
+  if(ok){res.textContent='✔ Quadrat erkannt!';res.className='ok';}
+  else{res.textContent='❌ Noch nicht ganz...';res.className='fail';}
+}
+
+// ========== Events ==========
+document.getElementById('run').onclick=()=>runSimulatorFromCode(document.getElementById('code').value);
+document.getElementById('check').onclick=checkTask;
+document.getElementById('solution-btn').onclick=()=>document.getElementById('modal').classList.add('show');
+document.getElementById('close-modal').onclick=()=>document.getElementById('modal').classList.remove('show');
+
+// Init
+resetSim();
+</script>
+</body>
+</html>

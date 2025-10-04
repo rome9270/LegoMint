@@ -1,213 +1,278 @@
 <!doctype html>
 <html lang="de">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>EV3 · Schritt 1 – Zwei Beeps & Name (ohne Pyodide)</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 (ev3dev) · Schritt 1 – Zwei Beeps & Name</title>
 
-<style>
-/* ===== Deine CSS (unverändert, mit Bugfix) ===== */
-/* Basislayout */
-body {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  padding: 60px;                     /* großzügige Außenabstände */
-}
-h1 { margin-bottom: 30px; }
-p  { margin-bottom: 30px; }
-hr  { margin: 40px 0; }
+  <!-- Alter Look -->
+  <link rel="stylesheet" href="../css/03_python.css" />
 
-/* Startseiten-Grid (Themen-Auswahl) */
-.link-grid{
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 24px;                 /* horizontal + vertikal Abstand */
-  padding: 20px 24px;        /* ✅ Bugfix: px ergänzt */
-  background: #fff;          /* Kontrast: hier sieht man den Gap wirklich */
-  margin-top: 40px;
-}
-/* Items */
-.link-grid > a.topic,
-.link-grid > button.topic{
-  display: block;
-  width: 100%;
-  margin: 0;                 /* neutralisiert evtl. globale Button-Margins */
-  text-align: center;
-  padding: 18px 24px;
-  border-radius: 24px;
-  background: #3fb257;       /* Button-Farbe */
-  color: #fff;
-  font-weight: 700;
-}
-
-/* Button-Grid (wird überall genutzt) */
-.level-grid { display:flex; flex-wrap:wrap; justify-content:center; column-gap:16px; row-gap:16px; margin-top:20px; }
-.level-btn{
-  display: inline-block;
-  width: 260px;
-  padding: 18px 28px;
-  font-size: 20px;
-  font-weight: bold;
-  color: #fff;
-  background: #4CAF50;
-  border-radius: 12px;
-  text-decoration: none;
-  text-align: center;
-  transition: background-color .3s, transform .2s;
-  cursor: pointer;
-  border: none;
-}
-.level-btn:hover{ background:#45a049; transform: translateY(-3px); }
-
-/* Mobile Feinschliff */
-@media (max-width: 640px){
-  body{ padding: 32px 16px; }
-  .level-btn{ width: 100%; max-width: 360px; }
-}
-
-/* ===== Kleine Zusatzstyles für Karte/Editor/Ausgabe ===== */
-main { max-width: 1100px; margin: 0 auto; }
-.card { background:#fff; border: 1px solid #e7e7e7; border-radius:16px; padding:18px; text-align:left; box-shadow: 0 6px 24px rgba(0,0,0,.06); }
-.card h2 { margin: 0 0 10px; }
-.small, .status { color:#666; font-size:14px; }
-.row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-textarea{
-  width:100%; min-height: 280px; border:1px solid #ddd; border-radius:12px; padding:14px;
-  font:14px/1.45 Consolas, ui-monospace, Menlo, Monaco, "Liberation Mono", monospace;
-}
-pre{
-  margin:0; padding:12px; min-height:160px; background:#f7f7f7; border:1px solid #e7e7e7; border-radius:12px;
-  white-space: pre-wrap; word-break: break-word;
-}
-.result{ font-weight:700; }
-.ok{ color:#2e7d32; }
-.fail{ color:#c62828; }
-</style>
+  <!-- Mini-Styles nur für Modal-Ersatz -->
+  <style>
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:9998;}
+    .modal{position:fixed;inset:auto 0 0 0;margin:auto;max-width:720px;background:#fff;border:1px solid #e5e5e5;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.15);padding:16px;display:none;z-index:9999}
+    .modal-header{font-weight:700;margin-bottom:8px}
+    .modal-body{max-height:55vh;overflow:auto}
+    .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  </style>
 </head>
-
 <body>
-  <main>
-    <h1>EV3 · Schritt 1: Zwei Beeps & Name</h1>
-    <p>Aufgabe: Erzeuge <b>zwei Pieptöne</b> mit <b>500&nbsp;ms</b> Abstand und zeige deinen <b>Namen</b> am Display an.</p>
+  <!-- Top-Navigation -->
+  <div class="nav-row" style="margin-top:20px; display:flex; justify-content:space-between;">
+    <a href="01_main.html" class="btn" id="back-btn">← Back</a>
+    <a href="#" class="btn primary" id="next-btn">Next →</a>
+  </div>
 
+  <!-- Header + Aktionsbuttons -->
+  <header class="row" style="justify-content: space-between;">
+    <div>
+      <h1 id="task-title">EV3 (ev3dev) · Schritt 1: Zwei Beeps & Name</h1>
+      <p id="task-desc">
+        Aufgabe: Erzeuge <b>zwei Pieptöne</b> mit <b>500&nbsp;ms</b> Abstand
+        und zeige deinen <b>Namen</b> am Display an.
+      </p>
+    </div>
+    <div class="row">
+      <button class="btn" id="tips-btn"  type="button">💡 Tips</button>
+      <button class="btn" id="solution-btn" type="button">✅ Solution</button>
+    </div>
+  </header>
+
+  <main class="layout">
     <section class="card">
-      <h2 style="margin:0 0 8px">Dein Code</h2>
-      <p class="status">Tipp: <code>EV3Brick</code>, <code>wait(ms)</code>, <code>speaker.beep()</code>, <code>screen.print("…")</code>.</p>
+      <h2>Dein Code (ev3dev2 / Python 3)</h2>
+      <p class="status">
+        Laufzeit ist <b>ev3dev</b>: nutze <code>Sound()</code>, <code>Display()</code>, <code>sleep(0.5)</code>, <code>screen.text_grid("…")</code>.
+      </p>
 
-      <textarea id="code" spellcheck="false">#!/usr/bin/env pybricks-micropython
-from pybricks.hubs import EV3Brick
-from pybricks.tools import wait
+<textarea id="editor" spellcheck="false">#!/usr/bin/env python3
+from ev3dev2.sound import Sound
+from ev3dev2.display import Display
+from time import sleep
 
-ev3 = EV3Brick()
+# EV3 initialisieren
+sound = Sound()
+screen = Display()
 
-# Dein Code hier:
-ev3.speaker.beep()
-wait(500)
-ev3.speaker.beep()
-ev3.screen.print("Hallo, ich bin Alex")
+# Zwei Beeps mit 500 ms Abstand
+sound.beep()
+sleep(0.5)
+sound.beep()
+
+# Name anzeigen
+screen.clear()
+screen.text_grid("Hallo, ich bin Alex", x=0, y=0, clear=False)
+
+# Sichtbar halten
+sleep(5)
 </textarea>
 
+      <!-- Steuerleiste -->
       <div class="row" style="margin-top:10px">
-        <button id="run" class="level-btn">Simulation ausführen</button>
-        <button id="check" class="level-btn" style="background:#3fb257">Aufgabe prüfen</button>
-        <button id="download" class="level-btn" style="background:#3fb257">Als main.py herunterladen</button>
-        <button id="next" class="level-btn" disabled>Nächster Schritt ▷</button>
+        <button class="btn primary" id="run-btn" type="button">▶ Simulation ausführen</button>
+        <button class="btn" id="check-btn" type="button">Aufgabe prüfen</button>
+        <button class="btn" id="download-btn" type="button">Als main.py herunterladen</button>
         <span id="status" class="status">Bereit (Schnellmodus)</span>
       </div>
 
+      <!-- Ausgabe / Ergebnisbereich -->
       <h3>Ausgabe</h3>
-      <pre id="out" aria-live="polite"></pre>
-      <p class="result" id="result"></p>
+      <pre id="output" aria-live="polite"></pre>
+
+      <h3>Ergebnis</h3>
+      <div id="result-panel">
+        <p class="result" id="result"></p>
+        <ul id="result-details"></ul>
+        <details id="imports-box" style="margin-top:8px">
+          <summary>Gefundene Imports</summary>
+          <pre id="imports-list"></pre>
+        </details>
+      </div>
     </section>
   </main>
 
-<script>
-  // ========== Web Audio: echter "Beep" bei Simulation ==========
-  let audioCtx;
-  async function ensureAudio(){
-    if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-    if(audioCtx.state === 'suspended'){ try { await audioCtx.resume(); } catch(_){} }
-    return audioCtx;
-  }
-  function playBeep(duration=120, freq=880, volume=0.15){
-    const ctx = audioCtx;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.value = freq;
-    gain.gain.value = volume;
-    osc.connect(gain); gain.connect(ctx.destination);
-    const t = ctx.currentTime;
-    osc.start(t); osc.stop(t + duration/1000);
-  }
-  function playBeeps(n, step=0){
-    // n Beeps leicht versetzt (180ms)
-    if(step >= n) return;
-    playBeep();
-    setTimeout(()=> playBeeps(n, step+1), 180);
-  }
+  <!-- Simple Modal-Ersatz (ohne <dialog>) -->
+  <div class="overlay" id="overlay"></div>
 
-  // ========== DOM Helpers ==========
-  const codeEl = document.getElementById('code');
-  const outEl  = document.getElementById('out');
-  const resEl  = document.getElementById('result');
-  const nextBtn = document.getElementById('next');
-  function clearOut(){ outEl.textContent=''; resEl.textContent=''; resEl.className='result'; }
+  <div class="modal" id="tips-modal">
+    <div class="modal-header">Tips</div>
+    <div class="modal-body">
+      <ul id="tips-list"></ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips" type="button">Close</button>
+    </div>
+  </div>
 
-  // ========== Modus B: Schnell-Simulation (ohne Python) ==========
+  <div class="modal" id="solution-modal">
+    <div class="modal-header">Solution</div>
+    <div class="modal-body"><pre id="solution-code"></pre></div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution" type="button">Insert</button>
+      <button class="btn" id="close-solution" type="button">Close</button>
+    </div>
+  </div>
+
+  <script>
+  // ---- ganz simpler Helper ----
+  function $(id){ return document.getElementById(id); }
+
+  // ---- TASK-Daten ----
+  const TASK = {
+    title: "EV3 (ev3dev) · Schritt 1: Zwei Beeps & Name",
+    description: 'Aufgabe: Erzeuge <b>zwei Pieptöne</b> mit <b>500&nbsp;ms</b> Abstand und zeige deinen <b>Namen</b> am Display an.',
+    tips: [
+      'ev3dev2 verwenden: <code>from ev3dev2.sound import Sound</code>, <code>from ev3dev2.display import Display</code>.',
+      'Beep: <code>sound.beep()</code> – Pause: <code>sleep(0.5)</code>.',
+      'Text: <code>screen.text_grid("Dein&nbsp;Name", x=0, y=0)</code>.',
+      'Vorher löschen: <code>screen.clear()</code>.',
+      'Am Ende: <code>sleep(5)</code>, damit der Text sichtbar bleibt.'
+    ],
+    solution:
+`#!/usr/bin/env python3
+from ev3dev2.sound import Sound
+from ev3dev2.display import Display
+from time import sleep
+
+sound = Sound()
+screen = Display()
+
+sound.beep()
+sleep(0.5)
+sound.beep()
+
+screen.clear()
+screen.text_grid("Hallo, ich bin Alex", x=0, y=0, clear=False)
+
+sleep(5)`,
+    filename: "main.py",
+    prevUrl: "01_main.html",
+    nextUrl: "#"
+  };
+
+  // ---- DOM-Refs ----
+  const els = {
+    title: $("task-title"),
+    desc:  $("task-desc"),
+    editor:$("editor"),
+    run:   $("run-btn"),
+    check: $("check-btn"),
+    download:$("download-btn"),
+    output:$("output"),
+    result:$("result"),
+    resultDetails:$("result-details"),
+    importsList:$("imports-list"),
+    importsBox:$("imports-box"),
+    status:$("status"),
+    tipsBtn:$("tips-btn"),
+    tipsModal:$("tips-modal"),
+    closeTips:$("close-tips"),
+    tipsList:$("tips-list"),
+    solutionBtn:$("solution-btn"),
+    solutionModal:$("solution-modal"),
+    closeSolution:$("close-solution"),
+    copySolution:$("copy-solution"),
+    overlay:$("overlay"),
+    back:$("back-btn"),
+    next:$("next-btn")
+  };
+
+  // ---- Seite initialisieren ----
+  document.title = TASK.title;
+  els.title.textContent = TASK.title;
+  els.desc.innerHTML = TASK.description;
+  els.tipsList.innerHTML = TASK.tips.map(t=>`<li>${t}</li>`).join("");
+  $("solution-code").textContent = TASK.solution;
+
+  // ---- Simple Modal-Logik (ohne dialog) ----
+  function openModal(m){ els.overlay.style.display='block'; m.style.display='block'; }
+  function closeModal(m){ els.overlay.style.display='none'; m.style.display='none'; }
+  els.tipsBtn.onclick     = ()=> openModal(els.tipsModal);
+  els.closeTips.onclick   = ()=> closeModal(els.tipsModal);
+  els.solutionBtn.onclick = ()=> openModal(els.solutionModal);
+  els.closeSolution.onclick = ()=> closeModal(els.solutionModal);
+  els.overlay.onclick     = ()=>{ closeModal(els.tipsModal); closeModal(els.solutionModal); };
+
+  els.copySolution.onclick = ()=>{
+    els.editor.value = TASK.solution;
+    closeModal(els.solutionModal);
+    clearOut();
+  };
+
+  // ---- Tools ----
+  function clearOut(){
+    els.output.textContent = '';
+    els.result.textContent = '';
+    els.result.className = 'result';
+    els.resultDetails.innerHTML = '';
+    els.importsList.textContent = '';
+    els.importsBox.open = false;
+  }
+  function detectImports(src){
+    const lines = src.split(/\n/);
+    const found = lines.filter(L => /^\s*(import\s+.+|from\s+\S+\s+import\s+.+)/.test(L));
+    return found.join('\n') || '(keine Imports gefunden)';
+  }
   function runFastSim(src){
-    // ganz einfache Parser-Simulation für die drei Kerncalls
+    // Nur simple Text-Simulation, keine echten Beeps nötig
     let beeps = 0;
     const lines = src.split(/\n/);
     for(const L of lines){
-      if(/speaker\.beep\(\)/.test(L)){ outEl.textContent += '[BEEP]\n'; beeps++; }
-      else if(/wait\(\s*(\d+)\s*\)/.test(L)){
-        const m = L.match(/wait\(\s*(\d+)\s*\)/);
-        outEl.textContent += `[WAIT ${m[1]}ms]\n`;
-      }
-      else if(/screen\.print\((.+)\)/.test(L)){
-        const m = L.match(/screen\.print\((.+)\)/);
-        outEl.textContent += '[SCREEN] ' + (m ? m[1] : '') + '\n';
+      if(/sound\.beep\(\)/.test(L)){ els.output.textContent += '[BEEP]\\n'; beeps++; }
+      else if(/sleep\(\s*(0?\.?5|\.50|0\.500)\s*\)/.test(L)){ els.output.textContent += '[WAIT 500ms]\\n'; }
+      else if(/screen\.text_grid\((.+)\)/.test(L)){
+        const m = L.match(/screen\.text_grid\((.+)\)/);
+        els.output.textContent += '[SCREEN] ' + (m ? m[1] : '') + '\\n';
+      } else if(/screen\.clear\(\)/.test(L)){
+        els.output.textContent += '[SCREEN CLEAR]\\n';
       }
     }
-    if(beeps){ playBeeps(beeps); }
+    // (Optional: hier könnte man WebAudio-Beep einbauen – weggelassen für maximale Robustheit)
   }
 
-  // ========== Checker ==========
+  // ---- Checks ----
   function checkTask(){
-    const code = codeEl.value;
-    const beeps = (code.match(/speaker\.beep\(\)/g) || []).length;
-    const hasWait500 = /wait\(\s*500\s*\)/.test(code);
-    const nameMatch = code.match(/screen\.print\(([^)]+)\)/);
+    const code = els.editor.value;
+
+    // Imports
+    els.importsList.textContent = detectImports(code);
+    els.importsBox.open = true;
+
+    const beeps = (code.match(/sound\\.beep\\(\\)/g) || []).length;
+    const hasWait500 = /sleep\\(\\s*(0?\\.?5|\\.50|0\\.500)\\s*\\)/.test(code);
+    const nameMatch = code.match(/screen\\.text_grid\\(([^)]+)\\)/);
     let hasName = false;
     if(nameMatch){
-      const txt = nameMatch[1].replace(/^([ru]|rb)?["']|["']\s*$/g,'');
+      const txt = nameMatch[1].replace(/^([ru]|rb)?["']|["']\\s*$/g,'');
       hasName = /[A-Za-zÄÖÜäöüß]{2,}/.test(txt);
     }
-    const ok = beeps >= 2 && hasWait500 && hasName;
-    resEl.textContent = ok ? '✔︎ Aufgabe erfüllt – super!' : 'Noch nicht ganz: 2× Beep, 500 ms Pause und Name anzeigen.';
-    resEl.className   = 'result ' + (ok ? 'ok' : 'fail');
-    nextBtn.disabled  = !ok;
+
+    const details = [
+      {ok: beeps >= 2, msg: (beeps>=2? '✓':'✗') + ` Mindestens 2× sound.beep() (gefunden: ${beeps})`},
+      {ok: hasWait500, msg: (hasWait500? '✓':'✗') + ' 500 ms Pause vorhanden (sleep(0.5))'},
+      {ok: hasName, msg: (hasName? '✓':'✗') + ' Name wird angezeigt (screen.text_grid("…"))'}
+    ];
+    els.resultDetails.innerHTML = details.map(d=>`<li>${d.msg}</li>`).join('');
+    const ok = details.every(d=>d.ok);
+    els.result.textContent = ok ? '✔︎ Aufgabe erfüllt – super!' : 'Noch nicht ganz. Prüfe die Punkte oben.';
+    els.result.className = 'result ' + (ok ? 'ok' : 'fail');
   }
 
-  // ========== Download als main.py ==========
-  function downloadMain(){
-    const blob = new Blob([codeEl.value], {type:'text/x-python'});
-    const url  = URL.createObjectURL(blob);
+  // ---- Events ----
+  els.run.onclick = ()=>{ els.status.textContent='running…'; clearOut(); runFastSim(els.editor.value); els.status.textContent='done.'; };
+  els.check.onclick = checkTask;
+  els.download.onclick = ()=>{
+    const blob = new Blob([els.editor.value], {type:'text/x-python'});
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'main.py'; a.click();
+    a.href = url; a.download = TASK.filename || 'main.py'; a.click();
     URL.revokeObjectURL(url);
-  }
+  };
 
-  // ========== UI Events ==========
-  document.getElementById('run').addEventListener('click', async ()=>{
-    clearOut();
-    await ensureAudio();      // User-Gesture vorhanden -> Audio erlaubt
-    runFastSim(codeEl.value);
-  });
-  document.getElementById('check').addEventListener('click', checkTask);
-  document.getElementById('download').addEventListener('click', downloadMain);
-  nextBtn.addEventListener('click', ()=> alert('Weiter: Schritt 2 – Geradeaus & zurück (auch Schnellmodus).'));
-</script>
+  // Back/Next (optional)
+  els.back && (els.back.onclick = ()=> TASK.prevUrl && TASK.prevUrl!="#" ? location.href=TASK.prevUrl : alert("Kein vorheriger Schritt gesetzt."));
+  els.next && (els.next.onclick = ()=> TASK.nextUrl && TASK.nextUrl!="#" ? location.href=TASK.nextUrl : alert("Kein nächster Schritt gesetzt."));
+  </script>
 </body>
 </html>
