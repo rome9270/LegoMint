@@ -115,6 +115,27 @@ for i in range(4):
 </div>
 
 <script>
+/*
+  TEMPLATE‑ERKLÄRUNG (auch für Lehrkräfte/Schüler)
+  ------------------------------------------------
+  1) Fachliche Einheit vs. Darstellung
+     - EV3‑Code nutzt Millimeter/Grad (Pybricks).
+     - Darstellung skaliert über STATE.scale (mm → px). Standard: 0.5 → 300 mm = 150 px.
+  2) Parser statt Interpreter
+     - Es werden Zeilen mit robot.straight(NUMMER) und robot.turn(NUMMER) erkannt.
+       Andere Python‑Teile werden ignoriert (leichter & sicherer fürs Template).
+  3) Canvas‑Koordinaten
+     - +x nach rechts, +y nach unten ⇒ dy = -sin(theta) * ... , damit positive Winkel „nach oben“ zeigen.
+  4) Raster
+     - 100‑mm‑Raster: step = 100 * STATE.scale in drawGrid().
+  5) Buttons
+     - ▶ Simulation: parst & animiert.
+     - Aufgabe prüfen: einfache Regex‑Muster.
+     - 💡 Tipps / 🧩 Lösung: Modals; im Lösungs‑Modal gibt es „📥 Einfügen“.
+     - 🔍 Fenster skalieren: Canvas‑Höhe 300px ↔ 480px.
+  6) Für neue Aufgaben
+     - Checker‑Regex in checkTask() anpassen; ggf. STATE.scale oder Raster ändern.
+*/
 // Erklärung:
 // - mm → px Skalierung: STATE.scale = 0.5 (1 mm = 0.5 Pixel)
 // - Der Button „Lösung anzeigen“ öffnet das Modal mit dem vollständigen EV3-Code.
