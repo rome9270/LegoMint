@@ -115,7 +115,7 @@ if abs(left_motor.angle() - start) > 5:
     brick.speaker.say("Motor A OK")
     brick.speaker.beep()
 else:
-    brick.speaker.say("Motor A nicht OK")
+    brick.speaker.say("Motor A not OK")
     brick.light.on(Color.RED)
     wait(3000)
     brick.light.off()
@@ -150,7 +150,7 @@ else:
     brick.light.off()
     brick.screen.print("NOT OK")
 
-brick.speaker.say("Motorentest abgeschlossen")
+brick.speaker.say("Test done")
 brick.speaker.beep()
 wait(1000)
 brick.speaker.beep()

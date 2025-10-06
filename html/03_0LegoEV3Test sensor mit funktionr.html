@@ -60,6 +60,7 @@ brick = EV3Brick()
            style="max-height:70vh; overflow:auto; background:#f9f9f9; border:1px solid #ddd;
                   border-radius:8px; padding:10px; font:14px/1.45 Consolas,ui-monospace,Menlo,Monaco,'Liberation Mono',monospace;">
 #!/usr/bin/env pybricks-micropython
+#!/usr/bin/env pybricks-micropython
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import ColorSensor, UltrasonicSensor, TouchSensor, GyroSensor
 from pybricks.parameters import Port, Color
@@ -67,52 +68,77 @@ from pybricks.tools import wait
 
 brick = EV3Brick()
 
-brick.light.on(Color.GREEN); wait(5000); brick.light.off(); wait(3000)
+# -----------------------------
+# Hilfsfunktionen
+# -----------------------------
 
-# --- S1: Farbe ---
-try:
+def led(color, time=800):
+    """LED kurz einschalten und dann ausschalten."""
+    brick.light.on(color)
+    wait(time)
+    brick.light.off()
+
+def test_sensor(name, test_function):
+    """Führt einen Sensortest aus und zeigt Ergebnis an."""
+    try:
+        ok = test_function()
+        led(Color.GREEN if ok else Color.RED)
+        if ok:
+            brick.speaker.say(name + " OK")
+        else:
+            brick.speaker.say(name + " not OK")
+    except Exception:
+        led(Color.RED)
+        brick.speaker.say(name + " not OK")
+    wait(1500)
+
+# -----------------------------
+# Sensor-Tests
+# -----------------------------
+
+def test_color():
     v = ColorSensor(Port.S1).reflection()
-    brick.light.on(Color.GREEN if 0 <= v <= 100 else Color.RED)
-    wait(800); brick.light.off()
-    brick.speaker.say("Sen 1 OK")
-except Exception:
-    brick.light.on(Color.RED); wait(800); brick.light.off()
-    brick.speaker.say("Sen 1 not OK")
+    return 0 <= v <= 100
 
-wait(1500)
-
-# --- S2: Ultraschall ---
-try:
+def test_ultra():
     d = UltrasonicSensor(Port.S2).distance()
-    brick.light.on(Color.GREEN if (d and 20 <= d <= 3000) else Color.RED)
-    wait(800); brick.light.off()
-    brick.speaker.say("Sen 2 OK")
-except Exception:
-    brick.light.on(Color.RED); wait(800); brick.light.off()
+    return d is not None and 20 <= d <= 3000
 
-wait(1500)
-
-# --- S3: Taster ---
-try:
+def test_touch():
     p = TouchSensor(Port.S3).pressed()
-    brick.light.on(Color.GREEN if isinstance(p, bool) else Color.RED)
-    wait(800); brick.light.off()
-except Exception:
-    brick.light.on(Color.RED); wait(800); brick.light.off()
+    return isinstance(p, bool)
 
-wait(1500)
-
-# --- S4: Gyro ---
-try:
+def test_gyro():
     g = GyroSensor(Port.S4)
     wait(300)
-    a = g.angle(); s = g.speed()
-    brick.light.on(Color.GREEN if isinstance(a,int) and isinstance(s,int) else Color.RED)
-    wait(800); brick.light.off()
-except Exception:
-    brick.light.on(Color.RED); wait(800); brick.light.off()
+    return isinstance(g.angle(), int) and isinstance(g.speed(), int)
 
-brick.light.on(Color.ORANGE); wait(2000); brick.light.off()
+# -----------------------------
+# Hauptprogramm ("main")
+# -----------------------------
+
+def main():
+    brick.light.on(Color.GREEN)
+    wait(2000)
+    brick.light.off()
+
+    test_sensor("Sensor 1", test_color)
+    test_sensor("Sensor 2", test_ultra)
+    test_sensor("Sensor 3", test_touch)
+    test_sensor("Sensor 4", test_gyro)
+
+    brick.light.on(Color.ORANGE)
+    wait(2000)
+    brick.light.off()
+
+# -----------------------------
+# Startpunkt
+# -----------------------------
+
+if __name__ == "__main__":
+    main()
+
+
       </pre>
     </div>
     <div class="modal-actions">
