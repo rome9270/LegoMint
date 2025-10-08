@@ -3,48 +3,48 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EV3 · Schritt 1 – Motorentest (Schüler)</title>
+  <title>EV3 · engine test</title>
 
-  <!-- Dein gewohntes Stylesheet -->
+  <!-- mein template -->
   <link rel="stylesheet" href="../css/01_mainEV.css">
 
-  <!-- Minimales Dialog-Styling (falls nicht in der CSS enthalten) -->
+  <!-- meine style) -->
   <style>
     dialog { border:none; border-radius:12px; padding:20px; max-width:680px;
              box-shadow:0 8px 30px rgba(0,0,0,.25); }
     .modal-header{ font-weight:700; margin-bottom:12px; }
     .modal-actions{ margin-top:16px; text-align:right; }
     .modal-actions .btn{ margin-left:8px; }
-    /* Platzhalter für Lösungstext im Modal */
+    /* Platzhalter für Lösungstext  */
     #solution-text { white-space:pre; font:14px/1.45 Consolas, ui-monospace, Menlo, Monaco, "Liberation Mono", monospace; }
   </style>
 </head>
 
 <body>
   <div class="hero">
-    <h1>EV3 · Schritt 1 – Motoren prüfen</h1>
-    <p>Schreibe ein Pybricks-Programm, das die Motoren <b>A</b>, <b>B</b> und <b>C</b> testet.
-       Der EV3 soll jeweils sagen: <b>„Motor A/B/C OK“</b>.</p>
+    <h1>EV3 · Check the engines</h1>
+    <p> Engine occupation: left engine =  1 | right engine = 2 | middle engine = 3
+       Task: Make a code which checks the engine </p>
   </div>
 
   <main>
     <header class="row" style="justify-content: space-between; margin-bottom:20px;">
       <div>
-        <h2 id="task-title">Aufgabe – Motorentest</h2>
+        <h2 id="task-title">Check the engines</h2>
         <p id="task-desc">
-          Teste jeden Motor: kurz laufen lassen, anhalten, Bewegung per <code>angle()</code> prüfen
-          und das Ergebnis per <code>brick.speaker.say()</code> ansagen.
+          Check each engine: short run, stop, moving per angle, 
+          Brick should say ok | nok 
         </p>
       </div>
       <div class="row">
         <button class="btn" id="tips-btn" type="button">💡 Tipps</button>
-        <button class="btn" id="solution-btn" type="button">✅ Lösung</button>
+        <button class="btn" id="solution-btn" type="button">✅ Solution</button>
       </div>
     </header>
 
     <section class="card">
       <h2>Dein Code</h2>
-      <p class="status">Hinweis: Shebang für Pybricks ist <code>#!/usr/bin/env pybricks-micropython</code>.</p>
+      <p class="status">Tipp: Shebang for Pybricks is <code>#!/usr/bin/env pybricks-micropython</code>.</p>
 
       <!-- Starter: leer + Kommentar für Schüler -->
       <textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
@@ -56,7 +56,7 @@
 </textarea>
 
       <div class="row" style="margin-top:12px;">
-        <button id="download" class="btn" type="button">💾 Als main.py herunterladen</button>
+        <button id="download" class="btn" type="button">💾  main.py download</button>
         <span id="status" class="status">Bereit</span>
       </div>
     </section>
@@ -92,7 +92,7 @@
     </div>
   </dialog>
 
-  <!-- 🔒 Versteckter Lösungscode (erst beim Klick sichtbar gemacht) -->
+  <!--  Versteckter Lösungscode (erst beim Klick sichtbar gemacht) -->
   <pre id="solution-code" style="display:none">#!/usr/bin/env pybricks-micropython
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import Motor
