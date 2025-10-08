@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 · Schritt 1 – Zwei Beeps & Name</title>
+
+  <!-- Alter Look / Seiten-Styles -->
+  <link rel="stylesheet" href="../css/03_python.css" />
+</head>
+<body>
+
+  <!-- Top-Navigation wie auf der Python-Seite -->
+  <div class="nav-row" style="margin-top:20px; display:flex; justify-content:space-between;">
+    <a href="01_main.html" class="btn" id="back-btn">← Back</a>
+    <a href="#" class="btn primary" id="next-btn">Next →</a>
+  </div>
+
+  <!-- Header + Aktionsbuttons -->
+  <header class="row" style="justify-content: space-between;">
+    <div>
+      <h1 id="task-title">EV3 · Schritt 1: Zwei Beeps & Name</h1>
+      <p id="task-desc">
+        Aufgabe: Erzeuge <b>zwei Pieptöne</b> mit <b>500&nbsp;ms</b> Abstand
+        und zeige deinen <b>Namen</b> am Display an.
+      </p>
+    </div>
+    <div class="row">
+      <button class="btn" id="tips-btn">💡 Tips</button>
+      <button class="btn" id="solution-btn">✅ Solution</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="card">
+      <h2>Dein Code</h2>
+      <p class="status">Tipp: <code>EV3Brick</code>, <code>wait(ms)</code>, <code>speaker.beep()</code>, <code>screen.print("…")</code>.</p>
+
+      <textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.tools import wait
+
+ev3 = EV3Brick()
+
+# Dein Code hier:
+ev3.speaker.beep()
+wait(500)
+ev3.speaker.beep()
+ev3.screen.print("Hallo, ich bin Alex")
+wait(5000)
+</textarea>
+
+      <!-- Steuerleiste wie im Python-Template -->
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="run-btn">▶ Simulation ausführen</button>
+        <button class="btn" id="check-btn">Aufgabe prüfen</button>
+        <button class="btn" id="download-btn">Als main.py herunterladen</button>
+        <span id="status" class="status">Bereit (Schnellmodus)</span>
+      </div>
+
+      <!-- Ausgabe / Ergebnisbereich -->
+      <h3>Ausgabe</h3>
+      <pre id="output" aria-live="polite"></pre>
+
+      <h3>Ergebnis</h3>
+      <div id="result-panel">
+        <p class="result" id="result"></p>
+        <ul id="result-details"></ul>
+        <details id="imports-box" style="margin-top:8px">
+          <summary>Gefundene Imports</summary>
+          <pre id="imports-list"></pre>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <!-- Tips modal -->
+  <dialog id="tips-modal">
+    <div class="modal-header">Tips</div>
+    <div class="modal-body"><ul id="tips-list"></ul></div>
+    <div class="modal-actions"><button class="btn" id="close-tips">Close</button></div>
+  </dialog>
+
+  <!-- Solution modal -->
+  <dialog id="solution-modal">
+    <div class="modal-header">Solution</div>
+    <div class="modal-body"><pre id="solution-code"></pre></div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution">Insert</button>
+      <button class="btn" id="close-solution">Close</button>
+    </div>
+  </dialog>
+
+  <script>
+    /* ---------- Aufgabe / Seite ---------- */
+    const TASK = {
+      title: "EV3 · Schritt 1: Zwei Beeps & Name",
+      description: 'Aufgabe: Erzeuge <b>zwei Pieptöne</b> mit <b>500&nbsp;ms</b> Abstand und zeige deinen <b>Namen</b> am Display an.',
+      tips: [
+        'Initialisiere den Stein: <code>ev3 = EV3Brick()</code>.',
+        'Zweimal
