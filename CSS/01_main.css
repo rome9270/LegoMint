@@ -145,3 +145,77 @@ hr{ margin: var(--space-xl) 0; }
   body{ padding: 32px 16px; }
   .level-btn{ width: 100%; max-width: 360px; }
 }
+/* ---------- Overview page additions ---------- */
+
+/* Zentrierter Inhaltsbereich */
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Hero-Bereich oben */
+.hero {
+  text-align: center;
+  margin: 24px 0 20px;
+}
+.hero h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.6rem, 2vw + 1rem, 2.2rem);
+  line-height: 1.2;
+}
+.hero hr {
+  height: 2px;
+  border: 0;
+  background: #e5e7eb;
+  width: min(420px, 60%);
+  margin: 12px auto 0;
+  border-radius: 999px;
+}
+
+/* Vertikaler Stack für die großen Buttons */
+.stack {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0 28px;
+}
+
+/* Grosse Start-Buttons auf Basis .btn */
+.btn.big-start {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 16px 18px;
+  font-size: 1.05rem;
+  border-radius: 12px;
+  background: #eef2ff;            /* sanftes Blau (passt zu .btn.primary Theme) */
+  border-color: #c7d2fe;
+  transition: transform .04s ease, background-color .15s ease, border-color .15s ease;
+}
+.btn.big-start:hover {
+  background: #e0e7ff;
+  border-color: #a5b4fc;
+}
+.btn.big-start:active {
+  transform: translateY(1px);
+}
+
+/* Back-Button unten (dezenter) */
+.btn.back,
+.btn.btn--back {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+/* Keyboard-Fokus klar sichtbar für alle Buttons/Links */
+a.btn:focus-visible,
+button.btn:focus-visible {
+  outline: 3px solid #6366f1;
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+/* Mobile: etwas mehr Rand links/rechts */
+@media (max-width: 640px) {
+  .container { padding-left: 14px; padding-right: 14px; }
+}

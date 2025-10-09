@@ -1,29 +1,21 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EV3 · Schritt 1 – Zwei Beeps & Name</title>
-
-  <!-- Alter Look / Seiten-Styles -->
+  <title>Python Task Template</title>
   <link rel="stylesheet" href="../css/03_python.css" />
 </head>
 <body>
-
-  <!-- Top-Navigation wie auf der Python-Seite -->
-  <div class="nav-row" style="margin-top:20px; display:flex; justify-content:space-between;">
+  <div class="nav-row">
     <a href="01_main.html" class="btn" id="back-btn">← Back</a>
-    <a href="#" class="btn primary" id="next-btn">Next →</a>
+    <a href="03_2python.html" class="btn primary" id="next-btn">Next →</a>
   </div>
 
-  <!-- Header + Aktionsbuttons -->
   <header class="row" style="justify-content: space-between;">
     <div>
-      <h1 id="task-title">EV3 · Schritt 1: Zwei Beeps & Name</h1>
-      <p id="task-desc">
-        Aufgabe: Erzeuge <b>zwei Pieptöne</b> mit <b>500&nbsp;ms</b> Abstand
-        und zeige deinen <b>Namen</b> am Display an.
-      </p>
+      <h1 id="task-title">Task 1: The print() function</h1>
+      <p id="task-desc">Write a Python program that prints <code>Hello, World!</code></p>
     </div>
     <div class="row">
       <button class="btn" id="tips-btn">💡 Tips</button>
@@ -33,69 +25,173 @@
 
   <main class="layout">
     <section class="card">
-      <h2>Dein Code</h2>
-      <p class="status">Tipp: <code>EV3Brick</code>, <code>wait(ms)</code>, <code>speaker.beep()</code>, <code>screen.print("…")</code>.</p>
-
-      <textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
-from pybricks.hubs import EV3Brick
-from pybricks.tools import wait
-
-ev3 = EV3Brick()
-
-# Dein Code hier:
-ev3.speaker.beep()
-wait(500)
-ev3.speaker.beep()
-ev3.screen.print("Hallo, ich bin Alex")
-wait(5000)
-</textarea>
-
-      <!-- Steuerleiste wie im Python-Template -->
-      <div class="row" style="margin-top:10px">
-        <button class="btn primary" id="run-btn">▶ Simulation ausführen</button>
-        <button class="btn" id="check-btn">Aufgabe prüfen</button>
-        <button class="btn" id="download-btn">Als main.py herunterladen</button>
-        <span id="status" class="status">Bereit (Schnellmodus)</span>
+      <h2>Editor</h2>
+      <div class="row">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+        <span id="status" class="status" aria-live="polite"></span>
       </div>
+      <textarea id="editor" spellcheck="false"></textarea>
+    </section>
 
-      <!-- Ausgabe / Ergebnisbereich -->
-      <h3>Ausgabe</h3>
-      <pre id="output" aria-live="polite"></pre>
-
-      <h3>Ergebnis</h3>
-      <div id="result-panel">
-        <p class="result" id="result"></p>
-        <ul id="result-details"></ul>
-        <details id="imports-box" style="margin-top:8px">
-          <summary>Gefundene Imports</summary>
-          <pre id="imports-list"></pre>
-        </details>
-      </div>
+    <section class="card">
+      <h2>Output</h2>
+      <pre id="output"></pre>
+      <div id="error"></div>
     </section>
   </main>
 
   <!-- Tips modal -->
   <dialog id="tips-modal">
     <div class="modal-header">Tips</div>
-    <div class="modal-body"><ul id="tips-list"></ul></div>
-    <div class="modal-actions"><button class="btn" id="close-tips">Close</button></div>
+    <div class="modal-body">
+      <ul id="tips-list"></ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips">Close</button>
+    </div>
   </dialog>
 
   <!-- Solution modal -->
   <dialog id="solution-modal">
     <div class="modal-header">Solution</div>
-    <div class="modal-body"><pre id="solution-code"></pre></div>
+    <div class="modal-body">
+      <pre id="solution-code" style="white-space:pre-wrap;"></pre>
+    </div>
     <div class="modal-actions">
       <button class="btn" id="copy-solution">Insert</button>
       <button class="btn" id="close-solution">Close</button>
     </div>
   </dialog>
 
+  <!-- Skulpt -->
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+
   <script>
-    /* ---------- Aufgabe / Seite ---------- */
     const TASK = {
-      title: "EV3 · Schritt 1: Zwei Beeps & Name",
-      description: 'Aufgabe: Erzeuge <b>zwei Pieptöne</b> mit <b>500&nbsp;ms</b> Abstand und zeige deinen <b>Namen</b> am Display an.',
-      tips: [
-        'Initialisiere den Stein: <code>ev3 = EV3Brick()</code>.',
-        'Zweimal
+      title: "Task 1: Use the print() function",
+      description: 'Write a Python program that prints "Hello, World!".',
+      starterCode: "",
+      tips: ["Use print() function", "Put text in quotes", "Include the !"],
+      solution: 'print("Hello, World!")',
+      filename: "task1.py",
+      prevUrl: "#",
+      nextUrl: "#"
+    };
+// Dialog für TIPS 
+    const els = {
+      title:  document.getElementById("task-title"),
+      desc:   document.getElementById("task-desc"),
+      editor: document.getElementById("editor"),
+      run:    document.getElementById("run-btn"),
+      reset:  document.getElementById("reset-btn"),
+      save:   document.getElementById("save-btn"),
+      output: document.getElementById("output"),
+      error:  document.getElementById("error"),
+      status: document.getElementById("status"),
+      tipsBtn: document.getElementById("tips-btn"),
+      tipsModal: document.getElementById("tips-modal"),
+      tipsList: document.getElementById("tips-list"),
+      closeTips: document.getElementById("close-tips"),
+      solutionBtn: document.getElementById("solution-btn"),
+      solutionModal: document.getElementById("solution-modal"),
+      solutionCode: document.getElementById("solution-code"),
+      copySolution: document.getElementById("copy-solution"),
+      closeSolution: document.getElementById("close-solution"),
+      back: document.getElementById("back-btn"),
+      next: document.getElementById("next-btn")
+    };
+
+    // Init
+    document.title = TASK.title;
+    els.title.textContent = TASK.title;
+    els.desc.innerHTML = TASK.description;
+    els.solutionCode.textContent = TASK.solution;
+    els.tipsList.innerHTML = (TASK.tips || []).slice(0,3).map(t=>"<li>"+t+"</li>").join("");
+
+    // Helpers
+    function setStatus(state, text){
+      els.status.className = "status" + (state ? (" " + state) : "");
+      els.status.textContent = text || "";
+    }
+    function builtinRead(x){
+      if(!Sk.builtinFiles || !Sk.builtinFiles["files"][x]) throw "File not found:"+x;
+      return Sk.builtinFiles["files"][x];
+    }
+    function openDialog(dlg){
+      if (dlg && typeof dlg.showModal === "function") dlg.showModal();
+      else if (dlg) { dlg.setAttribute("open",""); document.documentElement.style.overflow="hidden"; }
+    }
+    function closeDialog(dlg){
+      if (dlg && typeof dlg.close === "function") dlg.close();
+      else if (dlg) { dlg.removeAttribute("open"); document.documentElement.style.overflow=""; }
+    }
+
+    // Run
+    async function runCode(){
+      els.output.textContent = "";
+      els.error.textContent = "";
+      setStatus("running", "running…");
+
+      Sk.configure({
+        output: t => els.output.textContent += t,
+        read: builtinRead,
+        __future__: Sk.python3,
+        inputfun: (p) => window.prompt(p || "Input:") ?? "",
+        inputfunTakesPrompt: true,
+        execLimit: 10000
+      });
+
+      try {
+        await Sk.misceval.asyncToPromise(
+          () => Sk.importMainWithBody("<stdin>", false, els.editor.value, true)
+        );
+        setStatus("ok", "done.");
+      } catch(e) {
+        setStatus("error", "error");
+        els.error.textContent = String(e);
+      }
+    }
+
+    // Reset / Save
+    function reset(){
+      els.editor.value = TASK.starterCode || "";
+      els.output.textContent = "";
+      els.error.textContent = "";
+      setStatus("", "");
+    }
+    function save(){
+      const b = new Blob([els.editor.value], {type:"text/plain"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(b);
+      a.download = TASK.filename || "solution.py";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    // Buttons
+    els.run.onclick = runCode;
+    els.reset.onclick = reset;
+    els.save.onclick = save;
+
+    // Dialog Buttons
+    els.tipsBtn.onclick = () => openDialog(els.tipsModal);
+    els.closeTips.onclick = () => closeDialog(els.tipsModal);
+    els.solutionBtn.onclick = () => openDialog(els.solutionModal);
+    els.closeSolution.onclick = () => closeDialog(els.solutionModal);
+    els.copySolution.onclick = () => {
+      els.editor.value = TASK.solution || "";
+      closeDialog(els.solutionModal);
+      els.output.textContent = "";
+      els.error.textContent = "";
+      setStatus("", "");
+    };
+
+    // Navigation
+    els.back.onclick = () => TASK.prevUrl!="#" ? location.href = TASK.prevUrl : alert("No previous task");
+    els.next.onclick = () => TASK.nextUrl!="#" ? location.href = TASK.nextUrl : alert("No next task");
+  </script>
+</body>
+</html>
