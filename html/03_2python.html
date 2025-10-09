@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Python Task Template</title>
+
+  <!-- alte CSS Stil -->
+  <link rel="stylesheet" href="../css/03_python.css" />
+</head>
+<body>
+  <div class="nav-row" style="margin-top:20px; display:flex; justify-content:space-between;">
+    <a href="01_main.html" class="btn" id="back-btn">← Back</a>
+    <a href="03_3python.html" class="btn primary" id="next-btn">Next →</a>
+  </div>
+
+  <header class="row" style="justify-content: space-between;">
+    <div>
+      <h1 id="task-title">Task 1: The print() function</h1>
+      <p id="task-desc">Comment and string <code>Hello, World! </p>
+    </div>
+
+    <div class="row">
+      <button class="btn" id="tips-btn">💡 Tips</button>
+      <button class="btn" id="solution-btn">✅ Solution</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="card">
+      <h2>Editor</h2>
+      <div class="row">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+        <span id="status"></span>
+      </div>
+      <textarea id="editor" spellcheck="false"></textarea>
+    </section>
+
+    <section class="card">
+      <h2>Output</h2>
+      <pre id="output"></pre>
+      <div id="error" style="color:#b91c1c;"></div>
+      <h3>Check</h3>
+      <div id="checkbar" class="checkbar">
+        <span class="dot"></span><span id="checkmsg">No check yet</span>
+      </div>
+    </section>
+  </main>
+
+  <!-- Tips modal -->
+  <dialog id="tips-modal">
+    <div class="modal-header">Tips</div>
+    <div class="modal-body"><ul id="tips-list"></ul></div>
+    <div class="modal-actions"><button class="btn" id="close-tips">Close</button></div>
+  </dialog>
+
+  <!-- Solution modal -->
+  <dialog id="solution-modal">
+    <div class="modal-header">Solution</div>
+    <div class="modal-body"><pre id="solution-code"></pre></div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution">Insert</button>
+      <button class="btn" id="close-solution">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Skulpt -->
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+
+  <script>
+    /* ---------- Aufgabenblock ---------- */
+    const TASK = {
+      title: "Task 1: Use the print() function",
+      description: 'Write a Python program that prints "Hello, World!".',
+      starterCode: "",
+      /*-- Vergleich der eingegebenen  Lösung ---*/
+      expectedOutputRegex: /^Hello,\s+[A-Za-zÄÖÜäöüß]+!$/m,
+      tips: ["Use print() function", "Put text in quotes", "Include the !"],
+      solution: 'print("Hello, World!")',
+      filename: "task1.py",
+      prevUrl: "#",
+      nextUrl: "#"
+    };
+
+    /* ---------- JS references ---------- */
+    const els = {
+      title:  document.getElementById("task-title"),
+      desc:   document.getElementById("task-desc"),
+      editor: document.getElementById("editor"),
+      run:    document.getElementById("run-btn"),
+      reset:  document.getElementById("reset-btn"),
+      save:   document.getElementById("save-btn"),
+      output: document.getElementById("output"),
+      error:  document.getElementById("error"),
+      status: document.getElementById("status"),
+      checkbar: document.getElementById("checkbar"),
+      checkmsg: document.getElementById("checkmsg"),
+      tipsBtn: document.getElementById("tips-btn"),
+      tipsModal: document.getElementById("tips-modal"),
+      tipsList: document.getElementById("tips-list"),
+      closeTips: document.getElementById("close-tips"),
+      solutionBtn: document.getElementById("solution-btn"),
+      solutionModal: document.getElementById("solution-modal"),
+      solutionCode: document.getElementById("solution-code"),
+      copySolution: document.getElementById("copy-solution"),
+      closeSolution: document.getElementById("close-solution"),
+      back: document.getElementById("back-btn"),
+      next: document.getElementById("next-btn")
+    };
+
+    // init content
+    document.title = TASK.title;
+    els.title.textContent = TASK.title;
+    els.desc.innerHTML = TASK.description;
+    els.solutionCode.textContent = TASK.solution;
+    els.tipsList.innerHTML = (TASK.tips || []).slice(0,3).map(t=>"<li>"+t+"</li>").join("");
+    setCheckIdle();
+
+    // helpers
+    function setCheckIdle(){ els.checkbar.className="checkbar"; els.checkmsg.textContent="No check yet"; }
+    function setCheckPassed(m){ els.checkbar.className="checkbar passed"; els.checkmsg.textContent=m||"Passed"; }
+    function setCheckFailed(m){ els.checkbar.className="checkbar failed"; els.checkmsg.textContent=m||"Not matched"; }
+    function builtinRead(x){ if(!Sk.builtinFiles||!Sk.builtinFiles["files"][x]) throw "File not found:"+x; return Sk.builtinFiles["files"][x]; }
+
+    // run / validate
+    async function runCode(){
+      els.output.textContent=""; els.error.textContent=""; els.status.textContent="running…"; setCheckIdle();
+      Sk.configure({
+        output:t=>els.output.textContent+=t,
+        read:builtinRead,
+        __future__:Sk.python3,
+        inputfun:(p)=>window.prompt(p||"Input:") ?? "",
+        inputfunTakesPrompt:true,
+        execLimit:10000
+      });
+      try{
+        await Sk.misceval.asyncToPromise(()=>Sk.importMainWithBody("<stdin>",false,els.editor.value,true));
+        els.status.textContent="done."; validate();
+      }catch(e){
+        els.status.textContent="error"; els.error.textContent=String(e); setCheckFailed("Fix errors");
+      }
+    }
+    function validate(){
+      const out=els.output.textContent.trim();
+      let ok=false;
+      if (typeof TASK.validate === "function") ok=!!TASK.validate(out);
+      else if (TASK.expectedOutputRegex) ok=TASK.expectedOutputRegex.test(out);
+      else ok=true;
+      ok ? setCheckPassed("Passed") : setCheckFailed("Output mismatch");
+    }
+
+    // reset / save
+    function reset(){ els.editor.value=TASK.starterCode||""; els.output.textContent=""; els.error.textContent=""; setCheckIdle(); }
+    function save(){ const b=new Blob([els.editor.value],{type:"text/plain"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=TASK.filename||"solution.py"; a.click(); URL.revokeObjectURL(a.href); }
+
+    // buttons
+    els.run.onclick=runCode; els.reset.onclick=reset; els.save.onclick=save;
+    els.tipsBtn.onclick=()=>els.tipsModal.showModal(); els.closeTips.onclick=()=>els.tipsModal.close();
+    els.solutionBtn.onclick=()=>els.solutionModal.showModal(); els.closeSolution.onclick=()=>els.solutionModal.close();
+    els.copySolution.onclick=()=>{ els.editor.value=TASK.solution||""; els.solutionModal.close(); els.output.textContent=""; els.error.textContent=""; setCheckIdle(); };
+    els.back.onclick=()=>TASK.prevUrl!="#"?location.href=TASK.prevUrl:alert("No previous task");
+    els.next.onclick=()=>TASK.nextUrl!="#"?location.href=TASK.nextUrl:alert("No next task");
+  </script>
+</body>
+</html>
