@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 · engine test</title>
+
+  <!-- mein template -->
+  <link rel="stylesheet" href="../css/01_mainEV.css">
+    
+
+  <!-- meine style) -->
+  <style>
+    dialog { border:none; border-radius:12px; padding:20px; max-width:680px;
+             box-shadow:0 8px 30px rgba(0,0,0,.25); }
+    .modal-header{ font-weight:700; margin-bottom:12px; }
+    .modal-actions{ margin-top:16px; text-align:right; }
+    .modal-actions .btn{ margin-left:8px; }
+    /* Platzhalter für Lösungstext  */
+    #solution-text { white-space:pre; font:14px/1.45 Consolas, ui-monospace, Menlo, Monaco, "Liberation Mono", monospace; }
+  </style>
+</head>
+
+<body>
+  <div class="hero">
+    <h1>EV3 · Check the engines</h1>
+    <p> Engine occupation: left engine =  1 | right engine = 2 | middle engine = 3
+       Task: Make a code which checks the engine </p>
+  </div>
+
+
+<body>
+<nav class="link-grid" aria-label="Topic selection">
+  <a class="btn" href="01_main.html" id="go-main" aria-label="Back to main">
+    ⬅️ Going to main
+  </a>
+</nav>
+  
+  <main>
+    <header class="row" style="justify-content: space-between; margin-bottom:20px;">
+      <div>
+        <h2 id="task-title">Check the engines</h2>
+        <p id="task-desc">
+          Check each engine: short run, stop, moving per angle, 
+          Brick should say ok | nok 
+        </p>
+      </div>
+      <div class="row">
+        <button class="btn" id="tips-btn" type="button">💡 Tipps</button>
+        <button class="btn" id="solution-btn" type="button">✅ Solution</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Dein Code</h2>
+      <p class="status">Tipp: Shebang for Pybricks is <code>#!/usr/bin/env pybricks-micropython</code>.</p>
+
+      <!-- Starter: leer + Kommentar für Schüler -->
+      <textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
+# Schreibe hier dein Programm:
+# - EV3Brick initialisieren (brick = EV3Brick())
+# - Motoren an Ports A, B, C anlegen
+# - Jeden Motor kurz laufen lassen (run(...)), stoppen (stop()), Bewegung prüfen (angle())
+# - Für jeden Motor sprechen: brick.speaker.say("Motor A OK") bzw. "nicht OK"
+</textarea>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="download" class="btn" type="button">💾  main.py download</button>
+        <span id="status" class="status">Bereit</span>
+      </div>
+    </section>
+  </main>
+
+  <!-- 💡 Tipps-Modal -->
+  <dialog id="tips-modal" aria-labelledby="tips-title">
+    <div class="modal-header" id="tips-title">💡 Tipps</div>
+    <div class="modal-body">
+      <ul>
+        <li>Imports: <code>from pybricks.hubs import EV3Brick</code>, <code>from pybricks.ev3devices import Motor</code>, <code>from pybricks.parameters import Port, Color</code>, <code>from pybricks.tools import wait</code>.</li>
+        <li>Motor anlegen: <code>Motor(Port.A)</code> (bzw. B, C).</li>
+        <li>Laufen &amp; stoppen: <code>motor.run(200)</code> → <code>wait(1500)</code> → <code>motor.stop()</code>.</li>
+        <li>Bewegung prüfen: <code>delta = abs(motor.angle() - start)</code> (Startwinkel vorher speichern).</li>
+        <li>Sprachausgabe: <code>brick.speaker.say("Motor A OK")</code>.</li>
+        <li>LED optional: <code>brick.light.on(Color.GREEN)</code> bzw. <code>Color.RED</code>.</li>
+      </ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips" type="button">Schließen</button>
+    </div>
+  </dialog>
+
+  <!-- ✅ Lösung-Modal (Lösung ist versteckt im DOM und wird erst beim Klick eingesetzt) -->
+  <dialog id="solution-modal" aria-labelledby="solution-title">
+    <div class="modal-header" id="solution-title">✅ Lösung</div>
+    <div class="modal-body">
+      <div id="solution-text"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution" type="button">Einfügen</button>
+      <button class="btn" id="close-solution" type="button">Schließen</button>
+    </div>
+  </dialog>
+
+  <!--  Versteckter Lösungscode (erst beim Klick sichtbar gemacht) -->
+  <pre id="solution-code" style="display:none">#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor
+from pybricks.parameters import Port, Color
+from pybricks.tools import wait
+
+brick = EV3Brick()
+brick.speaker.beep()
+
+left_motor = Motor(Port.A)
+right_motor = Motor(Port.B)
+middle_motor = Motor(Port.C)
+
+# Motor A
+start = left_motor.angle()
+left_motor.run(200)      # 200°/s, damit er sicher anläuft
+wait(2000)
+left_motor.stop()
+if abs(left_motor.angle() - start) > 5:
+    brick.speaker.say("Motor A OK")
+    brick.speaker.beep()
+else:
+    brick.speaker.say("Motor A not OK")
+    brick.light.on(Color.RED)
+    wait(3000)
+    brick.light.off()
+
+# Motor B
+start = right_motor.angle()
+right_motor.run(300)
+wait(2000)
+right_motor.stop()
+if abs(right_motor.angle() - start) > 5:
+    brick.speaker.say("Motor B OK")
+    brick.speaker.beep()
+else:
+    brick.speaker.say("Motor B nicht OK")
+    brick.light.on(Color.RED)
+    wait(3000)
+    brick.light.off()
+
+# Motor C
+start = middle_motor.angle()
+middle_motor.run(120)    # etwas höher als 20, damit er anläuft
+wait(500)
+middle_motor.stop()
+if abs(middle_motor.angle() - start) > 5:
+    brick.speaker.say("Motor C OK")
+    brick.speaker.beep()
+    brick.screen.print("OK")
+else:
+    brick.speaker.say("Motor C nicht OK")
+    brick.light.on(Color.RED)
+    wait(3000)
+    brick.light.off()
+    brick.screen.print("NOT OK")
+
+brick.speaker.say("Test done")
+brick.speaker.beep()
+wait(1000)
+brick.speaker.beep()
+wait(1000)
+brick.light.on(Color.RED)
+wait(3000)
+brick.light.off()
+wait(1000)
+for _ in range(3):
+    brick.light.on(Color.GREEN)
+    wait(150)
+    brick.light.off()
+    wait(100)
+brick.screen.print("OK")
+wait(5000)
+</pre>
+
+  <script>
+    // ==== Mini-Helfer ====
+    const $ = (id) => document.getElementById(id);
+
+    // ==== Modale öffnen/schließen ====
+    const tipsModal = $('tips-modal');
+    const solutionModal = $('solution-modal');
+
+    $('tips-btn').onclick = () => tipsModal.showModal();
+    $('close-tips').onclick = () => tipsModal.close();
+
+    $('solution-btn').onclick = () => {
+      // Lösung erst jetzt in den sichtbaren Container einsetzen
+      $('solution-text').textContent = $('solution-code').textContent;
+      solutionModal.showModal();
+    };
+    $('close-solution').onclick = () => solutionModal.close();
+
+    // Lösung in den Editor kopieren
+    $('copy-solution').onclick = () => {
+      $('editor').value = $('solution-code').textContent;
+      solutionModal.close();
+    };
+
+    // ==== Download main.py ====
+    $('download').onclick = () => {
+      const src = $('editor').value;
+      const blob = new Blob([src], { type: 'text/x-python' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = 'main.py'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    };
+  </script>
+</body>
+</html>
