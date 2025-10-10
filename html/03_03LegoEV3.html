@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EV3 (Pybricks) – Drive a Square</title>
+  <title>EV3 (Pybricks) – Drive a Circle</title>
 
   <link rel="stylesheet" href="../css/03_python.css" />
 
@@ -18,16 +18,16 @@
 <body>
   <div class="nav-row">
     <a href="01_main.html" class="btn" id="back-btn">← Back</a>
-    <a href="#" class="btn primary" id="next-btn">Next →</a>
+    <a href="03_04LegoEV3.html" class=""btn" id="next-btn">Next →</a>
   </div>
 
   <header class="row" style="justify-content: space-between;">
     <div>
-      <h1>EV3 (Pybricks) · Drive a Square</h1>
+      <h1>EV3 (Pybricks) · Drive a Circle</h1>
       <p>
         Write a correct <b>Pybricks</b> program (EV3Brick, motors A/B, <b>DriveBase</b>).<br>
-        Use a <code>for</code> loop to drive a <b>square</b> (4 sides), then <b>beep</b> and print
-        <code>"This is my square"</code> on the screen.
+        Use a loop to approximate a <b>circle</b> (e.g., 36 steps × turn 10°).<br>
+        After the loop: <b>stop</b>, <b>beep</b>, and print something that includes the word <code>circle</code>.
       </p>
     </div>
     <div class="row">
@@ -61,12 +61,15 @@ from pybricks.robotics import DriveBase
 # right = Motor(Port.B)
 # drive = DriveBase(left, right, 56, 114)
 #
-# for i in range(4):
-#     drive.straight(200)   # mm per side
-#     drive.turn(90)        # deg
+# STEP_MM = 35
+# for _ in range(36):
+#     drive.straight(STEP_MM)  # small forward step
+#     drive.turn(10)           # small turn → arc
 #
+# drive.stop(Stop.BRAKE)
 # brick.speaker.beep()
-# brick.screen.print("This is my square")
+# brick.screen.print("This is my circle")
+# wait(500)
 </textarea>
     </section>
 
@@ -74,7 +77,7 @@ from pybricks.robotics import DriveBase
     <section class="card">
       <h2>Simulation</h2>
       <canvas id="arena" width="600" height="300"></canvas>
-      <p class="muted">Scale: <b>1 px = 1 cm</b> · Start at (80,200) facing right</p>
+      <p class="muted">Scale: <b>1 px = 1 cm</b> · Start at (200, 180) facing right</p>
       <pre id="output"></pre>
       <div id="error" style="color:#b91c1c;"></div>
     </section>
@@ -104,27 +107,23 @@ from pybricks.tools import wait
 from pybricks.robotics import DriveBase
 
 brick = EV3Brick()
-
-# Motors on A (left) and B (right)
 left  = Motor(Port.A)
 right = Motor(Port.B)
 
-# Typical geometry (mm) – adjust if needed
+# Typical geometry (mm) – adjust for your robot
 WHEEL_DIAMETER = 56
 AXLE_TRACK     = 114
 drive = DriveBase(left, right, WHEEL_DIAMETER, AXLE_TRACK)
 
-# Drive a square: 4 sides × 200 mm, turning 90° each corner
-for i in range(4):
-    drive.straight(200)   # <-- literal number to satisfy validator
-    drive.turn(90)        # 90° right turn
+STEP_MM = 35
+for _ in range(36):
+    drive.straight(STEP_MM)
+    drive.turn(10)
 
-drive.stop(Stop.BRAKE)    # Stop after the loop
-
+drive.stop(Stop.BRAKE)
 brick.speaker.beep()
-brick.screen.print("This is my square")
-wait(500)                 # simple wait to use the 'wait' import
-
+brick.screen.print("This is my circle")
+wait(500)
 </pre>
     </div>
     <div class="modal-actions">
@@ -137,10 +136,11 @@ wait(500)                 # simple wait to use the 'wait' import
     /* ---------- Tips ---------- */
     const TASK = {
       tips: [
-        "Use DriveBase(straight_mm, turn_deg): drive.straight(mm), drive.turn(deg).",
-        "Loop: for i in range(4): straight + 90° turn → a square.",
-        "After the loop: brick.speaker.beep(); brick.screen.print(\"This is my square\").",
-        "Adjust wheel diameter and axle track to your robot (56 mm / 114 mm are typical)."
+        "DriveBase: drive.straight(mm) moves in millimeters; drive.turn(deg) rotates in degrees.",
+        "Circle approximation: many small forward steps + small turns (e.g., 36 × 10° = 360°).",
+        "Use a constant for step length (e.g., STEP_MM = 35).",
+        "After the loop: drive.stop(Stop.BRAKE), brick.speaker.beep(), brick.screen.print(\"...circle...\").",
+        "Adjust wheel diameter and axle track to your robot (56/114 mm are typical)."
       ]
     };
 
@@ -179,8 +179,8 @@ wait(500)                 # simple wait to use the 'wait' import
       setStatus("", ""); els.output.textContent=""; els.error.textContent="";
     };
 
-    /* ---------- STRICT VALIDATION (square task) ---------- */
-    function validateSquareTask(src){
+    /* ---------- STRICT VALIDATION (circle task) ---------- */
+    function validateCircleTask(src){
       const errors = [];
       const code = src.replace(/\r/g,'');
       const lines = code.split('\n');
@@ -204,50 +204,98 @@ wait(500)                 # simple wait to use the 'wait' import
       if(!leftM)  errors.push("✗ Left motor (Port.A) missing");
       if(!rightM) errors.push("✗ Right motor (Port.B) missing");
       if(!driveM) errors.push("✗ DriveBase not created");
-
       const driveVar = driveM?.[1] || "drive";
 
-      // for ... in range(4)
-      const forRe = /^\s*for\s+\w+\s+in\s+range\s*\(\s*4\s*\)\s*:\s*$/m;
-      if(!forRe.test(code)) errors.push("✗ Missing loop: for i in range(4):");
-
-      // inside the loop: straight(mm) and turn(±90)
-      // We search anywhere; more robust would check indentation, but this is OK for class use.
-      const straightRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*straight\\s*\\(\\s*(\\d+)\\s*\\)`);
-      const turnRe     = new RegExp(`\\b${driveVar}\\s*\\.\\s*turn\\s*\\(\\s*(-?\\d+)\\s*\\)`);
-
-      const straightM = code.match(straightRe);
-      const turnM     = code.match(turnRe);
-
-      if(!straightM) errors.push("✗ Missing drive.straight(mm) inside the loop");
-      if(!turnM)     errors.push("✗ Missing drive.turn(±90) inside the loop");
-
-      // after loop: beep and screen print mentioning 'square'
-      if(!/brick\s*\.s(k|p)eeper\s*\.?beep|brick\s*\.speaker\s*\.beep\s*\(/.test(code) && !/brick\s*\.speaker\s*\.beep\s*\(/.test(code)){
-        // fallback for typo; then strict:
-      }
-      if(!/brick\s*\.speaker\s*\.beep\s*\(/.test(code)) errors.push("✗ Missing brick.speaker.beep()");
-      if(!/brick\s*\.screen\s*\.print\s*\(\s*["'].*square.*["']\s*\)/i.test(code)) errors.push('✗ Missing brick.screen.print("This is my square")');
-
-      // extract side length & turn angle for animation (optional but nice)
-      let sideMm = straightM ? parseInt(straightM[1],10) : null;
-      let angle  = turnM ? parseInt(turnM[1],10) : null;
-      if(Number.isFinite(angle) && Math.abs(angle) !== 90){
-        errors.push("✗ Turn must be ±90 degrees for a square");
-      }
-      if(!(Number.isFinite(sideMm) && sideMm >= 50 && sideMm <= 1000)){
-        // default to 200 mm if out of range (but warn)
-        errors.push("✗ Side length should be 50–1000 mm (via drive.straight(mm))");
+      // map simple assignments NAME = NUMBER (constants)
+      const assigns = {};
+      for(const L of lines){
+        const m = L.match(/^\s*([A-Za-z_]\w*)\s*=\s*(\d+)\s*$/);
+        if(m) assigns[m[1]] = parseInt(m[2],10);
       }
 
-      return { errors, sideMm, angle: angle || 90 };
+      // find for-loop "for _ in range(36):" (capture indent)
+      let forIndex = -1, forIndent = "";
+      for(let i=0;i<lines.length;i++){
+        const m = lines[i].match(/^(\s*)for\s+\w+\s+in\s+range\s*\(\s*36\s*\)\s*:\s*$/);
+        if(m){ forIndex=i; forIndent=m[1]||""; break; }
+      }
+      if(forIndex < 0) errors.push("✗ Missing loop: for _ in range(36):");
+
+      // inside the loop: need drive.straight(mm) and drive.turn(±10)
+      let stepMm = null;
+      let hasStraight = false;
+      let hasTurn10   = false;
+
+      if(forIndex >= 0){
+        for(let j=forIndex+1; j<lines.length; j++){
+          const L = lines[j];
+          if(L.trim()==="") continue;
+          const indent = (L.match(/^(\s*)/)||["",""])[1];
+          if(indent.length <= forIndent.length) break; // end of block
+
+          // straight: number or named constant
+          const straightRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*straight\\s*\\(\\s*([A-Za-z_]\\w*|\\d+)\\s*\\)`);
+          const sm = L.match(straightRe);
+          if(sm){
+            hasStraight = true;
+            const arg = sm[1];
+            if(/^\d+$/.test(arg)){
+              stepMm = parseInt(arg,10);
+            } else if(assigns[arg] !== undefined){
+              stepMm = assigns[arg];
+            }
+          }
+
+          // turn: must be ±10 (number or constant that resolves to ±10)
+          const turnRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*turn\\s*\\(\\s*([A-Za-z_]\\w*|-?\\d+)\\s*\\)`);
+          const tm = L.match(turnRe);
+          if(tm){
+            let ang = null;
+            const arg = tm[1];
+            if(/^-?\d+$/.test(arg)) ang = parseInt(arg,10);
+            else if(assigns[arg] !== undefined) ang = assigns[arg];
+            if(ang === 10 || ang === -10) hasTurn10 = true;
+          }
+        }
+      }
+
+      if(!hasStraight) errors.push("✗ Missing drive.straight(mm) inside the loop");
+      if(!hasTurn10)   errors.push("✗ Missing drive.turn(±10) inside the loop");
+
+      // step length sanity
+      if(!(Number.isFinite(stepMm) && stepMm >= 10 && stepMm <= 150)){
+        errors.push("✗ Step length should be 10–150 mm (via drive.straight(mm) or a constant)");
+      }
+
+      // after the loop: require stop + beep + screen print("...circle...")
+      let afterIdx = forIndex >= 0 ? forIndex+1 : 0;
+      if(forIndex >= 0){
+        for(let j=forIndex+1; j<lines.length; j++){
+          const L = lines[j];
+          const indent = (L.match(/^(\s*)/)||["",""])[1];
+          if(L.trim()!=="" && indent.length <= forIndent.length){ afterIdx = j; break; }
+          if(j === lines.length-1) afterIdx = j+1;
+        }
+      }
+      const afterCode = lines.slice(afterIdx).join("\n");
+      if(!new RegExp(`\\b${driveVar}\\s*\\.\\s*stop\\s*\\(\\s*Stop\\.BRAKE\\s*\\)`).test(afterCode)){
+        errors.push("✗ Missing drive.stop(Stop.BRAKE) after the loop");
+      }
+      if(!/brick\s*\.speaker\s*\.beep\s*\(/.test(afterCode)) {
+        errors.push("✗ Missing brick.speaker.beep() after the loop");
+      }
+      if(!/brick\s*\.screen\s*\.print\s*\(\s*["'][^"']*circle[^"']*["']\s*\)/i.test(afterCode)) {
+        errors.push('✗ Missing brick.screen.print("This is my circle") after the loop');
+      }
+
+      return { errors, stepMm: stepMm || 35, angle: 10 };
     }
 
     /* ---------- Arena / animation (1 px = 1 cm) ---------- */
     const ctx = els.canvas.getContext("2d");
     const WORLD = {
       W: els.canvas.width, H: els.canvas.height,
-      robot: { x:80, y:200, heading:0, r:6 } // start at (80,200) facing right
+      robot: { x:200, y:180, heading:0, r:6 } // start at (200,180) facing right
     };
     let runToken=0;
 
@@ -265,7 +313,7 @@ wait(500)                 # simple wait to use the 'wait' import
     function render(){ clear(); drawRobot(); }
     function resetWorld(){
       runToken++;
-      WORLD.robot = { x:80, y:200, heading:0, r:6 };
+      WORLD.robot = { x:200, y:180, heading:0, r:6 };
       render();
     }
 
@@ -321,7 +369,7 @@ wait(500)                 # simple wait to use the 'wait' import
         return;
       }
 
-      const { errors, sideMm, angle } = validateSquareTask(code);
+      const { errors, stepMm, angle } = validateCircleTask(code);
       if(errors.length){
         setStatus("error","ERROR");
         els.output.textContent = "Please fix first:\n" + errors.join("\n");
@@ -331,14 +379,12 @@ wait(500)                 # simple wait to use the 'wait' import
       setStatus("running","running…");
       resetWorld();
       try{
-        // animate a square (4 sides) with extracted side length/angle
-        const mm = sideMm || 200;
-        for(let i=0;i<4;i++){
-          await moveStraightMm(mm);
-          await turnDeg(angle>0?90:-90);
+        for(let i=0;i<36;i++){
+          await moveStraightMm(stepMm);
+          await turnDeg(angle);
         }
         setStatus("ok","done.");
-        els.output.textContent = `Square completed (side ~${mm} mm). Then: beep + print "This is my square".`;
+        els.output.textContent = `Circle completed (~36 steps × ${stepMm} mm, turn ${angle}°).`;
       }catch(e){
         setStatus("error","ERROR");
         els.error.textContent = String(e);
@@ -352,7 +398,7 @@ wait(500)                 # simple wait to use the 'wait' import
     render();
 
     document.getElementById("back-btn").onclick = () => history.back();
-    document.getElementById("next-btn").onclick = () => alert("Next task: circle / figure-8 (coming up).");
+    document.getElementById("next-btn").onclick = () => alert("Next task: figure-8 (coming up).");
   </script>
 </body>
 </html>
