@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 (ev3dev) · Schritt 1 – Zwei Beeps & Name</title>
+  <link rel="stylesheet" href="../css/03_python.css" />
+</head>
+<body>
+  <div class="nav-row">
+    <a href="01_main.html" class="btn" id="back-btn">← Back</a>
+    <a href="03_2LegoEV3.html" class="btn" id="next-btn">Next →</a>
+  </div>
+
+  <header class="row" style="justify-content: space-between;">
+    <div>
+      <h1 id="task-title">EV3 (ev3dev) · Schritt 1: Zwei Beeps & Name</h1>
+      <p id="task-desc">Erzeuge zwei Pieptöne mit <code>sleep(0.5)</code> Abstand und zeige deinen Namen mit <code>screen.text_grid()</code> an.</p>
+    </div>
+    <div class="row">
+      <button class="btn" id="tips-btn">💡 Tips</button>
+      <button class="btn" id="solution-btn">✅ Solution</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="card">
+      <h2>Editor</h2>
+      <div class="row">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+        <span id="status" class="status" aria-live="polite"></span>
+      </div>
+<textarea id="editor" spellcheck="false">#!/usr/bin/env python3
+from ev3dev2.sound import Sound
+from ev3dev2.display import Display
+from time import sleep
+
+# EV3 initialisieren
+sound = Sound()
+screen = Display()
+
+# Zwei Beeps mit 500 ms Abstand
+sound.beep()
+sleep(0.5)
+sound.beep()
+
+# Name anzeigen
+screen.clear()
+screen.text_grid("Hallo, ich bin Alex", x=0, y=0, clear=False)
+
+# Sichtbar halten
+sleep(5)
+</textarea>
+    </section>
+
+    <section class="card">
+      <h2>Output</h2>
+      <pre id="output"></pre>
+      <div id="error"></div>
+    </section>
+  </main>
+
+  <!-- Tips modal -->
+  <dialog id="tips-modal">
+    <div class="modal-header">Tips</div>
+    <div class="modal-body">
+      <ul id="tips-list"></ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Solution modal -->
+  <dialog id="solution-modal">
+    <div class="modal-header">Solution</div>
+    <div class="modal-body">
+      <pre id="solution-code" style="white-space:pre-wrap;"></pre>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution">Insert</button>
+      <button class="btn" id="close-solution">Close</button>
+    </div>
+  </dialog>
+
+  <script>
+    // Task-Daten
+    const TASK = {
+      title: "EV3 (ev3dev) · Schritt 1: Zwei Beeps & Name",
+      description: 'Erzeuge zwei Pieptöne mit <code>sleep(0.5)</code> Abstand und zeige deinen Namen mit <code>screen.text_grid()</code> an.',
+      starterCode: `#!/usr/bin/env python3
+from ev3dev2.sound import Sound
+from ev3dev2.display import Display
+from time import sleep
+
+sound = Sound()
+screen = Display()
+
+sound.beep()
+sleep(0.5)
+sound.beep()
+
+screen.clear()
+screen.text_grid("Hallo, ich bin Alex", x=0, y=0, clear=False)
+sleep(5)`,
+      tips: [
+        'Imports: <code>from ev3dev2.sound import Sound</code>, <code>from ev3dev2.display import Display</code>, <code>from time import sleep</code>.',
+        'Beep: <code>sound.beep()</code> – Pause: <code>sleep(0.5)</code>.',
+        'Text anzeigen: <code>screen.text_grid("Dein Name", x=0, y=0)</code>.',
+        'Optional vorher löschen: <code>screen.clear()</code>.',
+      ],
+      solution:
+`#!/usr/bin/env python3
+from ev3dev2.sound import Sound
+from ev3dev2.display import Display
+from time import sleep
+
+sound = Sound()
+screen = Display()
+
+sound.beep()
+sleep(0.5)
+sound.beep()
+
+screen.clear()
+screen.text_grid("Hallo, ich bin Alex", x=0, y=0, clear=False)
+sleep(5)`,
+      filename: "main.py",
+      prevUrl: "01_main.html",
+      nextUrl: "#"
+    };
+
+    // Refs
+    const els = {
+      title:  document.getElementById("task-title"),
+      desc:   document.getElementById("task-desc"),
+      editor: document.getElementById("editor"),
+      run:    document.getElementById("run-btn"),
+      reset:  document.getElementById("reset-btn"),
+      save:   document.getElementById("save-btn"),
+      output: document.getElementById("output"),
+      error:  document.getElementById("error"),
+      status: document.getElementById("status"),
+      tipsBtn: document.getElementById("tips-btn"),
+      tipsModal: document.getElementById("tips-modal"),
+      tipsList: document.getElementById("tips-list"),
+      closeTips: document.getElementById("close-tips"),
+      solutionBtn: document.getElementById("solution-btn"),
+      solutionModal: document.getElementById("solution-modal"),
+      solutionCode: document.getElementById("solution-code"),
+      copySolution: document.getElementById("copy-solution"),
+      closeSolution: document.getElementById("close-solution"),
+      back: document.getElementById("back-btn"),
+      next: document.getElementById("next-btn")
+    };
+
+    // Init
+    document.title = TASK.title;
+    els.title.textContent = TASK.title;
+    els.desc.innerHTML = TASK.description;
+    els.solutionCode.textContent = TASK.solution;
+    els.tipsList.innerHTML = (TASK.tips || []).slice(0,4).map(t=>"<li>"+t+"</li>").join("");
+    els.editor.value = TASK.starterCode;
+
+    // Helpers
+    function setStatus(state, text){
+      els.status.className = "status" + (state ? (" " + state) : "");
+      els.status.textContent = text || "";
+    }
+    function openDialog(dlg){
+      if (dlg && typeof dlg.showModal === "function") dlg.showModal();
+      else if (dlg) { dlg.setAttribute("open",""); document.documentElement.style.overflow="hidden"; }
+    }
+    function closeDialog(dlg){
+      if (dlg && typeof dlg.close === "function") dlg.close();
+      else if (dlg) { dlg.removeAttribute("open"); document.documentElement.style.overflow=""; }
+    }
+
+    // "Simulation": EV3-Code grob parsen und als Text ausgeben
+    function runFastSim(src){
+      const lines = src.split(/\n/);
+      for(const L of lines){
+        if (/sound\.beep\(\)/.test(L)) {
+          els.output.textContent += "[BEEP]\n";
+        } else if (/sleep\(\s*(0?\.?5|\.50|0\.500)\s*\)/.test(L)) {
+          els.output.textContent += "[WAIT 500ms]\n";
+        } else if (/screen\.clear\(\)/.test(L)) {
+          els.output.textContent += "[SCREEN CLEAR]\n";
+        } else if (/screen\.text_grid\((.+)\)/.test(L)) {
+          const m = L.match(/screen\.text_grid\((.+)\)/);
+          els.output.textContent += "[SCREEN] " + (m ? m[1] : "") + "\n";
+        }
+      }
+    }
+
+    // Run / Reset / Save
+    function reset(){
+      els.editor.value = TASK.starterCode || "";
+      els.output.textContent = "";
+      els.error.textContent = "";
+      setStatus("", "");
+    }
+    async function runCode(){
+      els.output.textContent = "";
+      els.error.textContent = "";
+      setStatus("running", "running…");
+      try{
+        runFastSim(els.editor.value);
+        setStatus("ok", "done.");
+      }catch(e){
+        setStatus("error", "error");
+        els.error.textContent = String(e);
+      }
+    }
+    function save(){
+      const b = new Blob([els.editor.value], {type:"text/plain"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(b);
+      a.download = TASK.filename || "main.py";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    // Buttons
+    els.run.onclick = runCode;
+    els.reset.onclick = reset;
+    els.save.onclick = save;
+
+    // Dialog Buttons
+    els.tipsBtn.onclick = () => openDialog(els.tipsModal);
+    els.closeTips.onclick = () => closeDialog(els.tipsModal);
+    els.solutionBtn.onclick = () => openDialog(els.solutionModal);
+    els.closeSolution.onclick = () => closeDialog(els.solutionModal);
+    els.copySolution.onclick = () => {
+      els.editor.value = TASK.solution || "";
+      closeDialog(els.solutionModal);
+      els.output.textContent = "";
+      els.error.textContent = "";
+      setStatus("", "");
+    };
+
+    // Navigation
+    els.back.onclick = () => TASK.prevUrl!="#" ? location.href = TASK.prevUrl : alert("No previous task");
+    els.next.onclick = () => TASK.nextUrl!="#" ? location.href = TASK.nextUrl : alert("No next task");
+  </script>
+</body>
+</html>
