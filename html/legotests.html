@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 (Pybricks) – Schritt 1: Stop vor der Wand</title>
+  <link rel="stylesheet" href="../css/03_python.css" />
+  <style>
+    #arena { background:#f9fafb; border:2px solid #111; width:100%; height:auto; max-width:900px; border-radius:10px; display:block; margin-top:10px; }
+    .status.ok { color:#15803d; }
+    .status.error { color:#b91c1c; }
+    .status.running { color:#374151; }
+    .muted { color:#6b7280; }
+  </style>
+</head>
+<body>
+  <div class="nav-row">
+    <a href="01_main.html" class="btn" id="back-btn">← Back</a>
+    <a href="#" class="btn primary" id="next-btn">Next →</a>
+  </div>
+
+  <header class="row" style="justify-content: space-between;">
+    <div>
+      <h1 id="task-title">EV3 (Pybricks) · Schritt 1 – Stop vor der Wand</h1>
+      <p id="task-desc">
+        Schreibe ein korrektes <b>Pybricks-Programm</b> (EV3Brick, Motoren, Ultraschall).
+        Die Simulation startet nur bei <b>korrektem Code</b> und vorhandenen <code># SIM.…</code>-Zeilen.
+      </p>
+    </div>
+    <div class="row">
+      <button class="btn" id="tips-btn">💡 Tips</button>
+      <button class="btn" id="solution-btn">✅ Solution</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="card">
+      <h2>Editor</h2>
+      <div class="row">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+        <span id="status" class="status" aria-live="polite"></span>
+      </div>
+<textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
+# EV3 (Pybricks) – Basis für Schritt 1
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, UltrasonicSensor
+from pybricks.parameters import Port, Stop
+from pybricks.tools import wait
+from pybricks.robotics import DriveBase
+
+# TODO:
+# 1) Hardware initialisieren:
+#    brick = EV3Brick()
+#    left  = Motor(Port.A)
+#    right = Motor(Port.B)
+#    ultra = UltrasonicSensor(Port.S2)
+#    drive = DriveBase(left, right, 56, 114)
+#
+# 2) Logik schreiben:
+#    drive.drive(150, 0)
+#    while ultra.distance() > 150:
+#        wait(20)
+#    drive.stop(Stop.BRAKE)
+#    brick.speaker.beep()
+#
+# 3) Simulation ansteuern (jede Zeile beginnt mit "# SIM."):
+#    # SIM.robot.set(60, 100, 0)
+#    # SIM.wall.set(500, 20, 500, 180)
+#    # SIM.robot.forward_until_wall(1)
+</textarea>
+    </section>
+
+    <section class="card">
+      <h2>Simulation</h2>
+      <canvas id="arena" width="600" height="200"></canvas>
+      <p class="muted">Maßstab: 1 px = 1 m · Arena: 600 m × 200 m</p>
+      <pre id="output"></pre>
+      <div id="error" style="color:#b91c1c;"></div>
+    </section>
+  </main>
+
+  <!-- Tips -->
+  <dialog id="tips-modal">
+    <div class="modal-header">Tips</div>
+    <div class="modal-body">
+      <ul id="tips-list"></ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Solution -->
+  <dialog id="solution-modal">
+    <div class="modal-header">Solution (eine mögliche Lösung)</div>
+    <div class="modal-body">
+      <p class="muted" style="margin:0 0 8px 0;">Hinweis: Es gibt viele korrekte Lösungen. Dies ist <b>ein Vorschlag</b>.</p>
+<pre id="solution-code" style="white-space:pre-wrap;"></pre>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution">Insert</button>
+      <button class="btn" id="close-solution">Close</button>
+    </div>
+  </dialog>
+
+  <script>
+    /* ---------- Task ---------- */
+    const TASK = {
+      title: "EV3 (Pybricks) – Stop vor Wand",
+      description: "Simulation startet nur bei korrektem Code + # SIM.-Zeilen.",
+      tips: [
+        "Pflicht-Imports: EV3Brick, Motor, UltrasonicSensor, Port, Stop, wait, DriveBase.",
+        "Initialisierung: Motor(Port.A/B) und UltrasonicSensor(Port.S2).",
+        "Schleife mit ultra.distance() und wait(...).",
+        "Simulation: # SIM.robot.set(...) · # SIM.wall.set(...) · # SIM.robot.forward_until_wall(1)."
+      ],
+      solution:
+`#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, UltrasonicSensor
+from pybricks.parameters import Port, Stop
+from pybricks.tools import wait
+from pybricks.robotics import DriveBase
+
+brick = EV3Brick()
+left = Motor(Port.A)
+right = Motor(Port.B)
+ultra = UltrasonicSensor(Port.S2)
+drive = DriveBase(left, right, 56, 114)
+
+brick.speaker.beep()
+drive.drive(150, 0)
+while ultra.distance() > 150:
+    wait(20)
+drive.stop(Stop.BRAKE)
+brick.speaker.beep()
+
+# SIM.robot.set(60, 100, 0)
+# SIM.wall.set(500, 20, 500, 180)
+# SIM.robot.forward_until_wall(1)`
+    };
+
+    /* ---------- Refs ---------- */
+    const els = {
+      editor: document.getElementById("editor"),
+      run: document.getElementById("run-btn"),
+      reset: document.getElementById("reset-btn"),
+      save: document.getElementById("save-btn"),
+      output: document.getElementById("output"),
+      error: document.getElementById("error"),
+      status: document.getElementById("status"),
+      canvas: document.getElementById("arena"),
+      tipsBtn: document.getElementById("tips-btn"),
+      tipsModal: document.getElementById("tips-modal"),
+      tipsList: document.getElementById("tips-list"),
+      closeTips: document.getElementById("close-tips"),
+      solutionBtn: document.getElementById("solution-btn"),
+      solutionModal: document.getElementById("solution-modal"),
+      solutionCode: document.getElementById("solution-code"),
+      copySolution: document.getElementById("copy-solution"),
+      closeSolution: document.getElementById("close-solution")
+    };
+
+    /* ---------- Init ---------- */
+    document.title = TASK.title;
+    els.solutionCode.textContent = TASK.solution;
+    els.tipsList.innerHTML = (TASK.tips || []).map(t=>"<li>"+t+"</li>").join("");
+    function setStatus(cls, txt){ els.status.className="status "+cls; els.status.textContent=txt; }
+
+    function openDialog(d){ if(d?.showModal) d.showModal(); else d?.setAttribute("open",""); }
+    function closeDialog(d){ if(d?.close) d.close(); else d?.removeAttribute("open"); }
+    els.tipsBtn.onclick = () => openDialog(els.tipsModal);
+    els.closeTips.onclick = () => closeDialog(els.tipsModal);
+    els.solutionBtn.onclick = () => openDialog(els.solutionModal);
+    els.closeSolution.onclick = () => closeDialog(els.solutionModal);
+    els.copySolution.onclick = () => { els.editor.value = TASK.solution; closeDialog(els.solutionModal); };
+
+    /* ---------- Strenge Validierung ---------- */
+    // Wir verlangen bewusst forward_until_wall in den SIM-Zeilen, damit der Stopp vor der Wand geübt wird.
+    function validateCode(src){
+      const must = [
+        { re:/from\s+pybricks\.hubs\s+import\s+EV3Brick/, msg:"Import EV3Brick fehlt" },
+        { re:/from\s+pybricks\.ev3devices\s+import\s+.*\bMotor\b/, msg:"Import Motor fehlt" },
+        { re:/from\s+pybricks\.ev3devices\s+import\s+.*\bUltrasonicSensor\b/, msg:"Import UltrasonicSensor fehlt" },
+        { re:/from\s+pybricks\.parameters\s+import\s+.*\bPort\b/, msg:"Import Port fehlt" },
+        { re:/from\s+pybricks\.tools\s+import\s+.*\bwait\b/, msg:"Import wait fehlt" },
+        { re:/from\s+pybricks\.robotics\s+import\s+.*\bDriveBase\b/, msg:"Import DriveBase fehlt" },
+
+        // Initialisierung
+        { re:/EV3Brick\s*\(/, msg:"EV3Brick nicht initialisiert" },
+        { re:/Motor\(\s*Port\.A\s*\)/, msg:"Motor links (Port.A) fehlt" },
+        { re:/Motor\(\s*Port\.B\s*\)/, msg:"Motor rechts (Port.B) fehlt" },
+        { re:/UltrasonicSensor\(\s*Port\.S2\s*\)/, msg:"Ultraschall an S2 fehlt" },
+        { re:/DriveBase\s*\(/, msg:"DriveBase nicht erstellt" },
+
+        // Logik: irgendeine Schleife mit ultra.distance und wait
+        { re:/while\s+.*ultra\.distance\(\)\s*(?:[<>]=?|==|!=)\s*\d+/, msg:"Schleife mit ultra.distance() fehlt" },
+        { re:/\bwait\s*\(\s*\d+/, msg:"wait(...) in der Schleife fehlt" },
+
+        // SIM: explizit der Wand-Stopp
+        { re:/#\s*SIM\.robot\.set\(/, msg:"SIM: robot.set(...) fehlt" },
+        { re:/#\s*SIM\.wall\.set\(/, msg:"SIM: wall.set(...) fehlt" },
+        { re:/#\s*SIM\.robot\.forward_until_wall\(/, msg:"SIM: forward_until_wall(...) fehlt" }
+      ];
+      return must.filter(c=>!c.re.test(src)).map(c=>"✗ "+c.msg);
+    }
+
+    /* ---------- Arena/Engine (1 px = 1 m) ---------- */
+    const ctx = els.canvas.getContext("2d");
+    const WORLD = { W: els.canvas.width, H: els.canvas.height,
+      wall: {x1:500,y1:20,x2:500,y2:180},
+      robot: {x:60,y:100,heading:0,r:6}
+    };
+    let anyCollision = false;
+
+    const rad = d=>d*Math.PI/180, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+    function clear(){ ctx.fillStyle="#fff"; ctx.fillRect(0,0,WORLD.W,WORLD.H); ctx.strokeStyle="#111"; ctx.lineWidth=2; ctx.strokeRect(0,0,WORLD.W,WORLD.H); }
+    function drawWall(){ const w=WORLD.wall; ctx.strokeStyle="#111"; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(w.x1,w.y1); ctx.lineTo(w.x2,w.y2); ctx.stroke(); }
+    function drawRobot(){ const r=WORLD.robot; ctx.fillStyle="#16a34a"; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,2*Math.PI); ctx.fill(); const hx=r.x+Math.cos(rad(r.heading))*(r.r+10), hy=r.y+Math.sin(rad(r.heading))*(r.r+10); ctx.strokeStyle="#16a34a"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(r.x,r.y); ctx.lineTo(hx,hy); ctx.stroke(); }
+    function render(){ clear(); drawWall(); drawRobot(); }
+    function resetWorld(){ anyCollision=false; WORLD.wall={x1:500,y1:20,x2:500,y2:180}; WORLD.robot={x:60,y:100,heading:0,r:6}; render(); }
+
+    const isVerticalWall=()=>Math.abs(WORLD.wall.x1-WORLD.wall.x2)<1e-6;
+    const wallX=()=>WORLD.wall.x1, wallYmin=()=>Math.min(WORLD.wall.y1,WORLD.wall.y2), wallYmax=()=>Math.max(WORLD.wall.y1,WORLD.wall.y2);
+
+    // Präzise Bewegung; registriert Kollisionen
+    async function forward_m(d){
+      const r=WORLD.robot, step=1; // 1 m pro Frame
+      const ux=Math.cos(rad(r.heading)), uy=Math.sin(rad(r.heading));
+      let remaining=d;
+      return new Promise(resolve=>{
+        function tick(){
+          const moved=Math.min(step, remaining);
+          let nx=r.x+ux*moved, ny=r.y+uy*moved;
+
+          // Kollisionsprüfung mit vertikaler Wand
+          if(isVerticalWall()){
+            const wx=wallX(), withinY=(r.y>=wallYmin()-r.r)&&(r.y<=wallYmax()+r.r);
+            if(withinY){
+              if(ux>0 && r.x<wx && nx>=wx - r.r){ nx = wx - r.r; anyCollision = true; remaining = 0; }
+              if(ux<0 && r.x>wx && nx<=wx + r.r){ nx = wx + r.r; anyCollision = true; remaining = 0; }
+            }
+          }
+
+          nx=clamp(nx, r.r, WORLD.W-r.r); ny=clamp(ny, r.r, WORLD.H-r.r);
+          r.x=nx; r.y=ny; render();
+
+          remaining -= moved;
+          if(remaining>0) requestAnimationFrame(tick); else resolve();
+        }
+        requestAnimationFrame(tick);
+      });
+    }
+
+    // Garantiert vor der Wand stoppen (ohne Kollision)
+    async function forward_until_wall(margin=1){
+      const r=WORLD.robot, ux=Math.cos(rad(r.heading));
+      if(!isVerticalWall() || Math.abs(ux)<1e-6){
+        els.output.textContent += "[INFO] Wandstopp nur bei vertikaler Wand & horizontaler Ausrichtung.\n";
+        return;
+      }
+      const wx=wallX();
+      const target = ux>0 ? (wx - r.r - margin) : (wx + r.r + margin);
+      const dist = Math.max(0, Math.abs(target - r.x));
+      await forward_m(dist);
+    }
+
+    function turnLeft(deg){ WORLD.robot.heading=(WORLD.robot.heading+deg)%360; render(); }
+    function turnRight(deg){ WORLD.robot.heading=(WORLD.robot.heading-deg+360)%360; render(); }
+
+    /* ---------- Parser für # SIM.-Zeilen ---------- */
+    async function runProgram(src){
+      els.output.textContent = "";
+      resetWorld();
+      const lines = src.split(/\n/).map(s=>s.trim());
+      const simLines = lines.filter(s => s.startsWith("# SIM."));
+      let motionCount = 0;
+
+      for (const line of simLines){
+        let m;
+        m = line.match(/^#\s*SIM\.robot\.set\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)$/i);
+        if(m){ WORLD.robot.x=+m[1]; WORLD.robot.y=+m[2]; WORLD.robot.heading=(+m[3])%360; render(); continue; }
+
+        m = line.match(/^#\s*SIM\.wall\.set\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)$/i);
+        if(m){ WORLD.wall={x1:+m[1],y1:+m[2],x2:+m[3],y2:+m[4]}; render(); continue; }
+
+        m = line.match(/^#\s*SIM\.robot\.forward_m\(\s*([-\d.]+)\s*\)$/i);
+        if(m){ els.output.textContent += `[MOVE] forward ${m[1]} m\n`; motionCount++; await forward_m(+m[1]); continue; }
+
+        m = line.match(/^#\s*SIM\.robot\.forward_until_wall\(\s*([-\d.]*)\s*\)$/i);
+        if(m){ const margin = m[1]===""?1:+m[1]; els.output.textContent += `[MOVE] until wall (margin ${margin} m)\n`; motionCount++; await forward_until_wall(margin); continue; }
+
+        m = line.match(/^#\s*SIM\.robot\.left\(\s*([-\d.]+)\s*\)$/i);
+        if(m){ turnLeft(+m[1]); continue; }
+
+        m = line.match(/^#\s*SIM\.robot\.right\(\s*([-\d.]+)\s*\)$/i);
+        if(m){ turnRight(+m[1]); continue; }
+
+        els.output.textContent += `[IGNORED] ${line}\n`;
+      }
+
+      return { motionCount, collided:anyCollision };
+    }
+
+    /* ---------- Run / Reset / Save ---------- */
+    function reset(){ els.output.textContent=""; els.error.textContent=""; setStatus("", ""); render(); }
+
+    async function runCode(){
+      els.error.textContent=""; els.output.textContent="";
+      setStatus("running","checking…");
+
+      const code = els.editor.value;
+      const errors = validateCode(code);
+      if (errors.length > 0){
+        setStatus("error","ERROR");
+        els.output.textContent = "Bitte korrigiere zuerst:\n" + errors.join("\n");
+        return;
+      }
+
+      setStatus("running","running…");
+      try{
+        const { motionCount, collided } = await runProgram(code);
+        if (motionCount === 0){
+          setStatus("error","ERROR");
+          els.output.textContent = "Keine Bewegung ausgeführt. Füge z. B. # SIM.robot.forward_until_wall(1) hinzu.";
+          return;
+        }
+        if (collided){
+          setStatus("error","ERROR");
+          els.output.textContent += "\nKollision erkannt: Der Roboter hat die Wand berührt.\nNutze # SIM.robot.forward_until_wall(margin) (z. B. margin=1).";
+          return;
+        }
+        setStatus("ok","done.");
+      }catch(e){
+        setStatus("error","ERROR");
+        els.error.textContent = String(e);
+      }
+    }
+
+    function save(){
+      const b=new Blob([els.editor.value],{type:"text/plain"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(b);
+      a.download="ev3_stop_wall.py";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    els.run.onclick = runCode;
+    els.reset.onclick = reset;
+    els.save.onclick = save;
+
+    render();
+  </script>
+</body>
+</html>

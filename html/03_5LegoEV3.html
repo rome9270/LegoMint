@@ -1,328 +1,444 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>EV3 · Schritt 5 – Linienfolger (Schwellwert + P-Regler)</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 (Pybricks) – Drive a Figure-8</title>
 
-<style>
-/* ===== Deine CSS (hell), mit Bugfix bei padding ===== */
-/* Basislayout */
-body{font-family:Arial,sans-serif;text-align:center;padding:60px}
-h1{margin-bottom:30px}
-p{margin-bottom:30px}
-hr{margin:40px 0}
+  <link rel="stylesheet" href="../css/03_python.css" />
 
-/* Startseiten-Grid (falls später genutzt) */
-.link-grid{
-  display:grid!important;
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-  gap:24px;
-  padding:20px 24px;   /* px ergänzt */
-  background:#fff;
-  margin-top:40px;
-}
-.link-grid>button.topic,.link-grid>a.topic{
-  display:block;width:100%;margin:0;text-align:center;padding:18px 24px;border-radius:24px;background:#3fb257;color:#fff;font-weight:700
-}
-.link-grid.debug>*{outline:2px dashed #f0f}
-
-/* Buttons */
-.level-grid{display:flex;flex-wrap:wrap;justify-content:center;column-gap:16px;row-gap:16px;margin-top:20px}
-.level-btn{display:inline-block;width:260px;padding:18px 28px;font-size:20px;font-weight:700;color:#fff;background:#4CAF50;border-radius:12px;text-decoration:none;text-align:center;transition:background-color .3s,transform .2s;cursor:pointer;border:none}
-.level-btn:hover{background:#45a049;transform:translateY(-3px)}
-
-/* Mobile */
-@media (max-width:640px){body{padding:32px 16px}.level-btn{width:100%;max-width:360px}}
-
-/* ===== Zusatz-UI für Karte/Editor/Ausgabe/Simulator ===== */
-main{max-width:1100px;margin:0 auto}
-.card{background:#fff;border:1px solid #e7e7e7;border-radius:16px;padding:18px;text-align:left;box-shadow:0 6px 24px rgba(0,0,0,.06)}
-.card h2{margin:0 0 10px}
-.small,.status{color:#666;font-size:14px}
-.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-textarea{width:100%;min-height:280px;border:1px solid #ddd;border-radius:12px;padding:14px;font:14px/1.45 Consolas,ui-monospace,Menlo,Monaco,"Liberation Mono",monospace}
-pre{margin:0;padding:12px;min-height:140px;background:#f7f7f7;border:1px solid #e7e7e7;border-radius:12px;white-space:pre-wrap;word-break:break-word}
-.result{font-weight:700}.ok{color:#2e7d32}.fail{color:#c62828}
-
-/* Simulator */
-.sim-wrap{margin-top:14px}
-#sim{width:100%;height:360px;display:block;background:#fff;border:1px solid #e7e7e7;border-radius:12px}
-.sim-legend{margin-top:6px;font-size:13px;color:#666}
-.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:12px 0}
-.ctrl{background:#fff;border:1px solid #e7e7e7;border-radius:12px;padding:10px}
-.ctrl label{display:block;font-size:14px;color:#333;margin-bottom:6px}
-.ctrl output{font-weight:700}
-.badge{font-size:12px;color:#555;background:#f3f5f7;border:1px solid #e5e7eb;border-radius:10px;padding:4px 8px}
-</style>
+  <style>
+    #arena { background:#f9fafb; border:2px solid #111; width:100%; height:auto; max-width:900px; border-radius:10px; display:block; margin-top:10px; }
+    .status.ok { color:#15803d; }
+    .status.error { color:#b91c1c; }
+    .status.running { color:#374151; }
+    .muted { color:#6b7280; }
+  </style>
 </head>
-
 <body>
-<main>
-  <h1>EV3 · Schritt 5: Linienfolger (Schwellwert + P)</h1>
-  <p>ColorSensor-Reflexion 0–100 → <b>THRESHOLD</b>. Regler: <code>turn = Kp * (THRESHOLD - reflection)</code>. Fahren mit <code>robot.drive(speed, turn)</code>.</p>
+  <div class="nav-row">
+    <a href="01_main.html" class="btn" id="back-btn">← Back</a>
+    <a href="#" class="btn primary" id="next-btn">Next →</a>
+  </div>
 
-  <section class="card">
-    <h2 style="margin:0 0 8px">Kurs-Parameter</h2>
-    <div class="controls">
-      <div class="ctrl">
-        <label>THRESHOLD (Reflexion): <output id="thrVal">50</output></label>
-        <input id="thr" type="range" min="20" max="80" step="1" value="50" />
-      </div>
-      <div class="ctrl">
-        <label>Linien-Position (Y, mm): <output id="lineVal">80</output></label>
-        <input id="line" type="range" min="-120" max="120" step="5" value="80" />
-      </div>
-      <div class="ctrl">
-        <label>Fahrgeschwindigkeit (sim) mm/s: <output id="spdVal">120</output></label>
-        <input id="spd" type="range" min="60" max="300" step="10" value="120" />
-      </div>
-      <div class="ctrl">
-        <label>Kp (Proportionalfaktor): <output id="kpVal">1.2</output></label>
-        <input id="kp" type="range" min="0.2" max="3.0" step="0.1" value="1.2" />
-      </div>
+  <header class="row" style="justify-content: space-between;">
+    <div>
+      <h1>EV3 (Pybricks) · Drive a Figure-8</h1>
+      <p>
+        Write a correct <b>Pybricks</b> program (EV3Brick, motors A/B, <b>DriveBase</b>).<br>
+        Use two loops to approximate a <b>figure-8</b> (first loop: turn +10°, second loop: turn −10°).<br>
+        After both loops: <b>stop</b>, <b>beep</b>, and print something that includes <code>8</code> (or “figure eight”).
+      </p>
     </div>
     <div class="row">
-      <button id="applyThr" class="level-btn" style="background:#3fb257">THRESHOLD in Editor setzen</button>
-      <button id="applyKp" class="level-btn" style="background:#3fb257">Kp in Editor setzen</button>
-      <span class="badge" id="dbg">REF – ERR – TURN</span>
+      <button class="btn" id="tips-btn">💡 Tips</button>
+      <button class="btn" id="solution-btn">✅ Solution</button>
     </div>
-  </section>
+  </header>
 
-  <section class="card" style="margin-top:14px">
-    <h2 style="margin:0 0 8px">Dein Code</h2>
-    <p class="status">Beispiel (anpassbar): P-Regler in Endlosschleife.</p>
+  <main class="layout">
+    <!-- Editor -->
+    <section class="card">
+      <h2>Editor</h2>
+      <div class="row">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+        <span id="status" class="status" aria-live="polite"></span>
+      </div>
 
-<textarea id="code" spellcheck="false">#!/usr/bin/env pybricks-micropython
+<textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
+# EV3 (Pybricks) – Starter (fill in the logic yourself)
 from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import Motor, ColorSensor
-from pybricks.parameters import Port
-from pybricks.robotics import DriveBase
+from pybricks.ev3devices import Motor
+from pybricks.parameters import Port, Stop
 from pybricks.tools import wait
+from pybricks.robotics import DriveBase
 
-left = Motor(Port.B); right = Motor(Port.C)
-robot = DriveBase(left, right, wheel_diameter=56, axle_track=114)
-color = ColorSensor(Port.S3)
-
-THRESHOLD = 50
-Kp = 1.2
-SPEED = 120
-
-while True:
-    r = color.reflection()
-    error = THRESHOLD - r
-    turn = Kp * error
-    robot.drive(SPEED, turn)
-    wait(10)
+# TODO (example structure):
+# brick = EV3Brick()
+# left  = Motor(Port.A)
+# right = Motor(Port.B)
+# drive = DriveBase(left, right, 56, 114)
+#
+# STEP_MM = 35
+# for _ in range(36):
+#     drive.straight(STEP_MM)
+#     drive.turn(10)         # first loop: +10°
+# for _ in range(36):
+#     drive.straight(STEP_MM)
+#     drive.turn(-10)        # second loop: -10°
+#
+# drive.stop(Stop.BRAKE)
+# brick.speaker.beep()
+# brick.screen.print("This is my figure 8")
+# wait(500)
 </textarea>
+    </section>
 
-    <div class="row" style="margin-top:10px">
-      <button id="run" class="level-btn">Simulation ausführen</button>
-      <button id="reset" class="level-btn" style="background:#3fb257">Reset</button>
-      <button id="check" class="level-btn" style="background:#3fb257">Aufgabe prüfen</button>
-      <button id="download" class="level-btn" style="background:#3fb257">Als main.py herunterladen</button>
-      <button id="next" class="level-btn" disabled>Nächster Schritt ▷</button>
-      <span id="status" class="status">Bereit (Schnellmodus)</span>
+    <!-- Simulation -->
+    <section class="card">
+      <h2>Simulation</h2>
+      <canvas id="arena" width="600" height="300"></canvas>
+      <p class="muted">Scale: <b>1 px = 1 cm</b> · Start at (200, 180) facing right</p>
+      <pre id="output"></pre>
+      <div id="error" style="color:#b91c1c;"></div>
+    </section>
+  </main>
+
+  <!-- Tips -->
+  <dialog id="tips-modal">
+    <div class="modal-header">Tips</div>
+    <div class="modal-body">
+      <ul id="tips-list"></ul>
     </div>
-
-    <div class="sim-wrap">
-      <canvas id="sim"></canvas>
-      <div class="sim-legend">Simulator: <b>1px = 1mm</b> · Schwarze Linie quer · Debug oben rechts.</div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips">Close</button>
     </div>
+  </dialog>
 
-    <h3>Ausgabe</h3>
-    <pre id="out" aria-live="polite"></pre>
-    <p class="result" id="result"></p>
-  </section>
-</main>
+  <!-- Solution -->
+  <dialog id="solution-modal">
+    <div class="modal-header">Solution (one example)</div>
+    <div class="modal-body">
+      <p class="muted" style="margin:0 0 8px 0;">There are many valid solutions. This is just one.</p>
+<pre id="solution-code" style="white-space:pre-wrap;">#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor
+from pybricks.parameters import Port, Stop
+from pybricks.tools import wait
+from pybricks.robotics import DriveBase
 
-<script>
-/* --- Regler-UI --- */
-const thr  = document.getElementById('thr');
-const line = document.getElementById('line');
-const spd  = document.getElementById('spd');
-const kp   = document.getElementById('kp');
-const thrVal  = document.getElementById('thrVal');
-const lineVal = document.getElementById('lineVal');
-const spdVal  = document.getElementById('spdVal');
-const kpVal   = document.getElementById('kpVal');
+brick = EV3Brick()
+left  = Motor(Port.A)
+right = Motor(Port.B)
 
-[thr,line,spd,kp].filter(Boolean).forEach(el=>{
-  const out = el===thr?thrVal : el===line?lineVal : el===spd?spdVal : kpVal;
-  const update = ()=> out && (out.textContent = el.value);
-  el.addEventListener('input', update); update();
-});
+# Typical geometry (mm) – adjust for your robot
+WHEEL_DIAMETER = 56
+AXLE_TRACK     = 114
+drive = DriveBase(left, right, WHEEL_DIAMETER, AXLE_TRACK)
 
-/* --- DOM --- */
-const codeEl = document.getElementById('code');
-const outEl  = document.getElementById('out');
-const resEl  = document.getElementById('result');
-const nextBtn= document.getElementById('next');
-const dbgEl  = document.getElementById('dbg');
-function clearOut(){ if(outEl) outEl.textContent=''; if(resEl){ resEl.textContent=''; resEl.className='result'; } }
+STEP_MM = 35
+for _ in range(36):
+    drive.straight(STEP_MM)
+    drive.turn(10)
 
-/* --- Canvas --- */
-const canvas = document.getElementById('sim');
-const ctx = canvas.getContext('2d', {alpha:false});
-function setupCanvas(){
-  const dpr = window.devicePixelRatio || 1;
-  const cssH = parseFloat(getComputedStyle(canvas).height) || 360;
-  const cssW = canvas.clientWidth || 640;
-  canvas.width = Math.round(cssW*dpr); canvas.height = Math.round(cssH*dpr);
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-}
-window.addEventListener('resize', ()=>{ setupCanvas(); drawAll(); });
+for _ in range(36):
+    drive.straight(STEP_MM)
+    drive.turn(-10)
 
-/* --- Welt --- */
-const LINE = { yOffset: 80, width: 28 };     /* Linie ruhig etwas breiter */
-const STATE = { scale:1, x:0, y:0, theta:0, path:[], running:false, timer:null };
+drive.stop(Stop.BRAKE)
+brick.speaker.beep()
+brick.screen.print("This is my figure 8")
+wait(500)
+</pre>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution">Insert</button>
+      <button class="btn" id="close-solution">Close</button>
+    </div>
+  </dialog>
 
-function resetSim(){
-  setupCanvas();
-  STATE.x = canvas.clientWidth*0.25; STATE.y = canvas.clientHeight/2;
-  STATE.theta = 0; STATE.path = []; STATE.running=false;
-  if(line) LINE.yOffset = parseInt(line.value,10) || 80;
-  drawAll();
-}
-function drawGrid(){
-  const w=canvas.clientWidth,h=canvas.clientHeight;
-  ctx.save(); ctx.clearRect(0,0,w,h); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
-  ctx.strokeStyle='#eee'; for(let x=0;x<=w;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
-  for(let y=0;y<=h;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
-  ctx.strokeStyle='#ddd'; ctx.beginPath();ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(w/2,0);ctx.lineTo(w/2,h);ctx.stroke(); ctx.restore();
-}
-function drawLine(){
-  const w=canvas.clientWidth,h=canvas.clientHeight,y=h/2+LINE.yOffset;
-  ctx.save(); ctx.fillStyle='#000'; ctx.fillRect(0,y-LINE.width/2,w,LINE.width); ctx.restore();
-}
-function drawPath(){
-  ctx.save(); ctx.strokeStyle='#3fb257'; ctx.lineWidth=2;
-  for(const [x1,y1,x2,y2] of STATE.path){ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
-  ctx.restore();
-}
-function drawRobot(){
-  const r=8,L=18,a=STATE.theta,x=STATE.x,y=STATE.y;
-  ctx.save();
-  ctx.fillStyle='#4CAF50'; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-  const tipX=x+Math.cos(a)*(r+L), tipY=y-Math.sin(a)*(r+L);
-  const leftX=x+Math.cos(a+Math.PI*0.75)*r, leftY=y-Math.sin(a+Math.PI*0.75)*r;
-  const rightX=x+Math.cos(a-Math.PI*0.75)*r, rightY=y-Math.sin(a-Math.PI*0.75)*r;
-  ctx.beginPath(); ctx.moveTo(tipX,tipY); ctx.lineTo(leftX,leftY); ctx.lineTo(rightX,rightY); ctx.closePath(); ctx.fill();
-  ctx.restore();
-}
-function drawAll(){ drawGrid(); drawLine(); drawPath(); drawRobot(); }
+  <script>
+    /* ---------- Tips ---------- */
+    const TASK = {
+      tips: [
+        "Use two loops: first arc with +10°, second arc with -10°.",
+        "Keep steps small (e.g., STEP_MM = 35) for a smoother curve.",
+        "After both loops: drive.stop(Stop.BRAKE), brick.speaker.beep(), brick.screen.print(\"...8...\").",
+        "Adjust wheel diameter and axle track to your robot (56/114 mm are typical values)."
+      ]
+    };
 
-/* --- „Sensor“ mit Offset vor dem Bot (20 mm) --- */
-function simulatedReflection(){
-  const SENSOR_OFFSET = 20;
-  const sx = STATE.x + Math.cos(STATE.theta) * SENSOR_OFFSET;
-  const sy = STATE.y - Math.sin(STATE.theta) * SENSOR_OFFSET;
+    /* ---------- DOM ---------- */
+    const els = {
+      editor: document.getElementById("editor"),
+      run: document.getElementById("run-btn"),
+      reset: document.getElementById("reset-btn"),
+      save: document.getElementById("save-btn"),
+      output: document.getElementById("output"),
+      error: document.getElementById("error"),
+      status: document.getElementById("status"),
+      canvas: document.getElementById("arena"),
+      tipsBtn: document.getElementById("tips-btn"),
+      tipsModal: document.getElementById("tips-modal"),
+      tipsList: document.getElementById("tips-list"),
+      closeTips: document.getElementById("close-tips"),
+      solutionBtn: document.getElementById("solution-btn"),
+      solutionModal: document.getElementById("solution-modal"),
+      copySolution: document.getElementById("copy-solution"),
+      closeSolution: document.getElementById("close-solution")
+    };
 
-  const lineY = canvas.clientHeight/2 + LINE.yOffset;
-  const d = Math.abs(sy - lineY);
+    /* ---------- UI ---------- */
+    els.tipsList.innerHTML = TASK.tips.map(t=>"<li>"+t+"</li>").join("");
+    function setStatus(cls, txt){ els.status.className="status "+cls; els.status.textContent=txt; }
+    function openDialog(d){ if(d?.showModal) d.showModal(); else d?.setAttribute("open",""); }
+    function closeDialog(d){ if(d?.close) d.close(); else d?.removeAttribute("open"); }
+    els.tipsBtn.onclick = () => openDialog(els.tipsModal);
+    els.closeTips.onclick = () => closeDialog(els.tipsModal);
+    els.solutionBtn.onclick = () => openDialog(els.solutionModal);
+    els.closeSolution.onclick = () => closeDialog(els.solutionModal);
+    els.copySolution.onclick = () => {
+      els.editor.value = document.getElementById("solution-code").textContent;
+      closeDialog(els.solutionModal);
+      setStatus("", ""); els.output.textContent=""; els.error.textContent="";
+    };
 
-  const WHITE=80, BLACK=15, sigma = LINE.width/2;
-  const darkGain = Math.exp(- (d*d) / (2*sigma*sigma));
-  const refl = Math.round(WHITE - (WHITE - BLACK) * darkGain);
-  return Math.max(0, Math.min(100, refl));
-}
+    /* ---------- STRICT VALIDATION (figure-8 task) ---------- */
+    function validateFigure8Task(src){
+      const errors = [];
+      const code = src.replace(/\r/g,'');
+      const lines = code.split('\n');
 
-/* --- Config aus Code oder UI --- */
-function extractLFConfig(src){
-  let threshold = (src.match(/THRESHOLD\s*=\s*(\d+)/i)||[])[1];
-  let Kp = (src.match(/\b(Kp|KP|kp)\s*=\s*([0-9]*\.?[0-9]+)/)||[])[2];
-  let speed = (src.match(/SPEED\s*=\s*(\d+)/)||[])[1] || (src.match(/robot\.drive\(\s*(\d+)/)||[])[1];
-  threshold = threshold?parseInt(threshold,10):(thr?parseInt(thr.value,10):50);
-  Kp = Kp?parseFloat(Kp):(kp?parseFloat(kp.value):1.2);
-  speed = speed?parseInt(speed,10):(spd?parseInt(spd.value,10):120);
-  return {threshold,Kp,speed};
-}
+      // required imports
+      [
+        [/from\s+pybricks\.hubs\s+import\s+EV3Brick/, "Missing import EV3Brick"],
+        [/from\s+pybricks\.ev3devices\s+import\s+.*\bMotor\b/, "Missing import Motor"],
+        [/from\s+pybricks\.parameters\s+import\s+.*\bPort\b/, "Missing import Port"],
+        [/from\s+pybricks\.parameters\s+import\s+.*\bStop\b/, "Missing import Stop"],
+        [/from\s+pybricks\.tools\s+import\s+.*\bwait\b/, "Missing import wait"],
+        [/from\s+pybricks\.robotics\s+import\s+.*\bDriveBase\b/, "Missing import DriveBase"]
+      ].forEach(([re,msg])=>{ if(!re.test(code)) errors.push("✗ "+msg); });
 
-/* --- Simulation (setInterval, stabil) --- */
-function runSimulatorFromCode(src){
-  resetSim(); clearOut();
-  const {threshold,Kp,speed} = extractLFConfig(src);
-  const dt = 0.02; // 20 ms
-  let t = 0;
-  if(STATE.timer) { clearInterval(STATE.timer); STATE.timer=null; }
-  STATE.running = true;
-  STATE.timer = setInterval(()=>{
-    if(!STATE.running){ clearInterval(STATE.timer); STATE.timer=null; return; }
+      // initializations (variable names are free)
+      const brickM = code.match(/(\w+)\s*=\s*EV3Brick\s*\(\s*\)/);
+      const leftM  = code.match(/(\w+)\s*=\s*Motor\s*\(\s*Port\.A\s*\)/);
+      const rightM = code.match(/(\w+)\s*=\s*Motor\s*\(\s*Port\.B\s*\)/);
+      const driveM = code.match(/(\w+)\s*=\s*DriveBase\s*\(/);
+      if(!brickM) errors.push("✗ EV3Brick not initialized");
+      if(!leftM)  errors.push("✗ Left motor (Port.A) missing");
+      if(!rightM) errors.push("✗ Right motor (Port.B) missing");
+      if(!driveM) errors.push("✗ DriveBase not created");
+      const driveVar = driveM?.[1] || "drive";
 
-    // Sensor lesen + Regler
-    const r = simulatedReflection();
-    const error = threshold - r;
-    const turnRate = Math.max(-360, Math.min(360, -Kp * error));  // °/s (Minus wg. Canvas-Richtung)
+      // constants/assignments
+      const assigns = {};
+      for(const L of lines){
+        const m = L.match(/^\s*([A-Za-z_]\w*)\s*=\s*(-?\d+)\s*$/);
+        if(m) assigns[m[1]] = parseInt(m[2],10);
+      }
 
-    // Kinematik
-    const w = turnRate * Math.PI/180; // rad/s
-    STATE.theta += w*dt;
-    const v = speed;
-    const dx = Math.cos(STATE.theta)*v*dt;
-    const dy = -Math.sin(STATE.theta)*v*dt;
-    const x1=STATE.x,y1=STATE.y; STATE.x+=dx; STATE.y+=dy; STATE.path.push([x1,y1,STATE.x,STATE.y]);
+      // find first loop: range(36)
+      function findLoop(startIdx){
+        for(let i=startIdx;i<lines.length;i++){
+          const m = lines[i].match(/^(\s*)for\s+\w+\s+in\s+range\s*\(\s*36\s*\)\s*:\s*$/);
+          if(m) return { idx:i, indent:m[1]||"" };
+        }
+        return null;
+      }
 
-    if(outEl && (Math.round(t*10)%5)===0){ // alle 100 ms
-      outEl.textContent += `[REF ${r}] [ERR ${error}] [TURN ${turnRate.toFixed(1)}] [SPEED ${speed}]\n`;
+      const loop1 = findLoop(0);
+      if(!loop1) errors.push("✗ Missing first loop: for _ in range(36):");
+
+      // inside a loop: straight + turn(±10). Returns {hasStraight, stepMm, turnOk}
+      function scanLoop(loop){
+        let hasStraight=false, stepMm=null, turnOk=false, endIdx=lines.length;
+        if(!loop) return {hasStraight, stepMm, turnOk, endIdx};
+        for(let j=loop.idx+1;j<lines.length;j++){
+          const L=lines[j];
+          if(L.trim()==="") continue;
+          const indent=(L.match(/^(\s*)/)||["",""])[1];
+          if(indent.length<=loop.indent.length){ endIdx=j; break; }
+
+          const straightRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*straight\\s*\\(\\s*([A-Za-z_]\\w*|\\d+)\\s*\\)`);
+          const sm = L.match(straightRe);
+          if(sm){
+            hasStraight=true;
+            const arg = sm[1];
+            if(/^\d+$/.test(arg)) stepMm=parseInt(arg,10);
+            else if(assigns[arg]!==undefined) stepMm=assigns[arg];
+          }
+
+          const turnRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*turn\\s*\\(\\s*([A-Za-z_]\\w*|-?\\d+)\\s*\\)`);
+          const tm = L.match(turnRe);
+          if(tm){
+            let ang=null; const arg=tm[1];
+            if(/^-?\d+$/.test(arg)) ang=parseInt(arg,10);
+            else if(assigns[arg]!==undefined) ang=assigns[arg];
+            if(ang===10 || ang===-10) turnOk=true;
+          }
+        }
+        return {hasStraight, stepMm, turnOk, endIdx};
+      }
+
+      const L1 = scanLoop(loop1);
+      if(!L1.hasStraight) errors.push("✗ First loop: missing drive.straight(mm)");
+      if(!L1.turnOk)      errors.push("✗ First loop: missing drive.turn(±10)");
+
+      // second loop must exist after first loop
+      const loop2 = findLoop((loop1?.idx ?? 0) + 1);
+      if(!loop2) errors.push("✗ Missing second loop: for _ in range(36):");
+
+      const L2 = scanLoop(loop2);
+      if(!L2.hasStraight) errors.push("✗ Second loop: missing drive.straight(mm)");
+      if(!L2.turnOk)      errors.push("✗ Second loop: missing drive.turn(±10)");
+
+      // step sanity (use the first detected step)
+      const stepMm = L1.stepMm ?? L2.stepMm;
+      if(!(Number.isFinite(stepMm) && stepMm >= 10 && stepMm <= 150)){
+        errors.push("✗ Step length should be 10–150 mm (via drive.straight(mm) or a constant)");
+      }
+
+      // turn directions: ideally + then − (or − then +)
+      // We check signs if resolvable
+      function loopTurnSign(loop){
+        for(let j=loop.idx+1;j<lines.length;j++){
+          const L=lines[j]; const indent=(L.match(/^(\s*)/)||["",""])[1];
+          if(L.trim()!=="" && indent.length<=loop.indent.length) break;
+          const tm = L.match(new RegExp(`\\b${driveVar}\\s*\\.\\s*turn\\s*\\(\\s*([A-Za-z_]\\w*|-?\\d+)\\s*\\)`));
+          if(tm){
+            let ang=null; const arg=tm[1];
+            if(/^-?\d+$/.test(arg)) ang=parseInt(arg,10);
+            else if(assigns[arg]!==undefined) ang=assigns[arg];
+            if(ang!==null) return Math.sign(ang);
+          }
+        }
+        return 0;
+      }
+      const s1 = loop1 ? loopTurnSign(loop1) : 0;
+      const s2 = loop2 ? loopTurnSign(loop2) : 0;
+      if(s1!==0 && s2!==0 && s1===s2){
+        errors.push("✗ Loops must turn in opposite directions (+10°, then −10° or vice versa)");
+      }
+
+      // after the second loop: require stop + beep + screen print(...8...)
+      let afterIdx = loop2 ? loop2.idx+1 : 0;
+      if(loop2){
+        // find end of loop2 block
+        for(let j=loop2.idx+1;j<lines.length;j++){
+          const L=lines[j];
+          const indent=(L.match(/^(\s*)/)||["",""])[1];
+          if(L.trim()!=="" && indent.length<=loop2.indent.length){ afterIdx=j; break; }
+          if(j===lines.length-1) afterIdx=j+1;
+        }
+      }
+      const afterCode = lines.slice(afterIdx).join("\n");
+      if(!new RegExp(`\\b${(driveM?.[1]||"drive")}\\s*\\.\\s*stop\\s*\\(\\s*Stop\\.BRAKE\\s*\\)`).test(afterCode)){
+        errors.push("✗ Missing drive.stop(Stop.BRAKE) after the loops");
+      }
+      if(!/brick\s*\.speaker\s*\.beep\s*\(/.test(afterCode)) {
+        errors.push("✗ Missing brick.speaker.beep() after the loops");
+      }
+      if(!/(brick\s*\.screen\s*\.print\s*\(\s*["'][^"']*(8|figure\s*-?\s*8|figure\s*eight)[^"']*["']\s*\))/i.test(afterCode)) {
+        errors.push('✗ Missing brick.screen.print("…8…") (or “figure eight”) after the loops');
+      }
+
+      return { errors, stepMm: stepMm || 35, angle1: (s1>=0?10:-10), angle2: (s2<=0?-10:10) };
     }
-    if(dbgEl){ dbgEl.textContent = `REF ${r} • ERR ${error} • TURN ${turnRate.toFixed(1)}`; }
 
-    drawAll(); t += dt;
-    if(t >= 8){ STATE.running=false; clearInterval(STATE.timer); STATE.timer=null; if(outEl) outEl.textContent += '[END]\n'; }
-  }, dt*1000);
-}
+    /* ---------- Arena / animation (1 px = 1 cm) ---------- */
+    const ctx = els.canvas.getContext("2d");
+    const WORLD = {
+      W: els.canvas.width, H: els.canvas.height,
+      robot: { x:200, y:180, heading:0, r:6 } // start at (200,180) facing right
+    };
+    let runToken=0;
 
-/* --- Checker --- */
-function checkTask(){
-  const code = codeEl.value || '';
-  const hasColor = /ColorSensor\s*\(/.test(code);
-  const hasReflection = /\.reflection\s*\(\s*\)/.test(code);
-  const hasLoop = /while\s+True|while\s+.+:/.test(code);
-  const usesDrive = /robot\.drive\s*\(\s*[^,]+,\s*[^)]+\)/.test(code);
-  const wantThr = thr ? parseInt(thr.value,10) : 50;
-  const thrMatch = code.match(/THRESHOLD\s*=\s*(\d+)/i);
-  const thrOK = thrMatch ? Math.abs(parseInt(thrMatch[1],10)-wantThr)<=5 : false;
-  const ok = hasColor && hasReflection && hasLoop && usesDrive && thrOK;
-  if(resEl){
-    if(ok){ resEl.textContent=`✔︎ Aufgabe erfüllt – THRESHOLD≈${wantThr}, P-Regler vorhanden.`; resEl.className='result ok'; if(nextBtn) nextBtn.disabled=false; }
-    else{
-      const miss=[]; if(!hasColor)miss.push('ColorSensor fehlt'); if(!hasReflection)miss.push('reflection() fehlt');
-      if(!hasLoop)miss.push('Schleife fehlt'); if(!usesDrive)miss.push('robot.drive(...) fehlt'); if(!thrOK)miss.push(`THRESHOLD ungleich ${wantThr}`);
-      resEl.textContent='Noch nicht ganz: '+miss.join(', ')+'.'; resEl.className='result fail'; if(nextBtn) nextBtn.disabled=true;
+    const rad=d=>d*Math.PI/180;
+    function clear(){ ctx.fillStyle="#fff"; ctx.fillRect(0,0,WORLD.W,WORLD.H); ctx.strokeStyle="#111"; ctx.lineWidth=2; ctx.strokeRect(0,0,WORLD.W,WORLD.H); }
+    function drawRobot(){
+      const r=WORLD.robot;
+      ctx.fillStyle="#16a34a";
+      ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,2*Math.PI); ctx.fill();
+      const hx=r.x+Math.cos(rad(r.heading))*(r.r+10);
+      const hy=r.y+Math.sin(rad(r.heading))*(r.r+10);
+      ctx.strokeStyle="#16a34a"; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(r.x,r.y); ctx.lineTo(hx,hy); ctx.stroke();
     }
-  }
-}
+    function render(){ clear(); drawRobot(); }
+    function resetWorld(){
+      runToken++;
+      WORLD.robot = { x:200, y:180, heading:0, r:6 };
+      render();
+    }
 
-/* --- Download & Editor-Helfer --- */
-function downloadMain(){
-  const blob = new Blob([codeEl.value||''], {type:'text/x-python'});
-  const url = URL.createObjectURL(blob); const a=document.createElement('a');
-  a.href=url; a.download='main.py'; a.click(); URL.revokeObjectURL(url);
-}
-document.getElementById('applyThr').addEventListener('click', ()=>{
-  const t=(thr?parseInt(thr.value,10):50);
-  const lines=(codeEl.value||'').split(/\n/); let done=false;
-  for(let i=0;i<lines.length;i++){ if(/^\s*THRESHOLD\s*=/.test(lines[i])){ lines[i]=`THRESHOLD = ${t}  # per Regler`; done=true; break; } }
-  if(!done){ const idx=lines.findIndex(l=>/ColorSensor\s*\(/.test(l)); lines.splice(idx>=0?idx+1:0,0,`THRESHOLD = ${t}  # per Regler`); }
-  codeEl.value=lines.join('\n');
-});
-document.getElementById('applyKp').addEventListener('click', ()=>{
-  const val=(kp?parseFloat(kp.value):1.2).toFixed(1);
-  const lines=(codeEl.value||'').split(/\n/); let done=false;
-  for(let i=0;i<lines.length;i++){ if(/^\s*(Kp|KP|kp)\s*=/.test(lines[i])){ lines[i]=`Kp = ${val}  # per Regler`; done=true; break; } }
-  if(!done){ const idx=lines.findIndex(l=>/THRESHOLD\s*=/.test(l)); lines.splice(idx>=0?idx+1:0,0,`Kp = ${val}  # per Regler`); }
-  codeEl.value=lines.join('\n');
-});
+    // move straight with animation: mm → px (1 cm/px → mm/10)
+    async function moveStraightMm(mm){
+      const my=runToken; const r=WORLD.robot;
+      const distPx = Math.max(0, mm)/10;  // mm → cm(px)
+      const step = 1; // 1 cm per frame
+      const ux = Math.cos(rad(r.heading)), uy = Math.sin(rad(r.heading));
+      let remaining = distPx;
+      return new Promise(resolve=>{
+        function tick(){
+          if(my!==runToken) return resolve();
+          const moved = Math.min(step, remaining);
+          r.x += ux*moved; r.y += uy*moved;
+          render();
+          remaining -= moved;
+          if(remaining>0) requestAnimationFrame(tick); else resolve();
+        }
+        requestAnimationFrame(tick);
+      });
+    }
+    async function turnDeg(deg){
+      const my=runToken; const r=WORLD.robot;
+      const total = deg; const step = deg>0? 5 : -5;
+      let done = 0;
+      return new Promise(resolve=>{
+        function tick(){
+          if(my!==runToken) return resolve();
+          const next = Math.abs(total-done) < Math.abs(step) ? (total-done) : step;
+          r.heading = (r.heading + next + 360) % 360;
+          done += next;
+          render();
+          if(done===total) resolve(); else requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      });
+    }
 
-/* --- Event-Listener --- */
-document.getElementById('run').addEventListener('click', ()=> runSimulatorFromCode(codeEl.value||''));
-document.getElementById('reset').addEventListener('click', resetSim);
-document.getElementById('check').addEventListener('click', checkTask);
-document.getElementById('download').addEventListener('click', downloadMain);
+    /* ---------- Run / Reset / Save ---------- */
+    function setStatus(cls, txt){ els.status.className="status "+cls; els.status.textContent=txt; }
+    function reset(){ setStatus("", ""); els.output.textContent=""; els.error.textContent=""; resetWorld(); }
+    function save(){ const b=new Blob([els.editor.value],{type:"text/plain"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="main.py"; a.click(); URL.revokeObjectURL(a.href); }
 
-/* Startzustand */
-resetSim();
-</script>
+    async function runCode(){
+      els.error.textContent=""; els.output.textContent="";
+      setStatus("running","checking…");
+
+      const code=els.editor.value.trim();
+      if(!code){
+        setStatus("error","ERROR");
+        els.output.textContent="Please write your Pybricks program first.";
+        return;
+      }
+
+      const { errors, stepMm, angle1, angle2 } = validateFigure8Task(code);
+      if(errors.length){
+        setStatus("error","ERROR");
+        els.output.textContent = "Please fix first:\n" + errors.join("\n");
+        return;
+      }
+
+      setStatus("running","running…");
+      resetWorld();
+      try{
+        for(let i=0;i<36;i++){
+          await moveStraightMm(stepMm);
+          await turnDeg(angle1);
+        }
+        for(let i=0;i<36;i++){
+          await moveStraightMm(stepMm);
+          await turnDeg(angle2);
+        }
+        setStatus("ok","done.");
+        els.output.textContent = `Figure-8 completed (~2 × 36 steps × ${stepMm} mm; turns ${angle1}° and ${angle2}°).`;
+      }catch(e){
+        setStatus("error","ERROR");
+        els.error.textContent = String(e);
+      }
+    }
+
+    els.run.onclick = runCode;
+    els.reset.onclick = reset;
+    els.save.onclick = save;
+
+    render();
+
+    document.getElementById("back-btn").onclick = () => history.back();
+    document.getElementById("next-btn").onclick = () => alert("Next task idea: line follower with ColorSensor.");
+  </script>
 </body>
 </html>

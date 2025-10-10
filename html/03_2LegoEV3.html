@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 (Pybricks) – Ultraschall: Stop vor der Wand</title>
+
+  <link rel="stylesheet" href="../css/03_python.css" />
+
+  <style>
+    #arena { background:#f9fafb; border:2px solid #111; width:100%; height:auto; max-width:900px; border-radius:10px; display:block; margin-top:10px; }
+    .status.ok { color:#15803d; }
+    .status.error { color:#b91c1c; }
+    .status.running { color:#374151; }
+    .muted { color:#6b7280; }
+  </style>
+</head>
+<body>
+  <div class="nav-row">
+    <a href="01_main.html" class="btn" id="back-btn">← Back</a>
+    <a href="#" class="btn primary" id="next-btn">Next →</a>
+  </div>
+
+  <header class="row" style="justify-content: space-between;">
+    <div>
+      <h1>EV3 (Pybricks) · Ultraschall — Stop vor der Wand</h1>
+      <p>
+        Schreibe ein korrektes <b>Pybricks-Programm</b> (EV3Brick, Motoren A/B, <b>Ultraschall S2</b>).<br>
+        Die Simulation startet nur bei <b>korrektem Code</b>. Sie liest den Schwellwert aus
+        <code>while ultra.distance() &gt; N:</code> (z.&nbsp;B. <code>N = 150</code> mm) und hält <b>N&nbsp;mm</b> vor der Wand.
+      </p>
+    </div>
+    <div class="row">
+      <button class="btn" id="tips-btn">💡 Tipps</button>
+      <button class="btn" id="solution-btn">✅ Solution</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="card">
+      <h2>Editor</h2>
+      <div class="row">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+        <span id="status" class="status" aria-live="polite"></span>
+      </div>
+
+<textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
+# EV3 (Pybricks) – Basis (fülle die Initialisierung & Logik selbst aus)
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, UltrasonicSensor
+from pybricks.parameters import Port, Stop, Color
+from pybricks.tools import wait
+from pybricks.robotics import DriveBase
+
+# TODO (Beispiel-Struktur):
+# brick = EV3Brick()
+# left  = Motor(Port.A)
+# right = Motor(Port.B)
+# ultra = UltrasonicSensor(Port.S2)
+# drive = DriveBase(left, right, 56, 114)
+#
+# THRESHOLD_MM = 150
+# drive.drive(150, 0)
+# while (ultra.distance()) >= THRESHOLD_MM:
+#     wait(20)
+# drive.stop(Stop.BRAKE)
+# brick.speaker.beep()
+</textarea>
+    </section>
+
+    <section class="card">
+      <h2>Simulation</h2>
+      <canvas id="arena" width="600" height="200"></canvas>
+      <p class="muted">Maßstab: <b>1 px = 1 cm</b> · Wand bei x=500 px · Start bei (60,100)</p>
+      <pre id="output"></pre>
+      <div id="error" style="color:#b91c1c;"></div>
+    </section>
+  </main>
+
+  <!-- Tipps -->
+  <dialog id="tips-modal">
+    <div class="modal-header">Tipps</div>
+    <div class="modal-body">
+      <ul id="tips-list"></ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Lösung -->
+  <dialog id="solution-modal">
+    <div class="modal-header">Solution (ein Vorschlag)</div>
+    <div class="modal-body">
+      <p class="muted" style="margin:0 0 8px 0;">Es gibt viele korrekte Lösungen. Dies ist <b>ein</b> Beispiel.</p>
+<pre id="solution-code" style="white-space:pre-wrap;">#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, UltrasonicSensor
+from pybricks.parameters import Port, Stop
+from pybricks.tools import wait
+from pybricks.robotics import DriveBase
+
+brick = EV3Brick()
+left  = Motor(Port.A)
+right = Motor(Port.B)
+ultra = UltrasonicSensor(Port.S2)
+drive = DriveBase(left, right, 56, 114)
+
+brick.speaker.beep()
+drive.drive(150, 0)
+while ultra.distance() > 150:
+    wait(20)
+drive.stop(Stop.BRAKE)
+brick.speaker.beep()
+
+ </pre>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution">Insert</button>
+      <button class="btn" id="close-solution">Close</button>
+    </div>
+  </dialog>
+
+  <script>
+    /* ---------- Tipps ---------- */
+    const TASK = {
+      tips: [
+        "Sensor-Port: Ultraschall an Port.S2.",
+        "Einheiten: distance() liefert Millimeter (oder None).",
+        "Fahren: drive.drive(speed_mm_s, 0) — 0 = geradeaus.",
+        "Schleife: while ultra.distance() > N: wait(…) (z. B. N=150).",
+        "Stoppen: drive.stop(Stop.BRAKE).",
+        "Robuster: mehrere Messungen mitteln (Median)."
+      ]
+    };
+
+    /* ---------- DOM ---------- */
+    const els = {
+      editor: document.getElementById("editor"),
+      run: document.getElementById("run-btn"),
+      reset: document.getElementById("reset-btn"),
+      save: document.getElementById("save-btn"),
+      output: document.getElementById("output"),
+      error: document.getElementById("error"),
+      status: document.getElementById("status"),
+      canvas: document.getElementById("arena"),
+      tipsBtn: document.getElementById("tips-btn"),
+      tipsModal: document.getElementById("tips-modal"),
+      tipsList: document.getElementById("tips-list"),
+      closeTips: document.getElementById("close-tips"),
+      solutionBtn: document.getElementById("solution-btn"),
+      solutionModal: document.getElementById("solution-modal"),
+      copySolution: document.getElementById("copy-solution"),
+      closeSolution: document.getElementById("close-solution")
+    };
+
+    /* ---------- UI ---------- */
+    els.tipsList.innerHTML = TASK.tips.map(t=>"<li>"+t+"</li>").join("");
+    function setStatus(cls, txt){ els.status.className="status "+cls; els.status.textContent=txt; }
+    function openDialog(d){ if(d?.showModal) d.showModal(); else d?.setAttribute("open",""); }
+    function closeDialog(d){ if(d?.close) d.close(); else d?.removeAttribute("open"); }
+    els.tipsBtn.onclick = () => openDialog(els.tipsModal);
+    els.closeTips.onclick = () => closeDialog(els.tipsModal);
+    els.solutionBtn.onclick = () => openDialog(els.solutionModal);
+    els.closeSolution.onclick = () => closeDialog(els.solutionModal);
+    els.copySolution.onclick = () => {
+      els.editor.value = document.getElementById("solution-code").textContent;
+      closeDialog(els.solutionModal);
+      setStatus("", ""); els.output.textContent=""; els.error.textContent="";
+    };
+
+    /* ---------- STRIKTE, ROBUSTE VALIDIERUNG ---------- */
+    function validateAndExtractThreshold(src){
+      const errors = [];
+      const code = src.replace(/\r/g,'');
+      const lines = code.split('\n');
+
+      // Pflicht-Imports
+      [
+        [/from\s+pybricks\.hubs\s+import\s+EV3Brick/, "Import EV3Brick fehlt"],
+        [/from\s+pybricks\.ev3devices\s+import\s+.*\bMotor\b/, "Import Motor fehlt"],
+        [/from\s+pybricks\.ev3devices\s+import\s+.*\bUltrasonicSensor\b/, "Import UltrasonicSensor fehlt"],
+        [/from\s+pybricks\.parameters\s+import\s+.*\bPort\b/, "Import Port fehlt"],
+        [/from\s+pybricks\.parameters\s+import\s+.*\bStop\b/, "Import Stop fehlt"],
+        [/from\s+pybricks\.tools\s+import\s+.*\bwait\b/, "Import wait fehlt"],
+        [/from\s+pybricks\.robotics\s+import\s+.*\bDriveBase\b/, "Import DriveBase fehlt"]
+      ].forEach(([re,msg])=>{ if(!re.test(code)) errors.push("✗ "+msg); });
+
+      // Initialisierung & Variablennamen
+      const brickM = code.match(/(\w+)\s*=\s*EV3Brick\s*\(\s*\)/);
+      const leftM  = code.match(/(\w+)\s*=\s*Motor\s*\(\s*Port\.A\s*\)/);
+      const rightM = code.match(/(\w+)\s*=\s*Motor\s*\(\s*Port\.B\s*\)/);
+      const ultraM = code.match(/(\w+)\s*=\s*UltrasonicSensor\s*\(\s*Port\.S2\s*\)/);
+      const driveM = code.match(/(\w+)\s*=\s*DriveBase\s*\(/);
+
+      if(!brickM) errors.push("✗ EV3Brick nicht initialisiert");
+      if(!leftM)  errors.push("✗ Motor links (Port.A) fehlt");
+      if(!rightM) errors.push("✗ Motor rechts (Port.B) fehlt");
+      if(!ultraM) errors.push("✗ Ultraschall an S2 fehlt");
+      if(!driveM) errors.push("✗ DriveBase nicht erstellt");
+
+      const driveVar = driveM?.[1];
+      const ultraVar = ultraM?.[1] || "ultra";
+
+      // drive.drive(...) irgendwo
+      if(driveVar){
+        const driveDriveRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*drive\\s*\\(`);
+        if(!driveDriveRe.test(code)) errors.push("✗ drive.drive(...) fehlt");
+      }
+
+      // Mappe einfache Zuweisungen NAME = ZAHL (für beliebige Konstantennamen)
+      const assigns = {};
+      for(const L of lines){
+        const m = L.match(/^\s*([A-Za-z_]\w*)\s*=\s*(\d+)\s*$/);
+        if(m) assigns[m[1]] = parseInt(m[2],10);
+      }
+
+      // while ultra.distance() > RHS  (>= erlaubt, RHS = Zahl ODER Name)
+      let thresholdMm = null, whileIndex = -1, whileIndent = "";
+      const whileRe = new RegExp(
+        `^([ \\t]*)while\\s*\\(?\\s*${ultraVar}\\s*\\.\\s*distance\\s*\\(\\s*\\)\\s*\\)?\\s*(?:>=|>)\\s*([A-Za-z_]\\w*|\\d+)\\s*:\\s*$`
+      );
+
+      for(let i=0;i<lines.length;i++){
+        const m = lines[i].match(whileRe);
+        if(m){
+          whileIndex = i; whileIndent = m[1] ?? "";
+          const rhs = m[2];
+          if (/^\d+$/.test(rhs)) {
+            thresholdMm = parseInt(rhs,10);
+          } else if (assigns[rhs] !== undefined) {
+            thresholdMm = assigns[rhs];
+          }
+          break;
+        }
+      }
+
+      if(!(Number.isFinite(thresholdMm) && thresholdMm >= 10 && thresholdMm <= 2000)){
+        errors.push("✗ while ultra.distance() > N: (10–2000 mm) nicht gefunden");
+      }
+
+      // wait(...) MUSS im eingerückten Block (Argument beliebig)
+      if(whileIndex>=0){
+        let hasWait=false;
+        for(let j=whileIndex+1;j<lines.length;j++){
+          const L=lines[j];
+          if(L.trim()==="") continue;
+          const indent=(L.match(/^([ \t]*)/)||["",""])[1];
+          if(indent.length<=whileIndent.length) break;
+          if(/\bwait\s*\(/.test(L)){ hasWait=true; break; }
+        }
+        if(!hasWait) errors.push("✗ wait(...) fehlt im Schleifenblock");
+      }
+
+      // drive.stop(Stop.BRAKE) nach der Schleife
+      if(driveVar && whileIndex>=0){
+        const stopRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*stop\\s*\\(\\s*Stop\\.BRAKE\\s*\\)`);
+        let stopAfter=false;
+        for(let j=whileIndex+1;j<lines.length;j++){
+          if(stopRe.test(lines[j])) { stopAfter=true; break; }
+        }
+        if(!stopAfter) errors.push("✗ drive.stop(Stop.BRAKE) nach der Schleife fehlt");
+      }
+
+      return { errors, thresholdMm };
+    }
+
+    /* ---------- Arena/Engine (1 px = 1 cm) ---------- */
+    const ctx = els.canvas.getContext("2d");
+    const WORLD = { W: els.canvas.width, H: els.canvas.height,
+      wall:  { x1:500, y1:20, x2:500, y2:180 },     // vertikale Wand bei x = 500 px
+      robot: { x:60,  y:100, heading:0, r:6 }      // Start (60,100), 0° = rechts; r=6 px ≈ 6 cm
+    };
+    let runToken=0, anyCollision=false;
+
+    const rad=d=>d*Math.PI/180, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+    function clear(){ ctx.fillStyle="#fff"; ctx.fillRect(0,0,WORLD.W,WORLD.H); ctx.strokeStyle="#111"; ctx.lineWidth=2; ctx.strokeRect(0,0,WORLD.W,WORLD.H); }
+    function drawWall(){ const w=WORLD.wall; ctx.strokeStyle="#111"; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(w.x1,w.y1); ctx.lineTo(w.x2,w.y2); ctx.stroke(); }
+    function drawRobot(){ const r=WORLD.robot; ctx.fillStyle="#16a34a"; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,2*Math.PI); ctx.fill(); const hx=r.x+Math.cos(rad(r.heading))*(r.r+10), hy=r.y+Math.sin(rad(r.heading))*(r.r+10); ctx.strokeStyle="#16a34a"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(r.x,r.y); ctx.lineTo(hx,hy); ctx.stroke(); }
+    function render(){ clear(); drawWall(); drawRobot(); }
+
+    function resetWorld(){
+      runToken++; anyCollision=false;
+      WORLD.wall={x1:500,y1:20,x2:500,y2:180};
+      WORLD.robot={x:60,y:100,heading:0,r:6};
+      render();
+    }
+
+    const isVert=()=>Math.abs(WORLD.wall.x1-WORLD.wall.x2)<1e-6;
+    const wallX=()=>WORLD.wall.x1, wYmin=()=>Math.min(WORLD.wall.y1,WORLD.wall.y2), wYmax=()=>Math.max(WORLD.wall.y1,WORLD.wall.y2);
+
+    // 1 px = 1 cm; Schrittweite 1 px/Frame = 1 cm
+    async function forward_m(d){  // d in px (cm)
+      const myToken=runToken;
+      const r=WORLD.robot, step=1;
+      const ux=Math.cos(rad(r.heading)), uy=Math.sin(rad(r.heading));
+      let remaining=d;
+      return new Promise(resolve=>{
+        function tick(){
+          if (myToken!==runToken) return resolve();
+          const moved=Math.min(step, remaining);
+          let nx=r.x+ux*moved, ny=r.y+uy*moved;
+
+          if(isVert()){
+            const wx=wallX(), withinY=(r.y>=wYmin()-r.r)&&(r.y<=wYmax()+r.r);
+            if(withinY){
+              if(ux>0 && r.x<wx && nx>=wx-r.r){ nx=wx-r.r; anyCollision=true; remaining=0; }
+              if(ux<0 && r.x>wx && nx<=wx+r.r){ nx=wx+r.r; anyCollision=true; remaining=0; }
+            }
+          }
+
+          nx=clamp(nx, r.r, WORLD.W-r.r); ny=clamp(ny, r.r, WORLD.H-r.r);
+          r.x=nx; r.y=ny; render();
+
+          remaining-=moved;
+          if(remaining>0) requestAnimationFrame(tick); else resolve();
+        }
+        requestAnimationFrame(tick);
+      });
+    }
+
+    // N mm → N/10 px (1 cm/px); stoppt vor der Wand ohne Kontakt
+    async function forward_until_threshold_mm(thresholdMm){
+      const marginPx = Math.max(0, thresholdMm) / 10;  // mm → cm(px)
+      const r=WORLD.robot, ux=Math.cos(rad(r.heading));
+      if(!isVert() || Math.abs(ux)<1e-6) throw new Error("Simulation erwartet horizontale Ausrichtung & vertikale Wand.");
+      const withinY=(r.y>=wYmin()-r.r)&&(r.y<=wYmax()+r.r);
+      if(!withinY) throw new Error("Roboter steht nicht im Y-Bereich der Wand.");
+
+      const wx=wallX();
+      const target = ux>0 ? (wx - r.r - marginPx) : (wx + r.r + marginPx);
+      const dist = Math.max(0, Math.abs(target - r.x));
+      if(dist===0) return;
+      await forward_m(dist);
+      if(anyCollision) throw new Error("Kollision erkannt.");
+    }
+
+    /* ---------- Run / Reset / Save ---------- */
+    function reset(){ setStatus("", ""); els.output.textContent=""; els.error.textContent=""; resetWorld(); }
+    function save(){ const b=new Blob([els.editor.value],{type:"text/plain"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="main.py"; a.click(); URL.revokeObjectURL(a.href); }
+
+    async function runCode(){
+      els.error.textContent=""; els.output.textContent="";
+      setStatus("running","checking…");
+
+      const code=els.editor.value.trim();
+      if(!code){
+        setStatus("error","ERROR");
+        els.output.textContent="Bitte schreibe zuerst dein Pybricks-Programm in den Editor.";
+        return;
+      }
+
+      const { errors, thresholdMm } = validateAndExtractThreshold(code);
+      if(errors.length){
+        setStatus("error","ERROR");
+        els.output.textContent = "Bitte korrigiere zuerst:\n" + errors.join("\n");
+        return;
+      }
+
+      setStatus("running","running…");
+      resetWorld();
+      try{
+        await forward_until_threshold_mm(thresholdMm);
+        setStatus("ok","done.");
+        els.output.textContent += `Stopp in ~${thresholdMm} mm vor der Wand (simuliert).\n`;
+      }catch(e){
+        setStatus("error","ERROR");
+        els.error.textContent = String(e);
+      }
+    }
+
+    els.run.onclick = runCode;
+    els.reset.onclick = reset;
+    els.save.onclick = save;
+
+    render();
+
+    document.getElementById("back-btn").onclick = () => history.back();
+    document.getElementById("next-btn").onclick = () => alert("Kein nächster Schritt gesetzt.");
+  </script>
+</body>
+</html>
