@@ -1,17 +1,15 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EV3 (Pybricks) – Schritt 1: Stop vor der Wand</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Robot Template – Arena + Bodies + Line Follower (Pyodide)</title>
+
+  <!-- Deine gemeinsame CSS -->
   <link rel="stylesheet" href="../css/03_python.css" />
-  <style>
-    #arena { background:#f9fafb; border:2px solid #111; width:100%; height:auto; max-width:900px; border-radius:10px; display:block; margin-top:10px; }
-    .status.ok { color:#15803d; }
-    .status.error { color:#b91c1c; }
-    .status.running { color:#374151; }
-    .muted { color:#6b7280; }
-  </style>
+
+  <!-- Pyodide (echtes Python im Browser) -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
 </head>
 <body>
   <div class="nav-row">
@@ -21,11 +19,8 @@
 
   <header class="row" style="justify-content: space-between;">
     <div>
-      <h1 id="task-title">EV3 (Pybricks) · Schritt 1 – Stop vor der Wand</h1>
-      <p id="task-desc">
-        Schreibe ein korrektes <b>Pybricks-Programm</b> (EV3Brick, Motoren, Ultraschall).
-        Die Simulation startet nur bei <b>korrektem Code</b> und vorhandenen <code># SIM.…</code>-Zeilen.
-      </p>
+      <h1>Robot Template — 3×3 m Arena (Pyodide)</h1>
+      <p id="task-desc">Füge Körper ein: <code>add_rect()</code>, <code>add_circle()</code>. Linie zeichnen: <code>track_polyline()</code>. Bewegen: <code>robot.forward_m()</code>, <code>robot.left()</code>, <code>robot.right()</code>. Line-Follower: <code>robot.follow_line()</code>.</p>
     </div>
     <div class="row">
       <button class="btn" id="tips-btn">💡 Tips</button>
@@ -34,6 +29,7 @@
   </header>
 
   <main class="layout">
+    <!-- Editor -->
     <section class="card">
       <h2>Editor</h2>
       <div class="row">
@@ -42,61 +38,39 @@
         <button class="btn" id="save-btn">💾 Save</button>
         <span id="status" class="status" aria-live="polite"></span>
       </div>
-<textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
-# EV3 (Pybricks) – Basis für Schritt 1
-from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import Motor, UltrasonicSensor
-from pybricks.parameters import Port, Stop
-from pybricks.tools import wait
-from pybricks.robotics import DriveBase
-
-# TODO:
-# 1) Hardware initialisieren:
-#    brick = EV3Brick()
-#    left  = Motor(Port.A)
-#    right = Motor(Port.B)
-#    ultra = UltrasonicSensor(Port.S2)
-#    drive = DriveBase(left, right, 56, 114)
-#
-# 2) Logik schreiben:
-#    drive.drive(150, 0)
-#    while ultra.distance() > 150:
-#        wait(20)
-#    drive.stop(Stop.BRAKE)
-#    brick.speaker.beep()
-#
-# 3) Simulation ansteuern (jede Zeile beginnt mit "# SIM."):
-#    # SIM.robot.set(60, 100, 0)
-#    # SIM.wall.set(500, 20, 500, 180)
-#    # SIM.robot.forward_until_wall(1)
-</textarea>
+      <textarea id="editor" spellcheck="false" placeholder="# Schreibe Python hier…"></textarea>
     </section>
 
+    <!-- Output + Canvas -->
     <section class="card">
-      <h2>Simulation</h2>
-      <canvas id="arena" width="600" height="200"></canvas>
-      <p class="muted">Maßstab: 1 px = 1 m · Arena: 600 m × 200 m</p>
-      <pre id="output"></pre>
-      <div id="error" style="color:#b91c1c;"></div>
+      <h2>Output</h2>
+      <pre id="output" aria-live="polite"></pre>
+      <h3>Arena</h3>
+      <canvas id="arena" width="540" height="540" aria-label="robot arena"
+              style="border:2px solid #111; background:#fff; width:100%; max-width:540px; height:auto;"></canvas>
     </section>
   </main>
 
-  <!-- Tips -->
+  <!-- Tips modal -->
   <dialog id="tips-modal">
     <div class="modal-header">Tips</div>
     <div class="modal-body">
-      <ul id="tips-list"></ul>
+      <ul>
+        <li>1 m = 100 px, Arena ist 3×3 m, Ursprung (0,0) in der Mitte.</li>
+        <li>Körper: <code>add_rect(x,y,w,h,deg=0, color="#94a3b8")</code>, <code>add_circle(x,y,r,color="#94a3b8")</code> (x/y in Metern).</li>
+        <li>Linie: <code>track_polyline([(x1,y1),(x2,y2),...], width_mm=40)</code> (Koordinaten in m).</li>
+        <li>Line-Follower: <code>robot.follow_line(seconds=5, base_speed_mm_s=120, kp=2.0, sensor_mm=12)</code>.</li>
+      </ul>
     </div>
     <div class="modal-actions">
       <button class="btn" id="close-tips">Close</button>
     </div>
   </dialog>
 
-  <!-- Solution -->
+  <!-- Solution modal -->
   <dialog id="solution-modal">
-    <div class="modal-header">Solution (eine mögliche Lösung)</div>
+    <div class="modal-header">Solution (Beispiel)</div>
     <div class="modal-body">
-      <p class="muted" style="margin:0 0 8px 0;">Hinweis: Es gibt viele korrekte Lösungen. Dies ist <b>ein Vorschlag</b>.</p>
 <pre id="solution-code" style="white-space:pre-wrap;"></pre>
     </div>
     <div class="modal-actions">
@@ -106,253 +80,301 @@ from pybricks.robotics import DriveBase
   </dialog>
 
   <script>
-    /* ---------- Task ---------- */
-    const TASK = {
-      title: "EV3 (Pybricks) – Stop vor Wand",
-      description: "Simulation startet nur bei korrektem Code + # SIM.-Zeilen.",
-      tips: [
-        "Pflicht-Imports: EV3Brick, Motor, UltrasonicSensor, Port, Stop, wait, DriveBase.",
-        "Initialisierung: Motor(Port.A/B) und UltrasonicSensor(Port.S2).",
-        "Schleife mit ultra.distance() und wait(...).",
-        "Simulation: # SIM.robot.set(...) · # SIM.wall.set(...) · # SIM.robot.forward_until_wall(1)."
-      ],
-      solution:
-`#!/usr/bin/env pybricks-micropython
-from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import Motor, UltrasonicSensor
-from pybricks.parameters import Port, Stop
-from pybricks.tools import wait
-from pybricks.robotics import DriveBase
-
-brick = EV3Brick()
-left = Motor(Port.A)
-right = Motor(Port.B)
-ultra = UltrasonicSensor(Port.S2)
-drive = DriveBase(left, right, 56, 114)
-
-brick.speaker.beep()
-drive.drive(150, 0)
-while ultra.distance() > 150:
-    wait(20)
-drive.stop(Stop.BRAKE)
-brick.speaker.beep()
-
-# SIM.robot.set(60, 100, 0)
-# SIM.wall.set(500, 20, 500, 180)
-# SIM.robot.forward_until_wall(1)`
-    };
-
-    /* ---------- Refs ---------- */
+    // ---------- Refs ----------
+    let pyodide;
     const els = {
-      editor: document.getElementById("editor"),
-      run: document.getElementById("run-btn"),
-      reset: document.getElementById("reset-btn"),
-      save: document.getElementById("save-btn"),
-      output: document.getElementById("output"),
-      error: document.getElementById("error"),
-      status: document.getElementById("status"),
-      canvas: document.getElementById("arena"),
-      tipsBtn: document.getElementById("tips-btn"),
-      tipsModal: document.getElementById("tips-modal"),
-      tipsList: document.getElementById("tips-list"),
-      closeTips: document.getElementById("close-tips"),
-      solutionBtn: document.getElementById("solution-btn"),
-      solutionModal: document.getElementById("solution-modal"),
-      solutionCode: document.getElementById("solution-code"),
-      copySolution: document.getElementById("copy-solution"),
-      closeSolution: document.getElementById("close-solution")
+      editor: document.getElementById('editor'),
+      run: document.getElementById('run-btn'),
+      reset: document.getElementById('reset-btn'),
+      save: document.getElementById('save-btn'),
+      out: document.getElementById('output'),
+      status: document.getElementById('status'),
+      canvas: document.getElementById('arena'),
+      tipsBtn: document.getElementById('tips-btn'),
+      tipsDlg: document.getElementById('tips-modal'),
+      closeTips: document.getElementById('close-tips'),
+      solBtn: document.getElementById('solution-btn'),
+      solDlg: document.getElementById('solution-modal'),
+      solCode: document.getElementById('solution-code'),
+      copySolution: document.getElementById('copy-solution'),
+      closeSol: document.getElementById('close-solution'),
     };
 
-    /* ---------- Init ---------- */
-    document.title = TASK.title;
-    els.solutionCode.textContent = TASK.solution;
-    els.tipsList.innerHTML = (TASK.tips || []).map(t=>"<li>"+t+"</li>").join("");
-    function setStatus(cls, txt){ els.status.className="status "+cls; els.status.textContent=txt; }
+    // ---------- Status ----------
+    function setStatus(state, text){
+      els.status.className = "status" + (state ? (" " + state) : "");
+      els.status.textContent = text || "";
+    }
+    function printLine(s){ els.out.textContent += s + "\\n"; }
 
-    function openDialog(d){ if(d?.showModal) d.showModal(); else d?.setAttribute("open",""); }
-    function closeDialog(d){ if(d?.close) d.close(); else d?.removeAttribute("open"); }
-    els.tipsBtn.onclick = () => openDialog(els.tipsModal);
-    els.closeTips.onclick = () => closeDialog(els.tipsModal);
-    els.solutionBtn.onclick = () => openDialog(els.solutionModal);
-    els.closeSolution.onclick = () => closeDialog(els.solutionModal);
-    els.copySolution.onclick = () => { els.editor.value = TASK.solution; closeDialog(els.solutionModal); };
+    // ---------- Canvas helpers exposed to Python ----------
+    const ctx = els.canvas.getContext('2d');
 
-    /* ---------- Strenge Validierung ---------- */
-    // Wir verlangen bewusst forward_until_wall in den SIM-Zeilen, damit der Stopp vor der Wand geübt wird.
-    function validateCode(src){
-      const must = [
-        { re:/from\s+pybricks\.hubs\s+import\s+EV3Brick/, msg:"Import EV3Brick fehlt" },
-        { re:/from\s+pybricks\.ev3devices\s+import\s+.*\bMotor\b/, msg:"Import Motor fehlt" },
-        { re:/from\s+pybricks\.ev3devices\s+import\s+.*\bUltrasonicSensor\b/, msg:"Import UltrasonicSensor fehlt" },
-        { re:/from\s+pybricks\.parameters\s+import\s+.*\bPort\b/, msg:"Import Port fehlt" },
-        { re:/from\s+pybricks\.tools\s+import\s+.*\bwait\b/, msg:"Import wait fehlt" },
-        { re:/from\s+pybricks\.robotics\s+import\s+.*\bDriveBase\b/, msg:"Import DriveBase fehlt" },
-
-        // Initialisierung
-        { re:/EV3Brick\s*\(/, msg:"EV3Brick nicht initialisiert" },
-        { re:/Motor\(\s*Port\.A\s*\)/, msg:"Motor links (Port.A) fehlt" },
-        { re:/Motor\(\s*Port\.B\s*\)/, msg:"Motor rechts (Port.B) fehlt" },
-        { re:/UltrasonicSensor\(\s*Port\.S2\s*\)/, msg:"Ultraschall an S2 fehlt" },
-        { re:/DriveBase\s*\(/, msg:"DriveBase nicht erstellt" },
-
-        // Logik: irgendeine Schleife mit ultra.distance und wait
-        { re:/while\s+.*ultra\.distance\(\)\s*(?:[<>]=?|==|!=)\s*\d+/, msg:"Schleife mit ultra.distance() fehlt" },
-        { re:/\bwait\s*\(\s*\d+/, msg:"wait(...) in der Schleife fehlt" },
-
-        // SIM: explizit der Wand-Stopp
-        { re:/#\s*SIM\.robot\.set\(/, msg:"SIM: robot.set(...) fehlt" },
-        { re:/#\s*SIM\.wall\.set\(/, msg:"SIM: wall.set(...) fehlt" },
-        { re:/#\s*SIM\.robot\.forward_until_wall\(/, msg:"SIM: forward_until_wall(...) fehlt" }
-      ];
-      return must.filter(c=>!c.re.test(src)).map(c=>"✗ "+c.msg);
+    function samplePixel(x, y){
+      // x/y in canvas px; returns "blackness" 0..1
+      const d = ctx.getImageData(Math.round(x), Math.round(y), 1, 1).data;
+      const r=d[0], g=d[1], b=d[2];
+      const lum = 0.2126*r + 0.7152*g + 0.0722*b; // Rec.709 luma
+      return 1 - (lum / 255); // 0=weiß, 1=schwarz
     }
 
-    /* ---------- Arena/Engine (1 px = 1 m) ---------- */
-    const ctx = els.canvas.getContext("2d");
-    const WORLD = { W: els.canvas.width, H: els.canvas.height,
-      wall: {x1:500,y1:20,x2:500,y2:180},
-      robot: {x:60,y:100,heading:0,r:6}
-    };
-    let anyCollision = false;
+    // ---------- Boot Pyodide and Python world ----------
+    async function boot(){
+      setStatus("running","loading Pyodide…");
+      els.out.textContent = "";
+      if (!pyodide) pyodide = await loadPyodide();
+      pyodide.setStdout({batched: s => { if(s) els.out.textContent += s; }});
+      pyodide.setStderr({batched: s => { if(s) els.out.textContent += s; }});
+      pyodide.registerJsModule("uiconsole", { printLine });
+      pyodide.registerJsModule("uicanvas", { ctx, samplePixel });
 
-    const rad = d=>d*Math.PI/180, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-    function clear(){ ctx.fillStyle="#fff"; ctx.fillRect(0,0,WORLD.W,WORLD.H); ctx.strokeStyle="#111"; ctx.lineWidth=2; ctx.strokeRect(0,0,WORLD.W,WORLD.H); }
-    function drawWall(){ const w=WORLD.wall; ctx.strokeStyle="#111"; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(w.x1,w.y1); ctx.lineTo(w.x2,w.y2); ctx.stroke(); }
-    function drawRobot(){ const r=WORLD.robot; ctx.fillStyle="#16a34a"; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,2*Math.PI); ctx.fill(); const hx=r.x+Math.cos(rad(r.heading))*(r.r+10), hy=r.y+Math.sin(rad(r.heading))*(r.r+10); ctx.strokeStyle="#16a34a"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(r.x,r.y); ctx.lineTo(hx,hy); ctx.stroke(); }
-    function render(){ clear(); drawWall(); drawRobot(); }
-    function resetWorld(){ anyCollision=false; WORLD.wall={x1:500,y1:20,x2:500,y2:180}; WORLD.robot={x:60,y:100,heading:0,r:6}; render(); }
+      // Python environment
+      await pyodide.runPythonAsync(`
+from uicanvas import ctx, samplePixel
+from uiconsole import printLine
+import math, time
 
-    const isVerticalWall=()=>Math.abs(WORLD.wall.x1-WORLD.wall.x2)<1e-6;
-    const wallX=()=>WORLD.wall.x1, wallYmin=()=>Math.min(WORLD.wall.y1,WORLD.wall.y2), wallYmax=()=>Math.max(WORLD.wall.y1,WORLD.wall.y2);
+W, H = ctx.canvas.width, ctx.canvas.height
+SCALE = 100       # 1 m = 100 px
+SIZE  = 3 * SCALE # 300 px Arena
+ORIGIN = (W//2, H//2)
 
-    // Präzise Bewegung; registriert Kollisionen
-    async function forward_m(d){
-      const r=WORLD.robot, step=1; // 1 m pro Frame
-      const ux=Math.cos(rad(r.heading)), uy=Math.sin(rad(r.heading));
-      let remaining=d;
-      return new Promise(resolve=>{
-        function tick(){
-          const moved=Math.min(step, remaining);
-          let nx=r.x+ux*moved, ny=r.y+uy*moved;
+# --- drawing utils ---
+def to_canvas(x, y):
+    # world (m) center -> canvas (px, top-left)
+    return ORIGIN[0] + x*SCALE, ORIGIN[1] - y*SCALE
 
-          // Kollisionsprüfung mit vertikaler Wand
-          if(isVerticalWall()){
-            const wx=wallX(), withinY=(r.y>=wallYmin()-r.r)&&(r.y<=wallYmax()+r.r);
-            if(withinY){
-              if(ux>0 && r.x<wx && nx>=wx - r.r){ nx = wx - r.r; anyCollision = true; remaining = 0; }
-              if(ux<0 && r.x>wx && nx<=wx + r.r){ nx = wx + r.r; anyCollision = true; remaining = 0; }
-            }
-          }
+def clear_canvas():
+    ctx.fillStyle = "#ffffff"
+    ctx.fillRect(0,0,W,H)
+    # border
+    ctx.strokeStyle = "#111"; ctx.lineWidth = 2
+    left = ORIGIN[0]-SIZE//2; top = ORIGIN[1]-SIZE//2
+    ctx.strokeRect(left, top, SIZE, SIZE)
 
-          nx=clamp(nx, r.r, WORLD.W-r.r); ny=clamp(ny, r.r, WORLD.H-r.r);
-          r.x=nx; r.y=ny; render();
+# --- "engine" state ---
+BODIES = []  # (type, params_dict)
+TRACK  = []  # list of points [(x,y) in meters]
+TRACK_W = 0  # width in px
 
-          remaining -= moved;
-          if(remaining>0) requestAnimationFrame(tick); else resolve();
-        }
-        requestAnimationFrame(tick);
-      });
+def add_rect(x, y, w, h, deg=0, color="#94a3b8"):
+    BODIES.append(("rect", dict(x=x, y=y, w=w, h=h, deg=deg, color=color)))
+    render()
+
+def add_circle(x, y, r, color="#94a3b8"):
+    BODIES.append(("circle", dict(x=x, y=y, r=r, color=color)))
+    render()
+
+def track_polyline(points, width_mm=40, color="#000000"):
+    global TRACK, TRACK_W, TRACK_COLOR
+    TRACK = list(points)
+    TRACK_W = max(1, int(width_mm/1000 * SCALE))
+    TRACK_COLOR = color
+    render()
+
+def draw_bodies():
+    for t, p in BODIES:
+        if t == "rect":
+            cx, cy = to_canvas(p["x"], p["y"])
+            wpx, hpx = p["w"]*SCALE, p["h"]*SCALE
+            ang = math.radians(p["deg"])
+            ctx.save()
+            ctx.translate(cx, cy)
+            ctx.rotate(-ang)  # canvas y down; world y up
+            ctx.fillStyle = p["color"]
+            ctx.fillRect(-wpx/2, -hpx/2, wpx, hpx)
+            ctx.restore()
+        elif t == "circle":
+            cx, cy = to_canvas(p["x"], p["y"])
+            rpx = p["r"]*SCALE
+            ctx.fillStyle = p["color"]
+            ctx.beginPath(); ctx.arc(cx, cy, rpx, 0, 2*math.pi); ctx.fill()
+
+def draw_track():
+    if len(TRACK) < 2: return
+    ctx.strokeStyle = TRACK_COLOR
+    ctx.lineWidth = TRACK_W
+    ctx.lineCap = "round"; ctx.lineJoin = "round"
+    x0,y0 = to_canvas(*TRACK[0])
+    ctx.beginPath(); ctx.moveTo(x0,y0)
+    for x,y in TRACK[1:]:
+        cx,cy = to_canvas(x,y)
+        ctx.lineTo(cx,cy)
+    ctx.stroke()
+
+def is_inside_arena(x, y):
+    half = (SIZE/2)/SCALE
+    return (-half <= x <= half) and (-half <= y <= half)
+
+# --- Robot with 2 line sensors ---
+class Robot:
+    def __init__(self):
+        self.x = -1.3   # m
+        self.y = -1.3   # m
+        self.heading = 0.0  # deg, 0 = +x
+        self.body_px = 10
+
+    def render(self):
+        clear_canvas()
+        draw_track()
+        draw_bodies()
+        # draw robot
+        cx, cy = to_canvas(self.x, self.y)
+        ctx.fillStyle = "#16a34a"
+        ctx.beginPath(); ctx.arc(cx, cy, self.body_px, 0, 2*math.pi); ctx.fill()
+        # heading tick
+        hx = cx + 14*math.cos(math.radians(self.heading))
+        hy = cy - 14*math.sin(math.radians(self.heading))
+        ctx.strokeStyle = "#16a34a"; ctx.lineWidth = 2
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(hx, hy); ctx.stroke()
+
+    def _try_move(self, nx, ny):
+        if is_inside_arena(nx, ny):
+            self.x, self.y = nx, ny
+
+    def forward_m(self, m):
+        rad = math.radians(self.heading)
+        nx = self.x + m*math.cos(rad)
+        ny = self.y + m*math.sin(rad)
+        self._try_move(nx, ny)
+        self.render()
+
+    def forward_mm(self, mm):
+        self.forward_m(mm/1000.0)
+
+    def left(self, deg=90):
+        self.heading = (self.heading + deg) % 360
+        self.render()
+
+    def right(self, deg=90):
+        self.heading = (self.heading - deg) % 360
+        self.render()
+
+    # --- Line sensors ---
+    def _sensor_px(self, offset_mm=12, ahead_mm=12):
+        # zwei Sensoren: links/rechts je offset quer zur Fahrtrichtung, "ahead" vor dem Zentrum
+        rad = math.radians(self.heading)
+        # Quer-Vektor (links)
+        lx = -math.sin(rad); ly = math.cos(rad)
+        # Vorwärts-Vektor
+        fx =  math.cos(rad); fy = math.sin(rad)
+        # Offset/Ahead in Meter
+        off = offset_mm/1000.0; ah = ahead_mm/1000.0
+        # Positionen in Weltkoordinaten
+        Lx = self.x + fx*ah + lx*off
+        Ly = self.y + fy*ah + ly*off
+        Rx = self.x + fx*ah - lx*off
+        Ry = self.y + fy*ah - ly*off
+        # nach Canvas-Pixel
+        lcx,lcy = to_canvas(Lx, Ly)
+        rcx,rcy = to_canvas(Rx, Ry)
+        return (lcx,lcy), (rcx,rcy)
+
+    def read_line_sensors(self, offset_mm=12, ahead_mm=12):
+        (lcx,lcy), (rcx,rcy) = self._sensor_px(offset_mm, ahead_mm)
+        # samplePixel kommt aus JS, gibt 0..1 (0=weiß, 1=schwarz)
+        left = samplePixel(lcx, lcy)
+        right = samplePixel(rcx, rcy)
+        return left, right
+
+    def follow_line(self, seconds=6.0, base_speed_mm_s=120, kp=2.0, sensor_mm=12, ahead_mm=12, dt=0.05):
+        steps = int(seconds / dt)
+        for _ in range(steps):
+            L, R = self.read_line_sensors(offset_mm=sensor_mm, ahead_mm=ahead_mm)
+            error = (L - R)  # pos -> zu viel links (schwärzer), neg -> rechts
+            turn = kp * error  # deg/s proportional
+            # Update heading
+            self.heading = (self.heading + turn*dt) % 360
+            # Vorwärts
+            self.forward_m((base_speed_mm_s/1000.0) * dt)
+        self.render()
+
+# global robot
+robot = Robot()
+clear_canvas(); draw_track(); draw_bodies(); robot.render()
+printLine("Arena bereit. Verfügbar: add_rect, add_circle, track_polyline, robot.*")
+      `);
+
+      // Beispiel-Lösung (Starter)
+      els.solCode.textContent =
+`# --- Beispiel: Bodies + Linie + Line-Follower ---
+# 1) Körper
+add_rect(x=0.0, y=0.0, w=0.6, h=0.2, deg=0,  color="#a3e635")  # grüner Block
+add_circle(x=0.8, y=0.6, r=0.12,            color="#f59e0b")   # oranger Kreis
+
+# 2) Linie (Poly-Line in Metern, Breite 40 mm)
+track_polyline([(-1.2,-1.2), (-0.8,-0.8), (-0.2,-0.8), (0.4,-0.2),
+                (0.8,0.4), (0.6,0.9), (0.0,1.2)], width_mm=40)
+
+# 3) Roboter an Start und folgen lassen
+robot.x, robot.y, robot.heading = -1.3, -1.3, 0
+robot.render()
+robot.follow_line(seconds=7, base_speed_mm_s=140, kp=2.4, sensor_mm=12, ahead_mm=12, dt=0.05)
+`;
+
+      setStatus("ok","ready");
     }
 
-    // Garantiert vor der Wand stoppen (ohne Kollision)
-    async function forward_until_wall(margin=1){
-      const r=WORLD.robot, ux=Math.cos(rad(r.heading));
-      if(!isVerticalWall() || Math.abs(ux)<1e-6){
-        els.output.textContent += "[INFO] Wandstopp nur bei vertikaler Wand & horizontaler Ausrichtung.\n";
-        return;
-      }
-      const wx=wallX();
-      const target = ux>0 ? (wx - r.r - margin) : (wx + r.r + margin);
-      const dist = Math.max(0, Math.abs(target - r.x));
-      await forward_m(dist);
-    }
-
-    function turnLeft(deg){ WORLD.robot.heading=(WORLD.robot.heading+deg)%360; render(); }
-    function turnRight(deg){ WORLD.robot.heading=(WORLD.robot.heading-deg+360)%360; render(); }
-
-    /* ---------- Parser für # SIM.-Zeilen ---------- */
-    async function runProgram(src){
-      els.output.textContent = "";
-      resetWorld();
-      const lines = src.split(/\n/).map(s=>s.trim());
-      const simLines = lines.filter(s => s.startsWith("# SIM."));
-      let motionCount = 0;
-
-      for (const line of simLines){
-        let m;
-        m = line.match(/^#\s*SIM\.robot\.set\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)$/i);
-        if(m){ WORLD.robot.x=+m[1]; WORLD.robot.y=+m[2]; WORLD.robot.heading=(+m[3])%360; render(); continue; }
-
-        m = line.match(/^#\s*SIM\.wall\.set\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)$/i);
-        if(m){ WORLD.wall={x1:+m[1],y1:+m[2],x2:+m[3],y2:+m[4]}; render(); continue; }
-
-        m = line.match(/^#\s*SIM\.robot\.forward_m\(\s*([-\d.]+)\s*\)$/i);
-        if(m){ els.output.textContent += `[MOVE] forward ${m[1]} m\n`; motionCount++; await forward_m(+m[1]); continue; }
-
-        m = line.match(/^#\s*SIM\.robot\.forward_until_wall\(\s*([-\d.]*)\s*\)$/i);
-        if(m){ const margin = m[1]===""?1:+m[1]; els.output.textContent += `[MOVE] until wall (margin ${margin} m)\n`; motionCount++; await forward_until_wall(margin); continue; }
-
-        m = line.match(/^#\s*SIM\.robot\.left\(\s*([-\d.]+)\s*\)$/i);
-        if(m){ turnLeft(+m[1]); continue; }
-
-        m = line.match(/^#\s*SIM\.robot\.right\(\s*([-\d.]+)\s*\)$/i);
-        if(m){ turnRight(+m[1]); continue; }
-
-        els.output.textContent += `[IGNORED] ${line}\n`;
-      }
-
-      return { motionCount, collided:anyCollision };
-    }
-
-    /* ---------- Run / Reset / Save ---------- */
-    function reset(){ els.output.textContent=""; els.error.textContent=""; setStatus("", ""); render(); }
-
+    // ---------- Run / Reset / Save ----------
     async function runCode(){
-      els.error.textContent=""; els.output.textContent="";
-      setStatus("running","checking…");
-
-      const code = els.editor.value;
-      const errors = validateCode(code);
-      if (errors.length > 0){
-        setStatus("error","ERROR");
-        els.output.textContent = "Bitte korrigiere zuerst:\n" + errors.join("\n");
-        return;
-      }
-
+      if(!pyodide) return;
+      els.out.textContent = "";
       setStatus("running","running…");
       try{
-        const { motionCount, collided } = await runProgram(code);
-        if (motionCount === 0){
-          setStatus("error","ERROR");
-          els.output.textContent = "Keine Bewegung ausgeführt. Füge z. B. # SIM.robot.forward_until_wall(1) hinzu.";
-          return;
-        }
-        if (collided){
-          setStatus("error","ERROR");
-          els.output.textContent += "\nKollision erkannt: Der Roboter hat die Wand berührt.\nNutze # SIM.robot.forward_until_wall(margin) (z. B. margin=1).";
-          return;
-        }
+        await pyodide.runPythonAsync(els.editor.value);
         setStatus("ok","done.");
       }catch(e){
-        setStatus("error","ERROR");
-        els.error.textContent = String(e);
+        els.out.textContent += String(e) + "\\n";
+        setStatus("error","error");
       }
     }
-
-    function save(){
-      const b=new Blob([els.editor.value],{type:"text/plain"});
-      const a=document.createElement("a");
-      a.href=URL.createObjectURL(b);
-      a.download="ev3_stop_wall.py";
+    async function resetAll(){
+      setStatus("running","reset…");
+      await boot();
+      setStatus("ok","ready");
+    }
+    function saveCode(){
+      const b = new Blob([els.editor.value], {type:"text/plain"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(b);
+      a.download = "robot_program.py";
       a.click();
       URL.revokeObjectURL(a.href);
     }
 
-    els.run.onclick = runCode;
-    els.reset.onclick = reset;
-    els.save.onclick = save;
+    // ---------- Dialog Handling (mit Fallback) ----------
+    function openDialog(dlg){
+      if (dlg && typeof dlg.showModal === "function") dlg.showModal();
+      else if (dlg){ dlg.setAttribute("open",""); document.documentElement.style.overflow="hidden"; }
+    }
+    function closeDialog(dlg){
+      if (dlg && typeof dlg.close === "function") dlg.close();
+      else if (dlg){ dlg.removeAttribute("open"); document.documentElement.style.overflow=""; }
+    }
 
-    render();
+    // ---------- Bindings ----------
+    els.run.onclick = runCode;
+    els.reset.onclick = resetAll;
+    els.save.onclick = saveCode;
+
+    els.tipsBtn.onclick = ()=> openDialog(els.tipsDlg);
+    els.closeTips.onclick = ()=> closeDialog(els.tipsDlg);
+
+    els.solBtn.onclick = ()=> { openDialog(els.solDlg); };
+    els.closeSol.onclick = ()=> closeDialog(els.solDlg);
+    els.copySolution.onclick = ()=>{
+      els.editor.value = els.solCode.textContent;
+      closeDialog(els.solDlg);
+      els.out.textContent = "";
+      setStatus("", "");
+    };
+
+    // ---------- Boot once & preload solution into modal ----------
+    (async () => {
+      await boot();
+      // optional: Starter in den Editor legen
+      els.editor.value = els.solCode.textContent;
+    })();
   </script>
 </body>
 </html>
