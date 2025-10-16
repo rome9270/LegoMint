@@ -136,8 +136,8 @@ brick.speaker.beep()
       ]
     };
 
-    /* ---------- DOM ---------- */
-    const els = {
+    /* ---------- DOM - Document Object Model => Brücke zwischen HTML und JS---------- */
+    /* ---------- JS benötigt DOM zum Steuern des Editors, Button und Canvas -------*/
       editor: document.getElementById("editor"),
       run: document.getElementById("run-btn"),
       reset: document.getElementById("reset-btn"),
@@ -156,7 +156,8 @@ brick.speaker.beep()
       closeSolution: document.getElementById("close-solution")
     };
 
-    /* ---------- UI ---------- */
+    /* ---------- UI = User Interface---------- */
+    /* -------- alles was der User sehen und klicken kann ----- */
     els.tipsList.innerHTML = TASK.tips.map(t=>"<li>"+t+"</li>").join("");
     function setStatus(cls, txt){ els.status.className="status "+cls; els.status.textContent=txt; }
     function openDialog(d){ if(d?.showModal) d.showModal(); else d?.setAttribute("open",""); }
