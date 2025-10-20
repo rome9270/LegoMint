@@ -181,7 +181,7 @@ const els = {
       const code = src.replace(/\r/g,'');
       const lines = code.split('\n');
 
-      // Pflicht-Imports -ohne diese Importe läuft das Programm NICHT
+      // Pflicht-Imports -ohne diese Importe läuft das Programm NICHT - CHECK EINGABE
       [
         [/from\s+pybricks\.hubs\s+import\s+EV3Brick/, "Import EV3Brick fehlt"],
         [/from\s+pybricks\.ev3devices\s+import\s+.*\bMotor\b/, "Import Motor fehlt"],
@@ -192,7 +192,7 @@ const els = {
         [/from\s+pybricks\.robotics\s+import\s+.*\bDriveBase\b/, "Import DriveBase fehlt"]
       ].forEach(([re,msg])=>{ if(!re.test(code)) errors.push("✗ "+msg); });
 
-      // Initialisierung & Variablennamen
+      // Initialisierung & Variablennamen - CHECK EINGABE
       const brickM = code.match(/(\w+)\s*=\s*EV3Brick\s*\(\s*\)/);
       const leftM  = code.match(/(\w+)\s*=\s*Motor\s*\(\s*Port\.A\s*\)/);
       const rightM = code.match(/(\w+)\s*=\s*Motor\s*\(\s*Port\.B\s*\)/);
