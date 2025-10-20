@@ -139,7 +139,6 @@ brick.speaker.beep()
     /* ---------- DOM - Document Object Model => Brücke zwischen HTML und JS---------- */
     /* ---------- JS benötigt DOM zum Steuern des Editors, Button und Canvas -------*/
    /* ---------- DOM - Document Object Model ---------- */
-/* ---------- JS benötigt DOM zum Steuern des Editors, Button und Canvas -------*/
 const els = {
   editor: document.getElementById("editor"),
   run: document.getElementById("run-btn"),
@@ -182,7 +181,7 @@ const els = {
       const code = src.replace(/\r/g,'');
       const lines = code.split('\n');
 
-      // Pflicht-Imports
+      // Pflicht-Imports -ohne diese Importe läuft das Programm NICHT
       [
         [/from\s+pybricks\.hubs\s+import\s+EV3Brick/, "Import EV3Brick fehlt"],
         [/from\s+pybricks\.ev3devices\s+import\s+.*\bMotor\b/, "Import Motor fehlt"],
@@ -215,7 +214,7 @@ const els = {
         if(!driveDriveRe.test(code)) errors.push("✗ drive.drive(...) fehlt");
       }
 
-      // Mappe einfache Zuweisungen NAME = ZAHL (für beliebige Konstantennamen)
+      // einfache Zuweisungen NAME = ZAHL (für beliebige Konstantennamen)
       const assigns = {};
       for(const L of lines){
         const m = L.match(/^\s*([A-Za-z_]\w*)\s*=\s*(\d+)\s*$/);
