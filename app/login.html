@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login – Digital Education</title>
+  <link rel="stylesheet" href="../CSS/01_main.css">
+  <link rel="stylesheet" href="../CSS/addons_login.css">
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <h1>Bitte einloggen</h1>
+      <hr>
+      <p>Mit Schülernummer oder Namen + Passwort</p>
+    </div>
+
+    <form class="form" action="login.php" method="post" autocomplete="on">
+      <div class="form-field">
+        <label for="user">Benutzer / Schülernummer</label>
+        <input id="user" name="user" required>
+      </div>
+      <div class="form-field">
+        <label for="pw">Passwort</label>
+        <input id="pw" name="pw" type="password" required>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button class="btn ghost" type="reset">Zurücksetzen</button>
+        <button class="btn primary" type="submit">Login</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
