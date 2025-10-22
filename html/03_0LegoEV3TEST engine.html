@@ -182,6 +182,12 @@ wait(5000)
     // ==== Modale öffnen/schließen ====
     const tipsModal = $('tips-modal');
     const solutionModal = $('solution-modal');
+    const TASK = {
+     taskId: 1,          
+      // <— WICHTIG: ID aus Tabelle tasks  
+      // ... dein bisheriges TASK-Objekt
+};
+
 
     $('tips-btn').onclick = () => tipsModal.showModal();
     $('close-tips').onclick = () => tipsModal.close();
