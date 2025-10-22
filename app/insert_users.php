@@ -5,7 +5,9 @@ require __DIR__ . '/db.php';
 $users = [
   ['S1001', 'Alex', 'student', 'schueler1'],
   ['S1002', 'Sophie', 'student', 'schueler2'],
-  [null, 'Frau Müller', 'teacher', 'lehrerpasswort']
+  ['S1003', 'Sophi', 'student', 'schueler3'],
+  ['S1004', 'Mari', 'student', 'schueler4'],
+  [null, 'Frau Müller', 'teacher', 'lehrer']
 ];
 
 $stmt = $pdo->prepare("
