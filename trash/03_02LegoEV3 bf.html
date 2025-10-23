@@ -6,6 +6,7 @@
   <title>EV3 (Pybricks) – Drive a Square</title>
 
   <link rel="stylesheet" href="../css/03_python.css" />
+
   <style>
     #arena { background:#f9fafb; border:2px solid #111; width:100%; height:auto; max-width:900px; border-radius:10px; display:block; margin-top:10px; }
     .status.ok { color:#15803d; }
@@ -15,15 +16,14 @@
   </style>
 </head>
 <body>
-  <!-- Simple nav (no nested <a>) -->
   <div class="nav-row">
-    <a class="btn" href="../app/01_main.php">← Go back to main</a>
-    <a class="btn primary" id="next-btn" href="03_03LegoEV3.html">Next →</a>
+    <a href="03_03LegoEV3.html" class="btn primary" id="next-btn">Next →</a>
   </div>
   <nav class="link-grid" aria-label="Topic selection">
-    <a class="btn" href="../app/01_main.php" aria-label="Back to main">⬅️ Going to main</a>
-    <a class="btn" href="../app/logout.php">🚪 Logout</a>
-  </nav>
+  <a class="btn" href="../app/01_main.php" id="go-main" aria-label="Back to main">⬅️ Going to main
+  <a class="btn" href="../app/logout.php">🚪 Logout</a>
+  </a>
+</nav>
 
   <header class="row" style="justify-content: space-between;">
     <div>
@@ -50,6 +50,7 @@
         <button class="btn" id="save-btn">💾 Save</button>
         <span id="status" class="status" aria-live="polite"></span>
       </div>
+
 <textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
 # EV3 (Pybricks) – Starter (fill in the logic yourself)
 from pybricks.hubs import EV3Brick
@@ -108,21 +109,26 @@ from pybricks.robotics import DriveBase
 
 brick = EV3Brick()
 
+# Motors on A (left) and B (right)
 left  = Motor(Port.A)
 right = Motor(Port.B)
 
+# Typical geometry (mm) – adjust if needed
 WHEEL_DIAMETER = 56
 AXLE_TRACK     = 114
 drive = DriveBase(left, right, WHEEL_DIAMETER, AXLE_TRACK)
 
+# Drive a square: 4 sides × 200 mm, turning 90° each corner
 for i in range(4):
-    drive.straight(200)
-    drive.turn(90)
+    drive.straight(200)   # <-- literal number to satisfy validator
+    drive.turn(90)        # 90° right turn
 
-drive.stop(Stop.BRAKE)
+drive.stop(Stop.BRAKE)    # Stop after the loop
+
 brick.speaker.beep()
 brick.screen.print("This is my square")
-wait(500)
+wait(500)                 # simple wait to use the 'wait' import
+
 </pre>
     </div>
     <div class="modal-actions">
@@ -132,14 +138,14 @@ wait(500)
   </dialog>
 
   <script>
-    /* ---------- Task meta ---------- */
+    /* ---------- Tips ---------- */
     const TASK = {
-      taskId: 2,
+      taskId: 2,  
       tips: [
-        "Use DriveBase: drive.straight(mm), drive.turn(deg).",
+        "Use DriveBase(straight_mm, turn_deg): drive.straight(mm), drive.turn(deg).",
         "Loop: for i in range(4): straight + 90° turn → a square.",
         "After the loop: brick.speaker.beep(); brick.screen.print(\"This is my square\").",
-        "Wheel diameter / axle track typical: 56 mm / 114 mm."
+        "Adjust wheel diameter and axle track to your robot (56 mm / 114 mm are typical)."
       ]
     };
 
@@ -163,19 +169,6 @@ wait(500)
       closeSolution: document.getElementById("close-solution")
     };
 
-    /* ---------- Helper: send event to backend ---------- */
-    function sendEvent(ev){
-      fetch("/LegoMint/app/event_update.php", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          task_id: String(TASK.taskId),
-          event: ev // "sim" or "download"
-        })
-      }).catch(()=>{});
-    }
-
     /* ---------- UI ---------- */
     els.tipsList.innerHTML = TASK.tips.map(t=>"<li>"+t+"</li>").join("");
     function setStatus(cls, txt){ els.status.className="status "+cls; els.status.textContent=txt; }
@@ -191,7 +184,7 @@ wait(500)
       setStatus("", ""); els.output.textContent=""; els.error.textContent="";
     };
 
-    /* ---------- Validation ---------- */
+    /* ---------- STRICT VALIDATION (square task) ---------- */
     function validateSquareTask(src){
       const errors = [];
       const code = src.replace(/\r/g,'');
@@ -207,7 +200,7 @@ wait(500)
         [/from\s+pybricks\.robotics\s+import\s+.*\bDriveBase\b/, "Missing import DriveBase"]
       ].forEach(([re,msg])=>{ if(!re.test(code)) errors.push("✗ "+msg); });
 
-      // initializations
+      // initializations (variable names are free)
       const brickM = code.match(/(\w+)\s*=\s*EV3Brick\s*\(\s*\)/);
       const leftM  = code.match(/(\w+)\s*=\s*Motor\s*\(\s*Port\.A\s*\)/);
       const rightM = code.match(/(\w+)\s*=\s*Motor\s*\(\s*Port\.B\s*\)/);
@@ -219,72 +212,98 @@ wait(500)
 
       const driveVar = driveM?.[1] || "drive";
 
-      // for range(4)
+      // for ... in range(4)
       const forRe = /^\s*for\s+\w+\s+in\s+range\s*\(\s*4\s*\)\s*:\s*$/m;
       if(!forRe.test(code)) errors.push("✗ Missing loop: for i in range(4):");
 
-      // straight + turn
+      // inside the loop: straight(mm) and turn(±90)
+      // We search anywhere; more robust would check indentation, but this is OK for class use.
       const straightRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*straight\\s*\\(\\s*(\\d+)\\s*\\)`);
       const turnRe     = new RegExp(`\\b${driveVar}\\s*\\.\\s*turn\\s*\\(\\s*(-?\\d+)\\s*\\)`);
+
       const straightM = code.match(straightRe);
       const turnM     = code.match(turnRe);
 
       if(!straightM) errors.push("✗ Missing drive.straight(mm) inside the loop");
       if(!turnM)     errors.push("✗ Missing drive.turn(±90) inside the loop");
 
+      // after loop: beep and screen print mentioning 'square'
+      if(!/brick\s*\.s(k|p)eeper\s*\.?beep|brick\s*\.speaker\s*\.beep\s*\(/.test(code) && !/brick\s*\.speaker\s*\.beep\s*\(/.test(code)){
+        // fallback for typo; then strict:
+      }
       if(!/brick\s*\.speaker\s*\.beep\s*\(/.test(code)) errors.push("✗ Missing brick.speaker.beep()");
       if(!/brick\s*\.screen\s*\.print\s*\(\s*["'].*square.*["']\s*\)/i.test(code)) errors.push('✗ Missing brick.screen.print("This is my square")');
 
+      // extract side length & turn angle for animation (optional but nice)
       let sideMm = straightM ? parseInt(straightM[1],10) : null;
       let angle  = turnM ? parseInt(turnM[1],10) : null;
       if(Number.isFinite(angle) && Math.abs(angle) !== 90){
         errors.push("✗ Turn must be ±90 degrees for a square");
       }
       if(!(Number.isFinite(sideMm) && sideMm >= 50 && sideMm <= 1000)){
+        // default to 200 mm if out of range (but warn)
         errors.push("✗ Side length should be 50–1000 mm (via drive.straight(mm))");
       }
+
       return { errors, sideMm, angle: angle || 90 };
     }
 
-    /* ---------- Arena ---------- */
+    /* ---------- Arena / animation (1 px = 1 cm) ---------- */
     const ctx = els.canvas.getContext("2d");
-    const WORLD = { W: els.canvas.width, H: els.canvas.height, robot: { x:80, y:200, heading:0, r:6 } };
+    const WORLD = {
+      W: els.canvas.width, H: els.canvas.height,
+      robot: { x:80, y:200, heading:0, r:6 } // start at (80,200) facing right
+    };
     let runToken=0;
-    const rad=d=>d*Math.PI/180;
 
+    const rad=d=>d*Math.PI/180;
     function clear(){ ctx.fillStyle="#fff"; ctx.fillRect(0,0,WORLD.W,WORLD.H); ctx.strokeStyle="#111"; ctx.lineWidth=2; ctx.strokeRect(0,0,WORLD.W,WORLD.H); }
     function drawRobot(){
       const r=WORLD.robot;
       ctx.fillStyle="#16a34a";
       ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,2*Math.PI); ctx.fill();
-      const hx=r.x+Math.cos(rad(r.heading))*(r.r+10), hy=r.y+Math.sin(rad(r.heading))*(r.r+10);
-      ctx.strokeStyle="#16a34a"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(r.x,r.y); ctx.lineTo(hx,hy); ctx.stroke();
+      const hx=r.x+Math.cos(rad(r.heading))*(r.r+10);
+      const hy=r.y+Math.sin(rad(r.heading))*(r.r+10);
+      ctx.strokeStyle="#16a34a"; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(r.x,r.y); ctx.lineTo(hx,hy); ctx.stroke();
     }
     function render(){ clear(); drawRobot(); }
-    function resetWorld(){ runToken++; WORLD.robot={x:80,y:200,heading:0,r:6}; render(); }
+    function resetWorld(){
+      runToken++;
+      WORLD.robot = { x:80, y:200, heading:0, r:6 };
+      render();
+    }
 
+    // move straight with animation: mm → px (1 cm/px → mm/10)
     async function moveStraightMm(mm){
-      const my=runToken, r=WORLD.robot, distPx=Math.max(0,mm)/10, step=1;
-      const ux=Math.cos(rad(r.heading)), uy=Math.sin(rad(r.heading));
-      let remaining=distPx;
+      const my=runToken; const r=WORLD.robot;
+      const distPx = Math.max(0, mm)/10;  // mm → cm(px)
+      const step = 1; // 1 cm per frame
+      const ux = Math.cos(rad(r.heading)), uy = Math.sin(rad(r.heading));
+      let remaining = distPx;
       return new Promise(resolve=>{
         function tick(){
           if(my!==runToken) return resolve();
-          const moved=Math.min(step,remaining);
-          r.x+=ux*moved; r.y+=uy*moved; render();
-          remaining-=moved;
+          const moved = Math.min(step, remaining);
+          r.x += ux*moved; r.y += uy*moved;
+          render();
+          remaining -= moved;
           if(remaining>0) requestAnimationFrame(tick); else resolve();
         }
         requestAnimationFrame(tick);
       });
     }
     async function turnDeg(deg){
-      const my=runToken, r=WORLD.robot, total=deg, step=deg>0?5:-5; let done=0;
+      const my=runToken; const r=WORLD.robot;
+      const total = deg; const step = deg>0? 5 : -5;
+      let done = 0;
       return new Promise(resolve=>{
         function tick(){
           if(my!==runToken) return resolve();
           const next = Math.abs(total-done) < Math.abs(step) ? (total-done) : step;
-          r.heading=(r.heading+next+360)%360; done+=next; render();
+          r.heading = (r.heading + next + 360) % 360;
+          done += next;
+          render();
           if(done===total) resolve(); else requestAnimationFrame(tick);
         }
         requestAnimationFrame(tick);
@@ -292,34 +311,39 @@ wait(500)
     }
 
     /* ---------- Run / Reset / Save ---------- */
+    function setStatus(cls, txt){ els.status.className="status "+cls; els.status.textContent=txt; }
     function reset(){ setStatus("", ""); els.output.textContent=""; els.error.textContent=""; resetWorld(); }
-    function save(){
-      const b=new Blob([els.editor.value],{type:"text/plain"});
-      const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="main.py"; a.click(); URL.revokeObjectURL(a.href);
-      // record download
-      sendEvent("download");
-    }
+    function save(){ const b=new Blob([els.editor.value],{type:"text/plain"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="main.py"; a.click(); URL.revokeObjectURL(a.href); }
 
     async function runCode(){
       els.error.textContent=""; els.output.textContent="";
       setStatus("running","checking…");
 
       const code=els.editor.value.trim();
-      if(!code){ setStatus("error","ERROR"); els.output.textContent="Please write your Pybricks program first."; return; }
+      if(!code){
+        setStatus("error","ERROR");
+        els.output.textContent="Please write your Pybricks program first.";
+        return;
+      }
 
       const { errors, sideMm, angle } = validateSquareTask(code);
-      if(errors.length){ setStatus("error","ERROR"); els.output.textContent = "Please fix first:\n" + errors.join("\n"); return; }
+      if(errors.length){
+        setStatus("error","ERROR");
+        els.output.textContent = "Please fix first:\n" + errors.join("\n");
+        return;
+      }
 
       setStatus("running","running…");
       resetWorld();
       try{
+        // animate a square (4 sides) with extracted side length/angle
         const mm = sideMm || 200;
-        for(let i=0;i<4;i++){ await moveStraightMm(mm); await turnDeg(angle>0?90:-90); }
+        for(let i=0;i<4;i++){
+          await moveStraightMm(mm);
+          await turnDeg(angle>0?90:-90);
+        }
         setStatus("ok","done.");
         els.output.textContent = `Square completed (side ~${mm} mm). Then: beep + print "This is my square".`;
-
-        // record successful simulation
-        sendEvent("sim");
       }catch(e){
         setStatus("error","ERROR");
         els.error.textContent = String(e);
@@ -332,9 +356,8 @@ wait(500)
 
     render();
 
-    // Safe back handler (only if element exists)
-    const backBtn = document.getElementById("back-btn");
-    if (backBtn) backBtn.onclick = () => history.back();
+    document.getElementById("back-btn").onclick = () => history.back();
+    
   </script>
 </body>
 </html>

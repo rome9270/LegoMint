@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EV3 (Pybricks) · Step 1 – Two Beeps & Name</title>
+
   <link rel="stylesheet" href="../css/03_python.css" />
   <style>
     .status.ok { color:#15803d; }
@@ -13,18 +14,18 @@
   </style>
 </head>
 <body>
+  <!-- NAVIGATION -->
   <div class="nav-row">
-    <a class="level-btn" href="01_main.php">← Go back to main</a>
-    <a href="03_02LegoEV3.html" class="btn" id="next-btn">Next →</a>
+    <a class="btn" href="../app/01_main.php">← Go back to main</a>
+    <a href="03_02LegoEV3.html" class="btn primary" id="next-btn">Next →</a>
   </div>
 
-  <header class="row" style="justify-content: space-between;">
-<nav class="link-grid" aria-label="Topic selection">
-  <a class="btn" href="../app/01_main.php" id="go-main" aria-label="Back to main">⬅️ Going to main
-  <a class="btn" href="../app/logout.php">🚪 Logout</a>
-  </a>
-</nav>
+  <nav class="link-grid" aria-label="Topic selection">
+    <a class="btn" href="../app/01_main.php">⬅️ Going to main</a>
+    <a class="btn" href="../app/logout.php">🚪 Logout</a>
+  </nav>
 
+  <header class="row" style="justify-content: space-between;">
     <div>
       <h1 id="task-title">EV3 (Pybricks) · Step 1: Two Beeps & Name</h1>
       <p id="task-desc">
@@ -39,6 +40,7 @@
   </header>
 
   <main class="layout">
+    <!-- EDITOR -->
     <section class="card">
       <h2>Editor</h2>
       <div class="row">
@@ -60,10 +62,10 @@ brick = EV3Brick()
 # 3) make a second beep
 # 4) print your name on the screen
 # 5) keep it visible for a short time
-# (write real code below)
 </textarea>
     </section>
 
+    <!-- OUTPUT -->
     <section class="card">
       <h2>Output</h2>
       <pre id="output"></pre>
@@ -95,8 +97,7 @@ brick = EV3Brick()
   </dialog>
 
   <script>
-    // --- Task (Pybricks) ---
-    
+    // === TASK DEFINITION ===
     const TASK = {
       taskId: 1,
       title: "EV3 (Pybricks) · Step 1: Two Beeps & Name",
@@ -105,7 +106,6 @@ brick = EV3Brick()
 from pybricks.hubs import EV3Brick
 from pybricks.tools import wait
 
-# Initialize EV3
 brick = EV3Brick()
 
 # TODO:
@@ -114,7 +114,6 @@ brick = EV3Brick()
 # 3) make a second beep
 # 4) print your name on the screen
 # 5) keep it visible for a short time
-# (write real code below)
 `,
       tips: [
         'Keep the shebang on top: <code>#!/usr/bin/env pybricks-micropython</code>.',
@@ -134,16 +133,14 @@ brick = EV3Brick()
 brick.speaker.beep()
 wait(500)
 brick.speaker.beep()
-
 brick.screen.print("This is Alex")
 wait(3000)
 `,
       filename: "main.py",
-      prevUrl: "01_main.html",
-      nextUrl: "03_2LegoEV3.html"
+      nextUrl: "03_02LegoEV3.html"
     };
 
-    // --- Refs ---
+    // === ELEMENTS ===
     const els = {
       title:  document.getElementById("task-title"),
       desc:   document.getElementById("task-desc"),
@@ -163,11 +160,10 @@ wait(3000)
       solutionCode: document.getElementById("solution-code"),
       copySolution: document.getElementById("copy-solution"),
       closeSolution: document.getElementById("close-solution"),
-      back: document.getElementById("back-btn"),
       next: document.getElementById("next-btn")
     };
 
-    // --- Init ---
+    // === INITIALIZE UI ===
     document.title = TASK.title;
     els.title.textContent = TASK.title;
     els.desc.innerHTML = TASK.description;
@@ -175,114 +171,66 @@ wait(3000)
     els.tipsList.innerHTML = (TASK.tips || []).map(t=>"<li>"+t+"</li>").join("");
     els.editor.value = TASK.starterCode;
 
+    // === EVENT REPORTING (DB) ===
+    function sendEvent(ev){
+      fetch("/LegoMint/app/event_update.php", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ task_id: String(TASK.taskId), event: ev })
+      }).then(r=>r.json()).then(j=>console.log("EVENT", ev, j)).catch(console.error);
+    }
+
+    // === STATUS HANDLING ===
     function setStatus(state, text){
       els.status.className = "status" + (state ? (" " + state) : "");
       els.status.textContent = text || "";
     }
-    function openDialog(dlg){ if (dlg?.showModal) dlg.showModal(); else dlg?.setAttribute("open",""); }
-    function closeDialog(dlg){ if (dlg?.close) dlg.close(); else dlg?.removeAttribute("open"); }
 
-    // --- Strip comments before any checks ---
+    // === STRIP COMMENTS ===
     function stripComments(src){
-      // remove full-line comments
       let s = src.replace(/^[ \t]*#.*$/gm, "");
-      // remove inline comments (rough; good enough for this task)
       s = s.replace(/[ \t]+#.*$/gm, "");
       return s;
     }
 
-    // --- Validation + tiny "simulation" (text only) ---
+    // === VALIDATE & SIMULATE ===
     function validateAndSimulate(src){
       els.output.textContent = "";
       els.error.textContent  = "";
-
-      const raw = src.replace(/\r/g, "");
-      const code = stripComments(raw);   // <= key change: ignore commented TODOs
+      const code = stripComments(src);
       const errors = [];
 
-      // Quick empty check (after stripping comments)
-      if(code.trim() === ""){
-        els.error.textContent = "Please write your Pybricks program first.";
-        return false;
-      }
-
-      // Required imports (Pybricks)
-      if(!/from\s+pybricks\.hubs\s+import\s+EV3Brick/.test(code)) errors.push("✗ Missing import: EV3Brick");
-      if(!/from\s+pybricks\.tools\s+import\s+wait/.test(code))     errors.push("✗ Missing import: wait");
-
-      // Must create the brick
-      if(!/\bbrick\s*=\s*EV3Brick\s*\(\s*\)/.test(code)) errors.push("✗ Missing: brick = EV3Brick()");
-
-      // Two beeps, one wait(500), and a screen print with non-empty string
+      if(!/EV3Brick/.test(code)) errors.push("✗ Missing import: EV3Brick");
+      if(!/wait/.test(code)) errors.push("✗ Missing import: wait");
+      if(!/brick\s*=\s*EV3Brick\s*\(\s*\)/.test(code)) errors.push("✗ Missing: brick = EV3Brick()");
       const beepCount = (code.match(/brick\s*\.\s*speaker\s*\.\s*beep\s*\(\s*\)/g) || []).length;
-      if(beepCount < 2) errors.push(`✗ Need at least 2× brick.speaker.beep() (found ${beepCount})`);
+      if(beepCount < 2) errors.push(`✗ Need 2× brick.speaker.beep() (found ${beepCount})`);
+      if(!/\bwait\s*\(\s*500\s*\)/.test(code)) errors.push("✗ Missing: wait(500)");
+      if(!/brick\.screen\.print\s*\(/.test(code)) errors.push("✗ Missing: brick.screen.print(...)");
 
-      if(!/\bwait\s*\(\s*500\s*\)/.test(code))
-        errors.push("✗ Missing: wait(500) between the beeps");
-
-      const printMatch = code.match(/brick\s*\.\s*screen\s*\.\s*print\s*\(\s*([^)]*)\)/);
-      if(!printMatch) {
-        errors.push('✗ Missing: brick.screen.print("Your Name")');
-      } else {
-        const arg0 = (printMatch[1]||"").split(",")[0].trim();
-        if(!/^["'][^"']{2,}["']$/.test(arg0)) {
-          errors.push("✗ The text for brick.screen.print(...) must be a non-empty string");
-        }
-      }
-
-      // If any errors → block
       if(errors.length){
         els.error.textContent = "Please fix first:\n" + errors.join("\n");
         return false;
       }
 
-      // Minimal text output to visualize intent (also on comment-stripped code)
-      const lines = code.split("\n");
-      for(const L of lines){
-        if(/brick\s*\.\s*speaker\s*\.\s*beep\s*\(\s*\)/.test(L)) {
-          els.output.textContent += "[BEEP]\n";
-        } else if(/\bwait\s*\(\s*500\s*\)/.test(L)) {
-          els.output.textContent += "[WAIT 500 ms]\n";
-        } else if(/brick\s*\.\s*screen\s*\.\s*print\s*\((.+)\)/.test(L)) {
-          const m = L.match(/brick\s*\.\s*screen\s*\.\s*print\s*\((.+)\)/);
-          els.output.textContent += "[SCREEN] " + (m ? m[1] : "") + "\n";
-        }
-      }
+      els.output.textContent = "[BEEP]\n[WAIT 500 ms]\n[BEEP]\n[SCREEN] Your Name";
       return true;
     }
 
-    // --- Run / Reset / Save ---
-    function reset(){
-      els.editor.value = TASK.starterCode || "";
-      els.output.textContent = "";
-      els.error.textContent = "";
-      setStatus("", "");
-    }
+    // === MAIN BUTTONS ===
+    function reset(){ els.editor.value = TASK.starterCode; els.output.textContent=""; els.error.textContent=""; setStatus("",""); }
 
     async function runCode(){
       els.output.textContent = "";
       els.error.textContent  = "";
-
-      const src = els.editor.value;
-      // also block empty-after-stripping here
-      if(stripComments(src).trim() === ""){
+      setStatus("running","running…");
+      const ok = validateAndSimulate(els.editor.value);
+      if(ok){
+        setStatus("ok","done.");
+        sendEvent("sim");   // ✅ simulation success
+      } else {
         setStatus("error","ERROR");
-        els.error.textContent = "Please write your Pybricks program first.";
-        return;
-      }
-
-      setStatus("running", "running…");
-
-      try{
-        const ok = validateAndSimulate(src);
-        if(ok === true){
-          setStatus("ok", "done.");
-        } else {
-          setStatus("error", "ERROR");
-        }
-      }catch(e){
-        setStatus("error", "ERROR");
-        els.error.textContent = String(e);
       }
     }
 
@@ -290,32 +238,30 @@ wait(3000)
       const b = new Blob([els.editor.value], {type:"text/plain"});
       const a = document.createElement("a");
       a.href = URL.createObjectURL(b);
-      a.download = TASK.filename || "main.py";
+      a.download = TASK.filename;
       a.click();
       URL.revokeObjectURL(a.href);
+      sendEvent("download"); // ✅ mark download
     }
 
-    // --- Buttons ---
+    // === DIALOGS ===
+    els.tipsBtn.onclick = ()=>els.tipsModal.showModal();
+    els.closeTips.onclick = ()=>els.tipsModal.close();
+    els.solutionBtn.onclick = ()=>els.solutionModal.showModal();
+    els.closeSolution.onclick = ()=>els.solutionModal.close();
+    els.copySolution.onclick = ()=>{
+      els.editor.value = els.solutionCode.textContent;
+      els.solutionModal.close();
+      setStatus("",""); els.output.textContent=""; els.error.textContent="";
+    };
+
+    // === ATTACH BUTTONS ===
     els.run.onclick = runCode;
     els.reset.onclick = reset;
     els.save.onclick = save;
 
-    // --- Dialog Buttons ---
-    els.tipsBtn.onclick = () => openDialog(els.tipsModal);
-    els.closeTips.onclick = () => closeDialog(els.tipsModal);
-    els.solutionBtn.onclick = () => openDialog(els.solutionModal);
-    els.closeSolution.onclick = () => closeDialog(els.solutionModal);
-    els.copySolution.onclick = () => {
-      els.editor.value = document.getElementById("solution-code").textContent;
-      closeDialog(els.solutionModal);
-      els.output.textContent = "";
-      els.error.textContent = "";
-      setStatus("", "");
-    };
-
-    // --- Navigation ---
-    document.getElementById("back-btn").onclick = () => TASK.prevUrl!="#" ? location.href = TASK.prevUrl : alert("No previous task");
-    document.getElementById("next-btn").onclick = () => TASK.nextUrl!="#" ? location.href = TASK.nextUrl : alert("No next task");
+    // NEXT NAVIGATION
+    els.next.onclick = ()=>location.href = TASK.nextUrl;
   </script>
 </body>
 </html>

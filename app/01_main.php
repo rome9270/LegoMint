@@ -37,6 +37,10 @@ $user = $_SESSION['user']; // ['name','role',...]
 
   <?php if (($user['role'] ?? '') === 'teacher'): ?>
   <a class="btn" href="teacher_overview.php">👩‍🏫 Lehrerübersicht</a>
+  <?php if (in_array(($user['role'] ?? ''), ['teacher','admin'], true)): ?>
+   <a class="btn" href="upload_users.php">📤 CSV-Import</a>
+<?php endif; ?>
+
 <?php endif; ?>
 
 </body>
