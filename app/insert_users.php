@@ -47,7 +47,8 @@ echo "<h3>Benutzer angelegt/aktualisiert</h3>";
 echo "<ul>";
 echo "<li>Lehrer: <b>L1 / lehrer123</b></li>";
 echo "<li>Admin: <b>A1 / admin123</b></li>";
-echo "<li>Schüler: S1001..S1004 / schueler1..schueler4</li>";
+// Schüler und Lehere mit hochzählen
+echo "<li>Schüler: S1001..S1005 / schueler1..schueler5</li>";
 echo "</ul>";
 echo "<p><a href='login.html'>→ Zum Login</a></p>";
 echo "</body>";
