@@ -14,8 +14,9 @@ $users = [
   ['S1002', 'Sophie', 'student', 'schueler2'],
   ['S1003', 'Sophi',  'student', 'schueler3'],
   ['S1004', 'Mari',   'student', 'schueler4'],
+  ['S1005', 'Babe',   'student', 'schueler5'],
   ['L1',    'RoMe',   'teacher', 'lehrer123'], // Lehrer
-  ['A1',    'Admin',  'admin',   'admin123'],  // Admin
+  ['A1',    'Admin',  'teacher',   'admin123'],  // Admin
 ];
 
 /* SQLite-UPSERT:
