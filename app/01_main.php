@@ -34,4 +34,9 @@ $user = $_SESSION['user']; // ['name','role',...]
     <a class="level-btn" href="/LegoMint/html/02_python_overview.html">Python</a>
     <a class="level-btn" href="/LegoMint/html/03_01LegoEV3.html">Lego EV3</a>
   </div>
+
+  <?php if (($user['role'] ?? '') === 'teacher'): ?>
+  <a class="btn" href="teacher_overview.php">👩‍🏫 Lehrerübersicht</a>
+<?php endif; ?>
+
 </body>

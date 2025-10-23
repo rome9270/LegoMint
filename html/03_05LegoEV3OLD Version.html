@@ -4,7 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EV3 (Pybricks) – Ultraschall: Stop vor der Wand</title>
+
   <link rel="stylesheet" href="../css/03_python.css" />
+
   <style>
     #arena { background:#f9fafb; border:2px solid #111; width:100%; height:auto; max-width:900px; border-radius:10px; display:block; margin-top:10px; }
     .status.ok { color:#15803d; }
@@ -17,12 +19,11 @@
   <div class="nav-row">
     <a href="03_06LegoEV3.html" class="btn primary" id="next-btn">Next →</a>
   </div>
-
-  <nav class="link-grid" aria-label="Topic selection">
-    <a class="btn" href="../app/01_main.php" id="go-main" aria-label="Back to main">⬅️ Going to main</a>
-    <a class="btn" href="../app/logout.php">🚪 Logout</a>
-  </nav>
-
+<nav class="link-grid" aria-label="Topic selection">
+  <a class="btn" href="../app/01_main.php" id="go-main" aria-label="Back to main">⬅️ Going to main
+  <a class="btn" href="../app/logout.php">🚪 Logout</a>
+  </a>
+</nav>
   <header class="row" style="justify-content: space-between;">
     <div>
       <h1>EV3 (Pybricks) · Ultraschall — Stop vor der Wand</h1>
@@ -47,6 +48,7 @@
         <button class="btn" id="save-btn">💾 Save</button>
         <span id="status" class="status" aria-live="polite"></span>
       </div>
+
 <textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
 # EV3 (Pybricks) – Basis (fülle die Initialisierung & Logik selbst aus)
 from pybricks.hubs import EV3Brick
@@ -115,7 +117,8 @@ while ultra.distance() > 150:
     wait(20)
 drive.stop(Stop.BRAKE)
 brick.speaker.beep()
-</pre>
+
+ </pre>
     </div>
     <div class="modal-actions">
       <button class="btn" id="copy-solution">Insert</button>
@@ -124,10 +127,8 @@ brick.speaker.beep()
   </dialog>
 
   <script>
-    /* ========== TASK (eine Quelle, kein Duplikat!) ========== */
-    // Ultraschall – Stop vor der Wand hat in deiner DB die ID 2
+    /* ---------- Tipps ---------- */
     const TASK = {
-      taskId: 2,
       tips: [
         "Sensor-Port: Ultraschall an Port.S2.",
         "Einheiten: distance() liefert Millimeter (oder None).",
@@ -138,28 +139,32 @@ brick.speaker.beep()
       ]
     };
 
-    /* ---------- DOM ---------- */
-    const els = {
-      editor: document.getElementById("editor"),
-      run: document.getElementById("run-btn"),
-      reset: document.getElementById("reset-btn"),
-      save: document.getElementById("save-btn"),
-      output: document.getElementById("output"),
-      error: document.getElementById("error"),
-      status: document.getElementById("status"),
-      canvas: document.getElementById("arena"),
-      tipsBtn: document.getElementById("tips-btn"),
-      tipsModal: document.getElementById("tips-modal"),
-      tipsList: document.getElementById("tips-list"),
-      closeTips: document.getElementById("close-tips"),
-      solutionBtn: document.getElementById("solution-btn"),
-      solutionModal: document.getElementById("solution-modal"),
-      copySolution: document.getElementById("copy-solution"),
-      closeSolution: document.getElementById("close-solution")
-    };
+    /* ---------- DOM - Document Object Model => Brücke zwischen HTML und JS---------- */
+    /* ---------- JS benötigt DOM zum Steuern des Editors, Button und Canvas -------*/
+   /* ---------- DOM - Document Object Model ---------- */
+const els = {
+  editor: document.getElementById("editor"),
+  run: document.getElementById("run-btn"),
+  reset: document.getElementById("reset-btn"),
+  save: document.getElementById("save-btn"),
+  output: document.getElementById("output"),
+  error: document.getElementById("error"),
+  status: document.getElementById("status"),
+  canvas: document.getElementById("arena"),
+  tipsBtn: document.getElementById("tips-btn"),
+  tipsModal: document.getElementById("tips-modal"),
+  tipsList: document.getElementById("tips-list"),
+  closeTips: document.getElementById("close-tips"),
+  solutionBtn: document.getElementById("solution-btn"),
+  solutionModal: document.getElementById("solution-modal"),
+  copySolution: document.getElementById("copy-solution"),
+  closeSolution: document.getElementById("close-solution")
+};
 
-    /* ---------- UI ---------- */
-    els.tipsList.innerHTML = (TASK.tips || []).map(t=>"<li>"+t+"</li>").join("");
+
+    /* ---------- UI = User Interface---------- */
+    /* -------- alles was der User sehen und klicken kann ----- */
+    els.tipsList.innerHTML = TASK.tips.map(t=>"<li>"+t+"</li>").join("");
     function setStatus(cls, txt){ els.status.className="status "+cls; els.status.textContent=txt; }
     function openDialog(d){ if(d?.showModal) d.showModal(); else d?.setAttribute("open",""); }
     function closeDialog(d){ if(d?.close) d.close(); else d?.removeAttribute("open"); }
@@ -173,12 +178,13 @@ brick.speaker.beep()
       setStatus("", ""); els.output.textContent=""; els.error.textContent="";
     };
 
-    /* ---------- VALIDIERUNG ---------- */
+    /* ---------- STRIKTE, ROBUSTE VALIDIERUNG ---------- */
     function validateAndExtractThreshold(src){
       const errors = [];
       const code = src.replace(/\r/g,'');
       const lines = code.split('\n');
 
+      // Pflicht-Imports -ohne diese Importe läuft das Programm NICHT - CHECK EINGABE
       [
         [/from\s+pybricks\.hubs\s+import\s+EV3Brick/, "Import EV3Brick fehlt"],
         [/from\s+pybricks\.ev3devices\s+import\s+.*\bMotor\b/, "Import Motor fehlt"],
@@ -189,6 +195,7 @@ brick.speaker.beep()
         [/from\s+pybricks\.robotics\s+import\s+.*\bDriveBase\b/, "Import DriveBase fehlt"]
       ].forEach(([re,msg])=>{ if(!re.test(code)) errors.push("✗ "+msg); });
 
+      // Initialisierung & Variablennamen - CHECK EINGABE
       const brickM = code.match(/(\w+)\s*=\s*EV3Brick\s*\(\s*\)/);
       const leftM  = code.match(/(\w+)\s*=\s*Motor\s*\(\s*Port\.A\s*\)/);
       const rightM = code.match(/(\w+)\s*=\s*Motor\s*\(\s*Port\.B\s*\)/);
@@ -204,17 +211,20 @@ brick.speaker.beep()
       const driveVar = driveM?.[1];
       const ultraVar = ultraM?.[1] || "ultra";
 
+      // drive.drive(...) irgendwo
       if(driveVar){
         const driveDriveRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*drive\\s*\\(`);
         if(!driveDriveRe.test(code)) errors.push("✗ drive.drive(...) fehlt");
       }
 
+      // einfache Zuweisungen NAME = ZAHL (für beliebige Konstantennamen)
       const assigns = {};
       for(const L of lines){
         const m = L.match(/^\s*([A-Za-z_]\w*)\s*=\s*(\d+)\s*$/);
         if(m) assigns[m[1]] = parseInt(m[2],10);
       }
 
+      // while ultra.distance() > RHS  (>= erlaubt, RHS = Zahl ODER Name)
       let thresholdMm = null, whileIndex = -1, whileIndent = "";
       const whileRe = new RegExp(
         `^([ \\t]*)while\\s*\\(?\\s*${ultraVar}\\s*\\.\\s*distance\\s*\\(\\s*\\)\\s*\\)?\\s*(?:>=|>)\\s*([A-Za-z_]\\w*|\\d+)\\s*:\\s*$`
@@ -225,8 +235,11 @@ brick.speaker.beep()
         if(m){
           whileIndex = i; whileIndent = m[1] ?? "";
           const rhs = m[2];
-          if (/^\d+$/.test(rhs)) thresholdMm = parseInt(rhs,10);
-          else if (assigns[rhs] !== undefined) thresholdMm = assigns[rhs];
+          if (/^\d+$/.test(rhs)) {
+            thresholdMm = parseInt(rhs,10);
+          } else if (assigns[rhs] !== undefined) {
+            thresholdMm = assigns[rhs];
+          }
           break;
         }
       }
@@ -235,6 +248,7 @@ brick.speaker.beep()
         errors.push("✗ while ultra.distance() > N: (10–2000 mm) nicht gefunden");
       }
 
+      // wait(...) MUSS im eingerückten Block (Argument beliebig)
       if(whileIndex>=0){
         let hasWait=false;
         for(let j=whileIndex+1;j<lines.length;j++){
@@ -247,6 +261,7 @@ brick.speaker.beep()
         if(!hasWait) errors.push("✗ wait(...) fehlt im Schleifenblock");
       }
 
+      // drive.stop(Stop.BRAKE) nach der Schleife
       if(driveVar && whileIndex>=0){
         const stopRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*stop\\s*\\(\\s*Stop\\.BRAKE\\s*\\)`);
         let stopAfter=false;
@@ -259,11 +274,11 @@ brick.speaker.beep()
       return { errors, thresholdMm };
     }
 
-    /* ---------- Arena / Engine ---------- */
+    /* ---------- Arena/Engine (1 px = 1 cm) ---------- */
     const ctx = els.canvas.getContext("2d");
     const WORLD = { W: els.canvas.width, H: els.canvas.height,
-      wall:  { x1:500, y1:20, x2:500, y2:180 },
-      robot: { x:60,  y:100, heading:0, r:6 }
+      wall:  { x1:500, y1:20, x2:500, y2:180 },     // vertikale Wand bei x = 500 px
+      robot: { x:60,  y:100, heading:0, r:6 }      // Start (60,100), 0° = rechts; r=6 px ≈ 6 cm
     };
     let runToken=0, anyCollision=false;
 
@@ -283,7 +298,8 @@ brick.speaker.beep()
     const isVert=()=>Math.abs(WORLD.wall.x1-WORLD.wall.x2)<1e-6;
     const wallX=()=>WORLD.wall.x1, wYmin=()=>Math.min(WORLD.wall.y1,WORLD.wall.y2), wYmax=()=>Math.max(WORLD.wall.y1,WORLD.wall.y2);
 
-    async function forward_m(d){
+    // 1 px = 1 cm; Schrittweite 1 px/Frame = 1 cm
+    async function forward_m(d){  // d in px (cm)
       const myToken=runToken;
       const r=WORLD.robot, step=1;
       const ux=Math.cos(rad(r.heading)), uy=Math.sin(rad(r.heading));
@@ -312,8 +328,9 @@ brick.speaker.beep()
       });
     }
 
+    // N mm → N/10 px (1 cm/px); stoppt vor der Wand ohne Kontakt
     async function forward_until_threshold_mm(thresholdMm){
-      const marginPx = Math.max(0, thresholdMm) / 10;
+      const marginPx = Math.max(0, thresholdMm) / 10;  // mm → cm(px)
       const r=WORLD.robot, ux=Math.cos(rad(r.heading));
       if(!isVert() || Math.abs(ux)<1e-6) throw new Error("Simulation erwartet horizontale Ausrichtung & vertikale Wand.");
       const withinY=(r.y>=wYmin()-r.r)&&(r.y<=wYmax()+r.r);
@@ -328,32 +345,21 @@ brick.speaker.beep()
     }
 
     /* ---------- Run / Reset / Save ---------- */
-    function reset(){
-      setStatus("", "");
-      els.output.textContent = "";
-      els.error.textContent  = "";
-      resetWorld();
-    }
+    function reset(){ setStatus("", ""); els.output.textContent=""; els.error.textContent=""; resetWorld(); }
+    function save(){ const b=new Blob([els.editor.value],{type:"text/plain"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="main.py"; a.click(); URL.revokeObjectURL(a.href); 
 
-    function save(){
-      const b = new Blob([els.editor.value], { type: "text/plain" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(b);
-      a.download = "main.py";
-      a.click();
-      URL.revokeObjectURL(a.href);
+  // ✅ Datei gespeichert → download-Event an den Server senden
+    fetch("/LegoMint/app/event_update.php", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        task_id: String(TASK.taskId),
+        event: "download"
+      })
+    }).catch(()=>{});
+  }
 
-      // ✅ Download-Event
-      fetch("/LegoMint/app/event_update.php", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          task_id: String(TASK.taskId),
-          event: "download"
-        })
-      }).catch(()=>{});
-    }
 
     async function runCode(){
       els.error.textContent=""; els.output.textContent="";
@@ -379,18 +385,6 @@ brick.speaker.beep()
         await forward_until_threshold_mm(thresholdMm);
         setStatus("ok","done.");
         els.output.textContent += `Stopp in ~${thresholdMm} mm vor der Wand (simuliert).\n`;
-
-        // ✅ Simulations-Event
-        fetch("/LegoMint/app/event_update.php", {
-          method: "POST",
-          credentials: "include",
-          headers: {"Content-Type":"application/x-www-form-urlencoded"},
-          body: new URLSearchParams({
-            task_id: String(TASK.taskId),
-            event: "sim"
-          })
-        }).catch(()=>{});
-
       }catch(e){
         setStatus("error","ERROR");
         els.error.textContent = String(e);
@@ -402,6 +396,8 @@ brick.speaker.beep()
     els.save.onclick = save;
 
     render();
+
+    document.getElementById("back-btn").onclick = () => history.back();
   </script>
 </body>
 </html>
