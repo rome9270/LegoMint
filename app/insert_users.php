@@ -44,12 +44,19 @@ foreach ($users as [$sn,$name,$role,$pw]) {
 }
 
 echo "<!doctype html><meta charset='utf-8'><body style='font-family:Arial,sans-serif'>";
-echo "<h3>Benutzer angelegt/aktualisiert</h3>";
-echo "<ul>";
-echo "<li>Lehrer: <b>L1 / lehrer123</b></li>";
-echo "<li>Admin: <b>A1 / admin123</b></li>";
-// Schüler und Lehere mit hochzählen
-echo "<li>Schüler: S1001..S1005 / schueler1..schueler5</li>";
-echo "</ul>";
-echo "<p><a href='login.html'>→ Zum Login</a></p>";
+$stmt = $pdo->query("SELECT student_number, name, role FROM users ORDER BY student_number");
+$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+echo "<h2>Benutzer angelegt/aktualisiert</h2><ul>";
+
+$lehrer = array_filter($users, fn($u) => $u['role'] === 'teacher');
+$admin  = array_filter($users, fn($u) => $u['role'] === 'admin');
+$schueler = array_filter($users, fn($u) => $u['role'] === 'student');
+
+echo "<li>Lehrer: " . implode(', ', array_column($lehrer, 'student_number')) . "</li>";
+echo "<li>Admin: "  . implode(', ', array_column($admin, 'student_number')) . "</li>";
+echo "<li>Schüler: " . implode(', ', array_column($schueler, 'student_number')) . "</li>";
+
+echo "</ul><a href='login.html'>→ Zum Login</a>";
+
 echo "</body>";
