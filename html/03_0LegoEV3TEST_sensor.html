@@ -4,37 +4,51 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EV3 · Sensor-only Function Check</title>
-  <link rel="stylesheet" href="../css/01_mainEV.css">
 
-    <!-- mein style) -->
+  <!-- mein template -->
+  <link rel="stylesheet" href="../css/01_mainEV.css">
+    
+  <!-- mein style -->
   <style>
     dialog { border:none; border-radius:12px; padding:20px; max-width:680px;
             box-shadow:0 8px 30px rgba(0,0,0,.25); }
     .modal-header{ font-weight:700; margin-bottom:12px; }
     .modal-actions{ margin-top:16px; text-align:right; }
     .modal-actions .btn{ margin-left:8px; }
-    /* Platzhalter für Lösungstext  */
     #solution-text { white-space:pre; font:14px/1.45 Consolas, ui-monospace, Menlo, Monaco, "Liberation Mono", monospace; }
   </style>
 </head>
 
 <body>
   <div class="hero">
-    <h1>LEGO EV3 — Sensor Function Check</h1>
-    <hr>
-    <p>Teste die Sensoren: <b>Farbe (S1)</b>, <b>Ultraschall (S2)</b>, <b>Taster (S3)</b>, <b>Gyro (S4)</b>.</p>
+    <h1>EV3 · Sensor Function Check</h1>
+    <p>Teste die Sensoren: Farbe (S1) | Ultraschall (S2) | Taster (S3) | Gyro (S4)</p>
   </div>
-<nav class="link-grid" aria-label="Topic selection">
-  <a class="btn" href="../app/01_main.php" id="go-main" aria-label="Back to main">⬅️ Going to main</a>
-  <a class="btn" href="../app/logout.php">🚪 Logout</a>
-</nav>
+
+  <nav class="link-grid" aria-label="Topic selection">
+    <a class="btn" href="../app/01_main.php" id="go-main" aria-label="Back to main">⬅️ Going to main</a>
+    <a class="btn" href="../app/logout.php">🚪 Logout</a>
+  </nav>
 
   <main>
-    <div class="card">
-      <h2>Dein Programm</h2>
+    <header class="row" style="justify-content: space-between; margin-bottom:20px;">
+      <div>
+        <h2 id="task-title">Check the sensors</h2>
+        <p id="task-desc">
+          Check each sensor: Color, Ultrasonic, Touch, Gyro — brick should say OK | not OK.
+        </p>
+      </div>
+      <div class="row">
+        <button class="btn" id="tips-btn" type="button">💡 Tipps</button>
+        <button class="btn" id="solution-btn" type="button">✅ Lösung</button>
+      </div>
+    </header>
 
-      <!-- 👇 Startet leer bzw. mit minimalem Gerüst -->
-      <textarea id="code" spellcheck="false">#!/usr/bin/env pybricks-micropython
+    <section class="card">
+      <h2>Dein Code</h2>
+      <p class="status">Tipp: Shebang für Pybricks ist <code>#!/usr/bin/env pybricks-micropython</code>.</p>
+
+      <textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
 from pybricks.hubs import EV3Brick
 from pybricks.parameters import Color
 from pybricks.tools import wait
@@ -44,16 +58,15 @@ brick = EV3Brick()
 </textarea>
 
       <div class="row" style="margin-top:12px;">
-        <button class="btn primary" id="tips-btn">💡 Tipps</button>
-        <button class="btn" id="solution-btn">✅ Lösung</button>
-        <button class="btn" id="download">💾 Download main.py</button>
+        <button id="download" class="btn" type="button">💾 main.py download</button>
+        <span id="status" class="status">ready</span>
       </div>
-    </div>
+    </section>
   </main>
 
-  <!-- Tipps-Modal -->
-  <dialog id="tips-modal">
-    <div class="modal-header">💡 Tipps</div>
+  <!-- 💡 Tipps-Modal -->
+  <dialog id="tips-modal" aria-labelledby="tips-title">
+    <div class="modal-header" id="tips-title">💡 Tipps</div>
     <div class="modal-body">
       <ul>
         <li>Überprüfe, ob alle Sensoren korrekt an den Ports S1–S4 angeschlossen sind.</li>
@@ -63,19 +76,24 @@ brick = EV3Brick()
       </ul>
     </div>
     <div class="modal-actions">
-      <button class="btn" id="close-tips">Schließen</button>
+      <button class="btn" id="close-tips" type="button">Schließen</button>
     </div>
   </dialog>
 
-  <!-- Lösung-Modal (versteckt, scrollbar) -->
-  <dialog id="solution-modal">
-    <div class="modal-header">✅ Lösung</div>
+  <!-- ✅ Lösung-Modal -->
+  <dialog id="solution-modal" aria-labelledby="solution-title">
+    <div class="modal-header" id="solution-title">✅ Lösung</div>
     <div class="modal-body">
-      <pre id="solution-text"
-          style="max-height:70vh; overflow:auto; background:#f9f9f9; border:1px solid #ddd;
-                  border-radius:8px; padding:10px; font:14px/1.45 Consolas,ui-monospace,Menlo,Monaco,'Liberation Mono',monospace;">
-#!/usr/bin/env pybricks-micropython
-#!/usr/bin/env pybricks-micropython
+      <div id="solution-text"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution" type="button">Einfügen</button>
+      <button class="btn" id="close-solution" type="button">Schließen</button>
+    </div>
+  </dialog>
+
+  <!-- 🔒 Versteckter Lösungscode -->
+  <pre id="solution-code" style="display:none">#!/usr/bin/env pybricks-micropython
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import ColorSensor, UltrasonicSensor, TouchSensor, GyroSensor
 from pybricks.parameters import Port, Color
@@ -83,33 +101,20 @@ from pybricks.tools import wait
 
 brick = EV3Brick()
 
-# -----------------------------
-# Hilfsfunktionen
-# -----------------------------
-
 def led(color, time=800):
-    """LED kurz einschalten und dann ausschalten."""
     brick.light.on(color)
     wait(time)
     brick.light.off()
 
 def test_sensor(name, test_function):
-    """Führt einen Sensortest aus und zeigt Ergebnis an."""
     try:
         ok = test_function()
         led(Color.GREEN if ok else Color.RED)
-        if ok:
-            brick.speaker.say(name + " OK")
-        else:
-            brick.speaker.say(name + " not OK")
+        brick.speaker.say(name + (" OK" if ok else " not OK"))
     except Exception:
         led(Color.RED)
         brick.speaker.say(name + " not OK")
     wait(1500)
-
-# -----------------------------
-# Sensor-Tests
-# -----------------------------
 
 def test_color():
     v = ColorSensor(Port.S1).reflection()
@@ -128,68 +133,50 @@ def test_gyro():
     wait(300)
     return isinstance(g.angle(), int) and isinstance(g.speed(), int)
 
-# -----------------------------
-# Hauptprogramm ("main")
-# -----------------------------
-
 def main():
-    brick.light.on(Color.GREEN)
-    wait(2000)
-    brick.light.off()
-
     test_sensor("Sensor 1", test_color)
     test_sensor("Sensor 2", test_ultra)
     test_sensor("Sensor 3", test_touch)
     test_sensor("Sensor 4", test_gyro)
-
-    brick.light.on(Color.ORANGE)
-    wait(2000)
-    brick.light.off()
-
-# -----------------------------
-# Startpunkt
-# -----------------------------
+    brick.speaker.say("Test done")
 
 if __name__ == "__main__":
     main()
-
-
-      </pre>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" id="insert-solution">Einfügen</button>
-      <button class="btn" id="close-solution">Schließen</button>
-    </div>
-  </dialog>
+</pre>
 
   <script>
-    const tipsModal = document.getElementById('tips-modal');
-    const solutionModal = document.getElementById('solution-modal');
-    const codeEl = document.getElementById('code');
-    const solutionText = document.getElementById('solution-text');
+    // ==== Mini-Helfer ====
+    const $ = (id) => document.getElementById(id);
 
-    // Tipps öffnen/schließen
-    document.getElementById('tips-btn').onclick = () => tipsModal.showModal();
-    document.getElementById('close-tips').onclick = () => tipsModal.close();
+    // ==== Modale öffnen/schließen ====
+    const tipsModal = $('tips-modal');
+    const solutionModal = $('solution-modal');
+    const TASK = {
+      taskId: 2, // Beispiel-ID
+    };
 
-    // Lösung öffnen/schließen
-    document.getElementById('solution-btn').onclick = () => solutionModal.showModal();
-    document.getElementById('close-solution').onclick = () => solutionModal.close();
+    $('tips-btn').onclick = () => tipsModal.showModal();
+    $('close-tips').onclick = () => tipsModal.close();
 
-    // Lösung in Editor kopieren
-    document.getElementById('insert-solution').onclick = () => {
-      codeEl.value = solutionText.textContent.trim();
+    $('solution-btn').onclick = () => {
+      $('solution-text').textContent = $('solution-code').textContent;
+      solutionModal.showModal();
+    };
+    $('close-solution').onclick = () => solutionModal.close();
+
+    $('copy-solution').onclick = () => {
+      $('editor').value = $('solution-code').textContent;
       solutionModal.close();
     };
 
-    // Download main.py
-    document.getElementById('download').onclick = () => {
-      const blob = new Blob([codeEl.value], { type: 'text/x-python' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'main.py';
-      a.click();
-      URL.revokeObjectURL(a.href);
+    // ==== Download main.py ====
+    $('download').onclick = () => {
+      const src = $('editor').value;
+      const blob = new Blob([src], { type: 'text/x-python' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = 'main.py'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
     };
   </script>
 </body>
