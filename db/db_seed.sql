@@ -10,4 +10,6 @@ INSERT INTO tasks (title, description, html_file) VALUES
 ('EV3 - ultrasonic stop in front of a wall', 'Stoppe 150 mm vor der Wand', '03_05LegoEV3_I.html'),
 ('EV3 - find the door', 'Ausgang finden mit Gyro', '03_06LegoEV3_I.html'),
 ('EV3 - eight', 'Pybricks Step 4', '03_07LegoEV3_I.html'),
-('EV3 - eight', 'Pybricks Step 4', '03_08LegoEV3_I.html');
+('EV3 - eight', 'Pybricks Step 4', '03_08LegoEV3_I.html'),
+('EV3 - eight', 'Pybricks Step 4', '03_09LegoEV3_I.html'),
+('EV3 - eight', 'Pybricks Step 4', '03_10LegoEV3_I.html');
