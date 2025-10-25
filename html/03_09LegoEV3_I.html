@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 (Pybricks) – Line Follower</title>
+
+  <link rel="stylesheet" href="../css/03_python.css" />
+  <style>
+    #arena {
+      background:#f9fafb;
+      border:2px solid #111;
+      width:100%;
+      height:auto;
+      max-width:900px;
+      border-radius:10px;
+      display:block;
+      margin-top:10px;
+    }
+
+    .status.ok { color:#15803d; }
+    .status.error { color:#b91c1c; }
+    .status.running { color:#374151; }
+    .muted { color:#6b7280; }
+    #error { color:#b91c1c; white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+ <!-- NAV BAR -->
+<!--  EINZIGER NAVIGATIONSBLOCK -->
+  <nav class="link-grid" aria-label="Topic selection">
+    <a class="btn" href="../app/01_main.php" id="go-main" aria-label="Back to main">⬅️ Going to main</a>
+    <a class="btn" href="../app/logout.php">🚪 Logout</a>
+    <a class="btn" href="../html/03_10LegoEV3_I.html">Next →</a>
+  </nav>
+
+  <header class="row" style="justify-content: space-between;">
+    <div>
+      <h1>EV3 (Pybricks) · Line Follower</h1>
+      <p>
+        Write a <b>Pybricks</b> program that makes the robot <b>follow a black line</b> on the floor using a
+        <b>ColorSensor on Port S1</b>.<br><br>
+
+        Requirements:
+        <ol>
+          <li>Use <code>ColorSensor(Port.S1)</code> and <code>.reflection()</code>.</li>
+          <li>Store a <code>target_reflection</code> value (for example mid between black and white).</li>
+          <li>Loop while driving forward: calculate an error between the current reflection and the target.</li>
+          <li>Turn (steer) left/right based on that error.</li>
+        </ol>
+
+        After ~5 seconds of following:
+        <b>stop</b>, <b>beep</b>, and print something with the word <code>line</code>.
+      </p>
+
+      <p class="muted" style="margin-top:8px;">
+        Idea:<br>
+        <code>target = 30</code><br>
+        <code>while True:</code><br>
+        <code>&nbsp;&nbsp;value = color.reflection()</code><br>
+        <code>&nbsp;&nbsp;error = target - value</code><br>
+        <code>&nbsp;&nbsp;steer = error * 2   # tuning</code><br>
+        <code>&nbsp;&nbsp;drive.drive(100, steer)</code><br>
+        <code>&nbsp;&nbsp;wait(10)</code>
+      </p>
+    </div>
+
+    <div class="row">
+      <button class="btn" id="tips-btn">💡 Tips</button>
+      <button class="btn" id="solution-btn">✅ Solution</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- EDITOR CARD -->
+    <section class="card">
+      <h2>Editor</h2>
+      <div class="row">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+        <span id="status" class="status" aria-live="polite"></span>
+      </div>
+
+<textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
+# EV3 (Pybricks) – Line Follower
+# - ColorSensor on Port.S1
+# - follow the edge of a black line
+# - simple P-control: steer = (target - reflection) * Kp
+
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, ColorSensor
+from pybricks.parameters import Port, Stop
+from pybricks.tools import wait
+from pybricks.robotics import DriveBase
+
+brick = EV3Brick()
+
+left   = Motor(Port.A)
+right  = Motor(Port.B)
+color  = ColorSensor(Port.S1)
+
+drive = DriveBase(left, right, 56, 114)
+
+target = 30        # target reflection (tune this!)
+kp     = 2         # proportional gain
+runtime = 0        # ms
+
+while runtime < 5000:   # follow line for ~5 seconds
+    value = color.reflection()
+    error = target - value
+    steer = error * kp
+
+    drive.drive(100, steer)   # forward speed 100 mm/s
+    wait(10)
+    runtime += 10
+
+drive.stop(Stop.BRAKE)
+brick.speaker.beep()
+brick.screen.print("I followed the line!")
+wait(500)
+</textarea>
+    </section>
+
+    <!-- SIMULATION CARD -->
+    <section class="card">
+      <h2>Simulation</h2>
+      <canvas id="arena" width="600" height="300"></canvas>
+      <p class="muted">
+        The black curve below is the "line". The robot (green circle) tries to stay on it.
+      </p>
+      <pre id="output"></pre>
+      <div id="error"></div>
+    </section>
+  </main>
+
+  <!-- Tips Modal -->
+  <dialog id="tips-modal">
+    <div class="modal-header">Tips</div>
+    <div class="modal-body">
+      <ul id="tips-list">
+        <li>Use <code>ColorSensor(Port.S1)</code> and <code>reflection()</code>.</li>
+        <li>Pick a <code>target</code> reflection: between black (low number) and white (high number).</li>
+        <li>Compute <code>error = target - reflection</code>.</li>
+        <li>Convert error to steering with a factor (<code>kp</code>).</li>
+        <li>Drive with <code>drive.drive(forward_speed, steer)</code>.</li>
+        <li>Stop, beep, and print a message containing "line".</li>
+      </ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Solution Modal -->
+  <dialog id="solution-modal">
+    <div class="modal-header">Solution (one example)</div>
+    <div class="modal-body">
+<pre id="solution-code" style="white-space:pre-wrap;">#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, ColorSensor
+from pybricks.parameters import Port, Stop
+from pybricks.tools import wait
+from pybricks.robotics import DriveBase
+
+brick = EV3Brick()
+
+left   = Motor(Port.A)
+right  = Motor(Port.B)
+color  = ColorSensor(Port.S1)
+
+drive = DriveBase(left, right, 56, 114)
+
+target = 30    # depends on your line + lighting
+kp     = 2
+runtime = 0
+
+while runtime < 5000:
+    value = color.reflection()  # 0..100 (dark..bright)
+    error = target - value      # how far from target
+    steer = error * kp          # steering correction
+
+    drive.drive(100, steer)
+    wait(10)
+    runtime += 10
+
+drive.stop(Stop.BRAKE)
+brick.speaker.beep()
+brick.screen.print("Line done!")
+wait(500)
+</pre>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution">Insert</button>
+      <button class="btn" id="close-solution">Close</button>
+    </div>
+  </dialog>
+
+  <script>
+  // === DOM refs (defensive like last time) ===
+  const editorEl   = document.getElementById("editor");
+  const runBtn     = document.getElementById("run-btn");
+  const resetBtn   = document.getElementById("reset-btn");
+  const saveBtn    = document.getElementById("save-btn");
+  const statusEl   = document.getElementById("status");
+  const outputEl   = document.getElementById("output");
+  const errorEl    = document.getElementById("error");
+  const canvasEl   = document.getElementById("arena");
+
+  const tipsBtn        = document.getElementById("tips-btn");
+  const tipsModal      = document.getElementById("tips-modal");
+  const closeTipsBtn   = document.getElementById("close-tips");
+
+  const solutionBtn       = document.getElementById("solution-btn");
+  const solutionModal     = document.getElementById("solution-modal");
+  const closeSolutionBtn  = document.getElementById("close-solution");
+  const copySolutionBtn   = document.getElementById("copy-solution");
+  const solutionCodeEl    = document.getElementById("solution-code");
+
+  function setStatus(cls, txt){
+    if (!statusEl) return;
+    statusEl.className = "status " + (cls || "");
+    statusEl.textContent = txt || "";
+  }
+
+  function openDialog(d){
+    if (!d) return;
+    if (d.showModal) d.showModal();
+    else d.setAttribute("open","");
+  }
+  function closeDialog(d){
+    if (!d) return;
+    if (d.close) d.close();
+    else d.removeAttribute("open");
+  }
+
+  if (tipsBtn) tipsBtn.onclick = ()=>openDialog(tipsModal);
+  if (closeTipsBtn) closeTipsBtn.onclick = ()=>closeDialog(tipsModal);
+
+  if (solutionBtn) solutionBtn.onclick = ()=>openDialog(solutionModal);
+  if (closeSolutionBtn) closeSolutionBtn.onclick = ()=>closeDialog(solutionModal);
+  if (copySolutionBtn) copySolutionBtn.onclick = ()=>{
+    if (editorEl && solutionCodeEl){
+      editorEl.value = solutionCodeEl.textContent;
+    }
+    closeDialog(solutionModal);
+    setStatus("", "");
+    if (outputEl) outputEl.textContent="";
+    if (errorEl)  errorEl.textContent ="";
+  };
+
+  // === Canvas + Simulation ===
+  // We'll simulate a wavy black "line" path that curves gently.
+  // Robot tries to follow the line based on a simple P-controller in JS.
+
+  const ctx = canvasEl ? canvasEl.getContext("2d") : null;
+  const degToRad = d => d * Math.PI/180;
+
+  // "line" as a function of x -> y
+  // we draw a sinus-like path the robot should follow
+  function lineY(x){
+    // baseline 150, small horizontal wave
+    return 150 + Math.sin(x / 60) * 40;
+  }
+
+  const WORLD = {
+    robot: {
+      x: 60,          // start x
+      y: lineY(60)+0, // start roughly on the line
+      heading: 0,     // facing right
+      r: 6
+    }
+  };
+
+  function drawWorld(){
+    if (!ctx || !canvasEl) return;
+
+    // clear bg + border
+    ctx.fillStyle="#fff";
+    ctx.fillRect(0,0,canvasEl.width,canvasEl.height);
+
+    ctx.strokeStyle="#111";
+    ctx.lineWidth=2;
+    ctx.strokeRect(0,0,canvasEl.width,canvasEl.height);
+
+    // draw the black line we want to follow
+    ctx.strokeStyle="#000";
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    for (let x=0; x<=canvasEl.width; x+=2){
+      const y = lineY(x);
+      if (x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+
+    // draw robot
+    const r = WORLD.robot;
+    ctx.fillStyle="#16a34a";
+    ctx.beginPath();
+    ctx.arc(r.x,r.y,r.r,0,Math.PI*2);
+    ctx.fill();
+
+    // heading tick
+    ctx.strokeStyle="#16a34a";
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(r.x,r.y);
+    ctx.lineTo(
+      r.x + Math.cos(degToRad(r.heading))*(r.r+10),
+      r.y + Math.sin(degToRad(r.heading))*(r.r+10)
+    );
+    ctx.stroke();
+  }
+
+  function resetWorld(){
+    WORLD.robot = {
+      x: 60,
+      y: lineY(60)+0,
+      heading: 0,
+      r: 6
+    };
+    drawWorld();
+  }
+
+  // simulate ~5 seconds of following:
+  // we "pretend" reflection error == vertical offset from line
+  async function followLineSim(){
+    // parameters similar to the python code
+    const kp = 0.15;         // steering gain in sim
+    const speedPx = 1.2;     // forward step per frame
+    const frames = 300;      // 300 * ~16ms ≈ 5s feeling
+
+    for (let i=0; i<frames; i++){
+      // read "sensor": distance from ideal line
+      const idealY = lineY(WORLD.robot.x);
+      const error = idealY - WORLD.robot.y; // how far we drifted from line
+
+      // steering = kp * error (positive error -> steer downwards)
+      const steer = kp * error;
+
+      // apply steer = change heading slightly
+      WORLD.robot.heading += steer; // steer is "deg per frame" here, simplified
+
+      // move forward in direction "heading"
+      WORLD.robot.x += Math.cos(degToRad(WORLD.robot.heading)) * speedPx;
+      WORLD.robot.y += Math.sin(degToRad(WORLD.robot.heading)) * speedPx;
+
+      drawWorld();
+      await new Promise(res => setTimeout(res,16));
+    }
+  }
+
+  // === RUN / RESET / SAVE ===
+  function doReset(){
+    setStatus("", "");
+    if (outputEl) outputEl.textContent = "";
+    if (errorEl)  errorEl.textContent  = "";
+    resetWorld();
+  }
+
+  async function runSim(){
+    doReset();
+    setStatus("running","running…");
+    if (outputEl) outputEl.textContent = "";
+    if (errorEl)  errorEl.textContent  = "";
+
+    await followLineSim();
+
+    setStatus("ok","done.");
+    if (outputEl){
+      outputEl.textContent = 'Simulated: line following for ~5 seconds, then stop + beep + "line".';
+    }
+  }
+
+  function saveFile(){
+    if (!editorEl) return;
+    const blob = new Blob([editorEl.value], { type:"text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "main.py";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  if (runBtn)   runBtn.onclick   = runSim;
+  if (resetBtn) resetBtn.onclick = doReset;
+  if (saveBtn)  saveBtn.onclick  = saveFile;
+
+  // initial draw
+  resetWorld();
+  </script>
+</body>
+</html>
