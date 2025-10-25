@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EV3 · Sensor-only Function Check</title>
   <link rel="stylesheet" href="../css/01_mainEV.css">
+
+    <!-- mein style) -->
+  <style>
+    dialog { border:none; border-radius:12px; padding:20px; max-width:680px;
+            box-shadow:0 8px 30px rgba(0,0,0,.25); }
+    .modal-header{ font-weight:700; margin-bottom:12px; }
+    .modal-actions{ margin-top:16px; text-align:right; }
+    .modal-actions .btn{ margin-left:8px; }
+    /* Platzhalter für Lösungstext  */
+    #solution-text { white-space:pre; font:14px/1.45 Consolas, ui-monospace, Menlo, Monaco, "Liberation Mono", monospace; }
+  </style>
 </head>
 
 <body>
@@ -12,16 +23,11 @@
     <h1>LEGO EV3 — Sensor Function Check</h1>
     <hr>
     <p>Teste die Sensoren: <b>Farbe (S1)</b>, <b>Ultraschall (S2)</b>, <b>Taster (S3)</b>, <b>Gyro (S4)</b>.</p>
-  <nav class="link-grid" aria-label="Topic selection">
-  <a class="btn" href="01_main.php" id="go-main" aria-label="Back to main">
-    ⬅️ Going to main
-  </a>
-</nav>
-  
-  
-  
-  
   </div>
+<nav class="link-grid" aria-label="Topic selection">
+  <a class="btn" href="../app/01_main.php" id="go-main" aria-label="Back to main">⬅️ Going to main</a>
+  <a class="btn" href="../app/logout.php">🚪 Logout</a>
+</nav>
 
   <main>
     <div class="card">
@@ -66,7 +72,7 @@ brick = EV3Brick()
     <div class="modal-header">✅ Lösung</div>
     <div class="modal-body">
       <pre id="solution-text"
-           style="max-height:70vh; overflow:auto; background:#f9f9f9; border:1px solid #ddd;
+          style="max-height:70vh; overflow:auto; background:#f9f9f9; border:1px solid #ddd;
                   border-radius:8px; padding:10px; font:14px/1.45 Consolas,ui-monospace,Menlo,Monaco,'Liberation Mono',monospace;">
 #!/usr/bin/env pybricks-micropython
 #!/usr/bin/env pybricks-micropython

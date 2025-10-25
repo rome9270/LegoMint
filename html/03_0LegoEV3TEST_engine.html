@@ -24,15 +24,14 @@
   <div class="hero">
     <h1>EV3 · Check the engines</h1>
     <p> Engine occupation: left engine =  1 | right engine = 2 | middle engine = 3
-      Task: Make a code which checks the engine </p>
+    Task: Make a code which checks the engine </p>
   </div>
 
 <nav class="link-grid" aria-label="Topic selection">
-  <a class="btn" href="../app/01_main.php" id="go-main" aria-label="Back to main">⬅️ Going to main
+  <a class="btn" href="../app/01_main.php" id="go-main" aria-label="Back to main">⬅️ Going to main</a>
   <a class="btn" href="../app/logout.php">🚪 Logout</a>
-  </a>
 </nav>
-  
+
   <main>
     <header class="row" style="justify-content: space-between; margin-bottom:20px;">
       <div>
@@ -86,7 +85,7 @@
     </div>
   </dialog>
 
-  <!-- ✅ Lösung-Modal (Lösung ist versteckt im DOM und wird erst beim Klick eingesetzt) -->
+  <!--  Lösung-Modal (Lösung ist versteckt im DOM und wird erst beim Klick eingesetzt) -->
   <dialog id="solution-modal" aria-labelledby="solution-title">
     <div class="modal-header" id="solution-title">✅ Lösung</div>
     <div class="modal-body">
@@ -182,10 +181,10 @@ wait(5000)
     const tipsModal = $('tips-modal');
     const solutionModal = $('solution-modal');
     const TASK = {
-     taskId: 1,          
-      // <— WICHTIG: ID aus Tabelle tasks  
+    taskId: 1,
+      // <— WICHTIG: ID aus Tabelle tasks
       // ... dein bisheriges TASK-Objekt
-};
+  };
 
 
     $('tips-btn').onclick = () => tipsModal.showModal();
