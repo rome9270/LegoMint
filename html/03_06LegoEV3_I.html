@@ -489,6 +489,7 @@ brick.speaker.beep()
 
         setStatus("ok","done.");
         els.output.textContent = `Simulated: bumped top, back ${backMm} mm, turn ${firstTurn}° → bumped right, back ${backMm} mm, turn ${secondTurn}° → exited.`;
+        cancelAnimationFrame(runToken);
       }catch(e){
         setStatus("error","ERROR");
         els.error.textContent = String(e.message || e);
