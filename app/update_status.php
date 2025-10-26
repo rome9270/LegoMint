@@ -28,3 +28,4 @@ try{
 }
 
 header('Location: dashboard.php');
+exit;
