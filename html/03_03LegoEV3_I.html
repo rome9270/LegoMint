@@ -8,11 +8,21 @@
   <link rel="stylesheet" href="../css/03_python.css" />
 
   <style>
-    #arena { background:#f9fafb; border:2px solid #111; width:100%; height:auto; max-width:900px; border-radius:10px; display:block; margin-top:10px; }
+    #arena {
+      background:#f9fafb;
+      border:2px solid #111;
+      width:100%;
+      height:auto;
+      max-width:900px;
+      border-radius:10px;
+      display:block;
+      margin-top:10px;
+    }
     .status.ok { color:#15803d; }
     .status.error { color:#b91c1c; }
     .status.running { color:#374151; }
     .muted { color:#6b7280; }
+    #error { color:#b91c1c; white-space:pre-wrap; }
   </style>
 </head>
 <body>
@@ -81,7 +91,7 @@ from pybricks.robotics import DriveBase
       <canvas id="arena" width="600" height="300"></canvas>
       <p class="muted">Scale: <b>1 px = 1 cm</b> · Start at (200, 180) facing right</p>
       <pre id="output"></pre>
-      <div id="error" style="color:#b91c1c;"></div>
+      <div id="error"></div>
     </section>
   </main>
 
@@ -135,9 +145,9 @@ wait(500)
   </dialog>
 
   <script>
-    /* ---------- Tips ---------- */
+    /* ---------- TASK META ---------- */
     const TASK = {
-      taskId: 3, 
+      taskId: 3,
       tips: [
         "DriveBase: drive.straight(mm) moves in millimeters; drive.turn(deg) rotates in degrees.",
         "Circle approximation: many small forward steps + small turns (e.g., 36 × 10° = 360°).",
@@ -147,7 +157,21 @@ wait(500)
       ]
     };
 
-    /* ---------- DOM ---------- */
+    /* ---------- SEND EVENT TO BACKEND ---------- */
+    // Wird vom Dashboard ausgewertet: "sim" = Simulation geschafft, "download" = Code gespeichert
+    function sendEvent(ev){
+      fetch("/LegoMint/app/event_update.php", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          task_id: String(TASK.taskId),
+          event: ev // "sim" or "download"
+        })
+      }).catch(()=>{});
+    }
+
+    /* ---------- DOM HANDLES ---------- */
     const els = {
       editor: document.getElementById("editor"),
       run: document.getElementById("run-btn"),
@@ -157,38 +181,56 @@ wait(500)
       error: document.getElementById("error"),
       status: document.getElementById("status"),
       canvas: document.getElementById("arena"),
+
       tipsBtn: document.getElementById("tips-btn"),
       tipsModal: document.getElementById("tips-modal"),
       tipsList: document.getElementById("tips-list"),
       closeTips: document.getElementById("close-tips"),
+
       solutionBtn: document.getElementById("solution-btn"),
       solutionModal: document.getElementById("solution-modal"),
       copySolution: document.getElementById("copy-solution"),
       closeSolution: document.getElementById("close-solution")
     };
 
-    /* ---------- UI ---------- */
+    /* ---------- UI HELPERS ---------- */
     els.tipsList.innerHTML = TASK.tips.map(t=>"<li>"+t+"</li>").join("");
-    function setStatus(cls, txt){ els.status.className="status "+cls; els.status.textContent=txt; }
-    function openDialog(d){ if(d?.showModal) d.showModal(); else d?.setAttribute("open",""); }
-    function closeDialog(d){ if(d?.close) d.close(); else d?.removeAttribute("open"); }
+
+    function setStatus(cls, txt){
+      els.status.className = "status " + cls;
+      els.status.textContent = txt;
+    }
+
+    function openDialog(d){
+      if (d?.showModal) d.showModal();
+      else d?.setAttribute("open","");
+    }
+
+    function closeDialog(d){
+      if (d?.close) d.close();
+      else d?.removeAttribute("open");
+    }
+
     els.tipsBtn.onclick = () => openDialog(els.tipsModal);
     els.closeTips.onclick = () => closeDialog(els.tipsModal);
     els.solutionBtn.onclick = () => openDialog(els.solutionModal);
     els.closeSolution.onclick = () => closeDialog(els.solutionModal);
+
     els.copySolution.onclick = () => {
       els.editor.value = document.getElementById("solution-code").textContent;
       closeDialog(els.solutionModal);
-      setStatus("", ""); els.output.textContent=""; els.error.textContent="";
+      setStatus("", "");
+      els.output.textContent = "";
+      els.error.textContent = "";
     };
 
-    /* ---------- STRICT VALIDATION (circle task) ---------- */
+    /* ---------- VALIDATION FOR THIS TASK ---------- */
     function validateCircleTask(src){
       const errors = [];
       const code = src.replace(/\r/g,'');
       const lines = code.split('\n');
 
-      // required imports
+      // Required imports
       [
         [/from\s+pybricks\.hubs\s+import\s+EV3Brick/, "Missing import EV3Brick"],
         [/from\s+pybricks\.ev3devices\s+import\s+.*\bMotor\b/, "Missing import Motor"],
@@ -196,47 +238,53 @@ wait(500)
         [/from\s+pybricks\.parameters\s+import\s+.*\bStop\b/, "Missing import Stop"],
         [/from\s+pybricks\.tools\s+import\s+.*\bwait\b/, "Missing import wait"],
         [/from\s+pybricks\.robotics\s+import\s+.*\bDriveBase\b/, "Missing import DriveBase"]
-      ].forEach(([re,msg])=>{ if(!re.test(code)) errors.push("✗ "+msg); });
+      ].forEach(([re,msg])=>{
+        if(!re.test(code)) errors.push("✗ "+msg);
+      });
 
-      // initializations (variable names are free)
+      // Initialisations
       const brickM = code.match(/(\w+)\s*=\s*EV3Brick\s*\(\s*\)/);
       const leftM  = code.match(/(\w+)\s*=\s*Motor\s*\(\s*Port\.A\s*\)/);
       const rightM = code.match(/(\w+)\s*=\s*Motor\s*\(\s*Port\.B\s*\)/);
       const driveM = code.match(/(\w+)\s*=\s*DriveBase\s*\(/);
+
       if(!brickM) errors.push("✗ EV3Brick not initialized");
       if(!leftM)  errors.push("✗ Left motor (Port.A) missing");
       if(!rightM) errors.push("✗ Right motor (Port.B) missing");
       if(!driveM) errors.push("✗ DriveBase not created");
+
       const driveVar = driveM?.[1] || "drive";
 
-      // map simple assignments NAME = NUMBER (constants)
+      // Look for constants like STEP_MM = 35 etc.
       const assigns = {};
       for(const L of lines){
         const m = L.match(/^\s*([A-Za-z_]\w*)\s*=\s*(\d+)\s*$/);
         if(m) assigns[m[1]] = parseInt(m[2],10);
       }
 
-      // find for-loop "for _ in range(36):" (capture indent)
+      // Find the for loop "for _ in range(36):"
       let forIndex = -1, forIndent = "";
-      for(let i=0;i<lines.length;i++){
+      for (let i=0;i<lines.length;i++){
         const m = lines[i].match(/^(\s*)for\s+\w+\s+in\s+range\s*\(\s*36\s*\)\s*:\s*$/);
         if(m){ forIndex=i; forIndent=m[1]||""; break; }
       }
-      if(forIndex < 0) errors.push("✗ Missing loop: for _ in range(36):");
+      if(forIndex < 0){
+        errors.push("✗ Missing loop: for _ in range(36):");
+      }
 
-      // inside the loop: need drive.straight(mm) and drive.turn(±10)
+      // Inside loop: must have drive.straight(mm) and drive.turn(±10)
       let stepMm = null;
       let hasStraight = false;
       let hasTurn10   = false;
 
       if(forIndex >= 0){
-        for(let j=forIndex+1; j<lines.length; j++){
+        for (let j=forIndex+1; j<lines.length; j++){
           const L = lines[j];
           if(L.trim()==="") continue;
           const indent = (L.match(/^(\s*)/)||["",""])[1];
-          if(indent.length <= forIndent.length) break; // end of block
+          if(indent.length <= forIndent.length) break; // loop ended
 
-          // straight: number or named constant
+          // straight(...)
           const straightRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*straight\\s*\\(\\s*([A-Za-z_]\\w*|\\d+)\\s*\\)`);
           const sm = L.match(straightRe);
           if(sm){
@@ -249,126 +297,194 @@ wait(500)
             }
           }
 
-          // turn: must be ±10 (number or constant that resolves to ±10)
+          // turn(...)
           const turnRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*turn\\s*\\(\\s*([A-Za-z_]\\w*|-?\\d+)\\s*\\)`);
           const tm = L.match(turnRe);
           if(tm){
             let ang = null;
             const arg = tm[1];
-            if(/^-?\d+$/.test(arg)) ang = parseInt(arg,10);
-            else if(assigns[arg] !== undefined) ang = assigns[arg];
-            if(ang === 10 || ang === -10) hasTurn10 = true;
+            if(/^-?\d+$/.test(arg)){
+              ang = parseInt(arg,10);
+            } else if(assigns[arg] !== undefined){
+              ang = assigns[arg];
+            }
+            if(ang === 10 || ang === -10){
+              hasTurn10 = true;
+            }
           }
         }
       }
 
-      if(!hasStraight) errors.push("✗ Missing drive.straight(mm) inside the loop");
-      if(!hasTurn10)   errors.push("✗ Missing drive.turn(±10) inside the loop");
-
-      // step length sanity
+      if(!hasStraight){
+        errors.push("✗ Missing drive.straight(mm) inside the loop");
+      }
+      if(!hasTurn10){
+        errors.push("✗ Missing drive.turn(±10) inside the loop");
+      }
       if(!(Number.isFinite(stepMm) && stepMm >= 10 && stepMm <= 150)){
         errors.push("✗ Step length should be 10–150 mm (via drive.straight(mm) or a constant)");
       }
 
-      // after the loop: require stop + beep + screen print("...circle...")
+      // After the loop: stop+beep+screen "circle"
       let afterIdx = forIndex >= 0 ? forIndex+1 : 0;
       if(forIndex >= 0){
-        for(let j=forIndex+1; j<lines.length; j++){
+        for (let j=forIndex+1; j<lines.length; j++){
           const L = lines[j];
           const indent = (L.match(/^(\s*)/)||["",""])[1];
-          if(L.trim()!=="" && indent.length <= forIndent.length){ afterIdx = j; break; }
-          if(j === lines.length-1) afterIdx = j+1;
+          if(L.trim()!=="" && indent.length <= forIndent.length){
+            afterIdx = j;
+            break;
+          }
+          if(j === lines.length-1){
+            afterIdx = j+1;
+          }
         }
       }
       const afterCode = lines.slice(afterIdx).join("\n");
+
       if(!new RegExp(`\\b${driveVar}\\s*\\.\\s*stop\\s*\\(\\s*Stop\\.BRAKE\\s*\\)`).test(afterCode)){
         errors.push("✗ Missing drive.stop(Stop.BRAKE) after the loop");
       }
-      if(!/brick\s*\.speaker\s*\.beep\s*\(/.test(afterCode)) {
+      if(!/brick\s*\.speaker\s*\.beep\s*\(/.test(afterCode)){
         errors.push("✗ Missing brick.speaker.beep() after the loop");
       }
-      if(!/brick\s*\.screen\s*\.print\s*\(\s*["'][^"']*circle[^"']*["']\s*\)/i.test(afterCode)) {
+      if(!/brick\s*\.screen\s*\.print\s*\(\s*["'][^"']*circle[^"']*["']\s*\)/i.test(afterCode)){
         errors.push('✗ Missing brick.screen.print("This is my circle") after the loop');
       }
 
-      return { errors, stepMm: stepMm || 35, angle: 10 };
+      return {
+        errors,
+        stepMm: stepMm || 35,
+        angle: 10
+      };
     }
 
-    /* ---------- Arena / animation (1 px = 1 cm) ---------- */
+    /* ---------- CANVAS WORLD (1 px = 1 cm) ---------- */
     const ctx = els.canvas.getContext("2d");
     const WORLD = {
-      W: els.canvas.width, H: els.canvas.height,
-      robot: { x:200, y:180, heading:0, r:6 } // start at (200,180) facing right
+      W: els.canvas.width,
+      H: els.canvas.height,
+      robot: { x:200, y:180, heading:0, r:6 } // start position
     };
-    let runToken=0;
+    let runToken = 0;
 
-    const rad=d=>d*Math.PI/180;
-    function clear(){ ctx.fillStyle="#fff"; ctx.fillRect(0,0,WORLD.W,WORLD.H); ctx.strokeStyle="#111"; ctx.lineWidth=2; ctx.strokeRect(0,0,WORLD.W,WORLD.H); }
-    function drawRobot(){
-      const r=WORLD.robot;
+    const rad = d => d*Math.PI/180;
+
+    function drawFrame(){
+      // background
+      ctx.fillStyle="#fff";
+      ctx.fillRect(0,0,WORLD.W,WORLD.H);
+      // border
+      ctx.strokeStyle="#111";
+      ctx.lineWidth=2;
+      ctx.strokeRect(0,0,WORLD.W,WORLD.H);
+
+      // robot
+      const r = WORLD.robot;
       ctx.fillStyle="#16a34a";
-      ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,2*Math.PI); ctx.fill();
-      const hx=r.x+Math.cos(rad(r.heading))*(r.r+10);
-      const hy=r.y+Math.sin(rad(r.heading))*(r.r+10);
-      ctx.strokeStyle="#16a34a"; ctx.lineWidth=2;
-      ctx.beginPath(); ctx.moveTo(r.x,r.y); ctx.lineTo(hx,hy); ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.r, 0, 2*Math.PI);
+      ctx.fill();
+
+      // heading arrow
+      const hx = r.x + Math.cos(rad(r.heading))*(r.r+10);
+      const hy = r.y + Math.sin(rad(r.heading))*(r.r+10);
+      ctx.strokeStyle="#16a34a";
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(r.x, r.y);
+      ctx.lineTo(hx, hy);
+      ctx.stroke();
     }
-    function render(){ clear(); drawRobot(); }
+
     function resetWorld(){
       runToken++;
       WORLD.robot = { x:200, y:180, heading:0, r:6 };
-      render();
+      drawFrame();
     }
 
-    // move straight with animation: mm → px (1 cm/px → mm/10)
-    async function moveStraightMm(mm){
-      const my=runToken; const r=WORLD.robot;
-      const distPx = Math.max(0, mm)/10;  // mm → cm(px)
-      const step = 1; // 1 cm per frame
-      const ux = Math.cos(rad(r.heading)), uy = Math.sin(rad(r.heading));
+    // move straight: convert mm → px (1cm per px => mm/10)
+    function moveStraightMm(mm){
+      const myToken = runToken;
+      const r = WORLD.robot;
+      const distPx = Math.max(0, mm) / 10;
+      const stepPx = 1; // 1px per frame => 1cm per frame
+      const ux = Math.cos(rad(r.heading));
+      const uy = Math.sin(rad(r.heading));
       let remaining = distPx;
+
       return new Promise(resolve=>{
         function tick(){
-          if(my!==runToken) return resolve();
-          const moved = Math.min(step, remaining);
-          r.x += ux*moved; r.y += uy*moved;
-          render();
+          if(myToken !== runToken) return resolve(); // cancelled
+          const moved = Math.min(stepPx, remaining);
+          r.x += ux*moved;
+          r.y += uy*moved;
+          drawFrame();
           remaining -= moved;
-          if(remaining>0) requestAnimationFrame(tick); else resolve();
+          if(remaining > 0){
+            requestAnimationFrame(tick);
+          } else {
+            resolve();
+          }
         }
         requestAnimationFrame(tick);
       });
     }
-    async function turnDeg(deg){
-      const my=runToken; const r=WORLD.robot;
-      const total = deg; const step = deg>0? 5 : -5;
+
+    function turnDeg(deg){
+      const myToken = runToken;
+      const r = WORLD.robot;
+      const total = deg;
+      const step = deg>0 ? 5 : -5;
       let done = 0;
+
       return new Promise(resolve=>{
         function tick(){
-          if(my!==runToken) return resolve();
+          if(myToken !== runToken) return resolve(); // cancelled
           const next = Math.abs(total-done) < Math.abs(step) ? (total-done) : step;
           r.heading = (r.heading + next + 360) % 360;
           done += next;
-          render();
-          if(done===total) resolve(); else requestAnimationFrame(tick);
+          drawFrame();
+          if(done === total){
+            resolve();
+          } else {
+            requestAnimationFrame(tick);
+          }
         }
         requestAnimationFrame(tick);
       });
     }
 
-    /* ---------- Run / Reset / Save ---------- */
-    function setStatus(cls, txt){ els.status.className="status "+cls; els.status.textContent=txt; }
-    function reset(){ setStatus("", ""); els.output.textContent=""; els.error.textContent=""; resetWorld(); }
-    function save(){ const b=new Blob([els.editor.value],{type:"text/plain"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="main.py"; a.click(); URL.revokeObjectURL(a.href); }
+    /* ---------- RESET / SAVE / RUN ---------- */
+    function reset(){
+      setStatus("", "");
+      els.output.textContent = "";
+      els.error.textContent  = "";
+      resetWorld();
+    }
+
+    function save(){
+      // Download main.py
+      const blob = new Blob([els.editor.value], {type:"text/plain"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "main.py";
+      a.click();
+      URL.revokeObjectURL(a.href);
+
+      // Fortschritt melden (download)
+      sendEvent("download");
+    }
 
     async function runCode(){
-      els.error.textContent=""; els.output.textContent="";
+      els.error.textContent  = "";
+      els.output.textContent = "";
       setStatus("running","checking…");
 
-      const code=els.editor.value.trim();
+      const code = els.editor.value.trim();
       if(!code){
         setStatus("error","ERROR");
-        els.output.textContent="Please write your Pybricks program first.";
+        els.output.textContent = "Please write your Pybricks program first.";
         return;
       }
 
@@ -379,6 +495,7 @@ wait(500)
         return;
       }
 
+      // passed validation → simulate
       setStatus("running","running…");
       resetWorld();
       try{
@@ -386,21 +503,27 @@ wait(500)
           await moveStraightMm(stepMm);
           await turnDeg(angle);
         }
+
         setStatus("ok","done.");
-        els.output.textContent = `Circle completed (~36 steps × ${stepMm} mm, turn ${angle}°).`;
+        els.output.textContent =
+          `Circle completed (~36 steps × ${stepMm} mm, turn ${angle}° each).`;
+
+        // Fortschritt melden (Simulation erfolgreich)
+        sendEvent("sim");
+
       }catch(e){
         setStatus("error","ERROR");
         els.error.textContent = String(e);
       }
     }
 
-    els.run.onclick = runCode;
+    /* ---------- HOOK BUTTONS ---------- */
+    els.run.onclick   = runCode;
     els.reset.onclick = reset;
-    els.save.onclick = save;
+    els.save.onclick  = save;
 
-    render();
-
-    document.getElementById("back-btn").onclick = () => history.back();
+    // initial draw
+    resetWorld();
   </script>
 </body>
 </html>

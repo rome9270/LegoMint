@@ -134,8 +134,22 @@ brick.screen.print("This is Alex")
 wait(3000)
 `,
       filename: "main.py",
-      nextUrl: "03_02LegoEV3.html"
+      nextUrl: "03_02LegoEV3_I.html"
     };
+
+    // === SEND EVENT TO BACKEND (for dashboard progress) ===
+    // This MUST be OUTSIDE of TASK, not inside.
+    function sendEvent(ev){
+      fetch("/LegoMint/app/event_update.php", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          task_id: String(TASK.taskId),
+          event: ev // "sim" or "download"
+        })
+      }).catch(()=>{});
+    }
 
     // === ELEMENTS ===
     const els = {
@@ -198,24 +212,45 @@ wait(3000)
       return true;
     }
 
-    // === MAIN BUTTONS ===
-    function reset(){ els.editor.value = TASK.starterCode; els.output.textContent=""; els.error.textContent=""; els.status.textContent=""; }
+    // === BUTTON LOGIC ===
+    function reset(){
+      els.editor.value = TASK.starterCode;
+      els.output.textContent = "";
+      els.error.textContent  = "";
+      els.status.textContent = "";
+      els.status.className   = "status";
+    }
 
-    async function runCode(){
+    function runCode(){
       els.output.textContent = "";
       els.error.textContent  = "";
       els.status.textContent = "running…";
+      els.status.className   = "status running";
+
       const ok = validateAndSimulate(els.editor.value);
-      els.status.textContent = ok ? "done." : "ERROR";
+
+      if(ok){
+        els.status.textContent = "done.";
+        els.status.className   = "status ok";
+
+        // Fortschritt melden → Simulation geschafft
+        sendEvent("sim");
+      } else {
+        els.status.textContent = "ERROR";
+        els.status.className   = "status error";
+      }
     }
 
     function save(){
       const b = new Blob([els.editor.value], {type:"text/plain"});
       const a = document.createElement("a");
       a.href = URL.createObjectURL(b);
-      a.download = TASK.filename;
+      a.download = TASK.filename || "main.py";
       a.click();
       URL.revokeObjectURL(a.href);
+
+      // Fortschritt melden → Schüler hat Code gespeichert
+      sendEvent("download");
     }
 
     // === DIALOGS ===
@@ -223,7 +258,10 @@ wait(3000)
     els.closeTips.onclick = ()=>els.tipsModal.close();
     els.solutionBtn.onclick = ()=>els.solutionModal.showModal();
     els.closeSolution.onclick = ()=>els.solutionModal.close();
-    els.copySolution.onclick = ()=>{ els.editor.value = els.solutionCode.textContent; els.solutionModal.close(); };
+    els.copySolution.onclick = ()=>{
+      els.editor.value = els.solutionCode.textContent;
+      els.solutionModal.close();
+    };
 
     // === BUTTONS ===
     els.run.onclick = runCode;

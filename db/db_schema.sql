@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS users(
 CREATE TABLE IF NOT EXISTS tasks(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL,
-  description TEXT,
   html_file TEXT                           -- Datei in /html (z.B. 03_06LegoEV3.html)
 );
 
