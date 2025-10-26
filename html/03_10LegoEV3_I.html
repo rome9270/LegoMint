@@ -248,13 +248,13 @@ const WALL_HEIGHT    = 60;     // px  -> Länge der roten Wand
 
 // --- MOTION + CONTROL (LANGSAM ABGESTIMMT) --------
 // SLOW-TUNED FOR REAL ROBOT:
-const SPEED_APPROACH = 0.5;    // px/frame (war 1.5)  langsamer zur Linie
-const SPEED_FOLLOW   = 0.5;    // px/frame (war 1.5)  langsamer auf Linie
-const KP_FOLLOW      = 0.10;   // (war 0.18) kleiner => weniger Zickzack
+const SPEED_APPROACH = 0.25;    // px/frame (war 1.5)  langsamer zur Linie
+const SPEED_FOLLOW   = 0.25;    // px/frame (war 1.5)  langsamer auf Linie
+const KP_FOLLOW      = 0.8;   // (war 0.18) kleiner => weniger Zickzack
 const SPEED_BACK     = 0.6;    // px/frame rückwärts weg von Wand (war 1.2)
 const BACK_FRAMES    = 60;     // länger rückwärts: 60 Frames statt 40
-const TURN_SPEED     = 4;      // deg/frame drehen nach dem Backup (war 6)
-const SPEED_RETURN   = 1.0;    // px/frame Heimfahrt (war 2.0)
+const TURN_SPEED     = 3;      // deg/frame drehen nach dem Backup (war 6)
+const SPEED_RETURN   = 0.8;    // px/frame Heimfahrt (war 2.0)
 
 // -------------------------------------------------
 // Steuert, ob wir laufen dürfen:

@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 (Pybricks) – Warehouse Mission (Seek → 3 Loads → Final Unload + Touch Safety)</title>
+
+  <link rel="stylesheet" href="../css/03_python.css" />
+  <style>
+    #arena {
+      background:#f9fafb;
+      border:2px solid #111;
+      width:100%;
+      height:auto;
+      max-width:900px;
+      border-radius:10px;
+      display:block;
+      margin-top:10px;
+    }
+
+    .status.ok      { color:#15803d; }
+    .status.error   { color:#b91c1c; }
+    .status.running { color:#374151; }
+    .muted { color:#6b7280; }
+    #error { color:#b91c1c; white-space:pre-wrap; }
+
+    .tipbox {
+      background:#f0fdf4;
+      border:1px solid #86efac;
+      border-radius:8px;
+      padding:10px 12px;
+      margin-top:8px;
+      font-size:0.9rem;
+      color:#166534;
+    }
+  </style>
+</head>
+<body>
+  <!-- NAV -->
+  <nav class="link-grid" aria-label="Topic selection">
+    <a class="btn" href="../app/01_main.php" id="go-main">⬅️ Main</a>
+    <a class="btn" href="../app/logout.php">🚪 Logout</a>
+    <a class="btn primary" id="next-btn" href="03_11LegoEV3_I.html">Next →</a>
+  </nav>
+
+  <header class="row" style="justify-content: space-between;">
+    <div>
+      <h1>EV3 (Pybricks) · Warehouse Mission</h1>
+
+      <p>The robot should:</p>
+      <ol>
+        <li>Start <b>off the black line</b> (ColorSensor on <b>Port S1</b> is not on the line yet).</li>
+        <li><b>Seek the line</b>: move until it finds the black line.</li>
+        <li>Follow the line forward. At each <b>beige marker</b>: stop and say
+          <code>"please load the vehicle"</code>.</li>
+        <li>Do this 3 times (3 loading stations).</li>
+        <li>Then continue to the <b>white marker</b> at the end and unload:
+          <code>"please unload the car"</code>, then
+          <code>"job done, ready for the next one"</code>.</li>
+        <li>Safety: if the <b>TouchSensor on Port S3</b> is pressed (a worker is in the way),
+            the robot must stop and say
+            <code>"you are in my way - please move"</code>
+            until it's clear, then continue.</li>
+      </ol>
+
+      <p class="muted">
+        • Click <b>✅ Solution → Insert</b> to load example code into the editor (this is what goes on the EV3).<br>
+        • Press <b>▶ Run</b> to watch the simulation.<br>
+        • The simulation shows 4 stations: 3 beige load stops + 1 white unload stop.<br>
+        • The simulation does not literally run the Python. It just animates the idea.
+      </p>
+    </div>
+
+    <div class="row">
+      <button class="btn" id="tips-btn">💡 Tips</button>
+      <button class="btn" id="solution-btn">✅ Solution</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- EDITOR -->
+    <section class="card">
+      <h2>Editor</h2>
+      <div class="row">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+        <span id="status" class="status" aria-live="polite"></span>
+      </div>
+
+<textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
+# EV3 (Pybricks) – Warehouse Mission with Touch Safety
+#
+# GOAL:
+# 1. Robot starts OFF the line.
+# 2. SEEK the black line using ColorSensor (Port S1).
+# 3. FOLLOW the black line.
+# 4. At each beige marker: stop + say "please load the vehicle" (3 times total).
+# 5. Then continue to the WHITE final marker:
+#       "please unload the car"
+#       "job done, ready for the next one"
+# 6. SAFETY: If TouchSensor (Port S3) is pressed, pause and say:
+#       "you are in my way - please move"
+#    Wait until it's released, and then continue.
+#
+# Hardware assumptions:
+#  - Motor A = left wheel
+#  - Motor B = right wheel
+#  - ColorSensor on Port S1 (facing down)
+#  - TouchSensor on Port S3 (bumper in front)
+
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, ColorSensor, TouchSensor
+from pybricks.parameters import Port, Stop
+from pybricks.tools import wait
+from pybricks.robotics import DriveBase
+
+brick = EV3Brick()
+left  = Motor(Port.A)
+right = Motor(Port.B)
+color = ColorSensor(Port.S1)
+touch = TouchSensor(Port.S3)
+
+drive = DriveBase(left, right, 56, 114)
+
+# -------- tunable constants (you can tweak these in class) --------
+LINE_REF_DARK      = 20   # reflection() ~ black line
+KP                 = 1.0  # steering gain (line following)
+SPEED_FWD          = 40   # mm/s forward during follow
+SEEK_SPEED         = 30   # mm/s while searching the line
+BEIGE_LIMIT        = 70   # reflection() > this => beige loading station
+WHITE_LIMIT        = 85   # reflection() > this => final white unload marker
+STOP_COUNT_GOAL    = 3    # after 3 beige stops, next bright stop = unload
+LOAD_WAIT_MS       = 2000 # wait time at each load station
+FINAL_WAIT_MS      = 3000 # roll time after last load, before looking for white
+
+# --- helper: safety stop with TouchSensor ---
+def check_touch_block():
+    # If someone is in front and presses the bumper,
+    # we immediately brake and politely complain,
+    # until they move away.
+    if touch.pressed():
+        drive.stop(Stop.BRAKE)
+        brick.speaker.say("you are in my way - please move")
+        # stay here until released
+        while touch.pressed():
+            wait(50)
+        # small extra pause before moving again
+        wait(200)
+
+# --- 1) SEEK PHASE: move until we detect dark line ---
+while color.reflection() > LINE_REF_DARK + 5:
+    check_touch_block()
+    drive.drive(SEEK_SPEED, 0)  # slow straight
+    wait(20)
+
+drive.stop(Stop.BRAKE)
+
+# --- 2) FOLLOW PHASE WITH LOADING STOPS ---
+stops_done = 0
+mission_running = True
+
+while mission_running:
+    check_touch_block()
+
+    ref   = color.reflection()
+    error = LINE_REF_DARK - ref       # how far from dark target
+    steer = error * KP                # proportional steering
+    drive.drive(SPEED_FWD, steer)     # keep rolling forward
+
+    # check for bright reflection
+    if ref > BEIGE_LIMIT:
+        # We hit a bright / beige marker
+        drive.stop(Stop.BRAKE)
+
+        if stops_done < STOP_COUNT_GOAL:
+            # normal load station
+            brick.speaker.say("please load the vehicle")
+            wait(LOAD_WAIT_MS)
+            stops_done += 1
+
+            # pull a little forward to leave the station
+            drive.drive(SPEED_FWD, 0)
+            wait(800)
+            drive.stop(Stop.BRAKE)
+
+            # after 3rd load station:
+            # roll forward extra time so we can reach final marker
+            if stops_done == STOP_COUNT_GOAL:
+                drive.drive(SPEED_FWD, 0)
+                wait(FINAL_WAIT_MS)
+                drive.stop(Stop.BRAKE)
+
+        else:
+            # This is the NEXT bright marker (white final zone)
+            # => unload / finish mission
+            brick.speaker.say("please unload the car")
+            wait(1000)
+            brick.speaker.say("job done, ready for the next one")
+            brick.speaker.beep()
+            brick.screen.print("done")
+            wait(1000)
+
+            drive.stop(Stop.BRAKE)
+            mission_running = False
+
+    wait(20)
+
+drive.stop(Stop.BRAKE)
+</textarea>
+    </section>
+
+    <!-- SIMULATION -->
+    <section class="card">
+      <h2>Simulation</h2>
+
+      <canvas id="arena" width="600" height="300"></canvas>
+
+      <p class="muted">
+        Robot (green) starts below the black line, first seeks it,
+        then follows the line. At each beige station it pauses
+        ("please load the vehicle"). At the white station at the end,
+        it unloads ("please unload the car" → "job done...").
+        If the worker (TouchSensor) presses the bumper, the robot waits:
+        "you are in my way - please move".
+      </p>
+
+      <div class="tipbox">
+        <strong>💡 Sensor tip:</strong><br>
+        • Black line = low reflection (~10-20).<br>
+        • Beige station = bright (~70+).<br>
+        • Final white station = very bright (~85+).<br>
+        • TouchSensor on S3 = safety stop.
+      </div>
+
+      <pre id="output"></pre>
+      <div id="error"></div>
+    </section>
+  </main>
+
+  <!-- TIPS MODAL -->
+  <dialog id="tips-modal">
+    <div class="modal-header">Tips</div>
+    <div class="modal-body">
+      <ul>
+        <li><code>ColorSensor(Port.S1).reflection()</code> returns 0..100.</li>
+        <li>"Seek line": move slowly forward until it's dark enough for the line.</li>
+        <li>"Follow line": drive with <code>steer = (target - reflection) * KP</code>.</li>
+        <li>At beige marker: stop + "please load the vehicle" (3x).</li>
+        <li>At the final white marker: "please unload the car", then "job done...".</li>
+        <li>TouchSensor S3: emergency stop → "you are in my way - please move".</li>
+      </ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips">Close</button>
+    </div>
+  </dialog>
+
+  <!-- SOLUTION MODAL -->
+  <dialog id="solution-modal">
+    <div class="modal-header">Solution (Warehouse Mission + Touch Safety)</div>
+    <div class="modal-body">
+<pre id="solution-code" style="white-space:pre-wrap;">#!/usr/bin/env pybricks-micropython
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, ColorSensor, TouchSensor
+from pybricks.parameters import Port, Stop
+from pybricks.tools import wait
+from pybricks.robotics import DriveBase
+
+brick = EV3Brick()
+left  = Motor(Port.A)
+right = Motor(Port.B)
+color = ColorSensor(Port.S1)
+touch = TouchSensor(Port.S3)
+
+drive = DriveBase(left, right, 56, 114)
+
+LINE_REF_DARK      = 20   # black line
+KP                 = 1.0  # steering gain
+SPEED_FWD          = 40   # mm/s
+SEEK_SPEED         = 30   # mm/s while searching
+BEIGE_LIMIT        = 70   # beige stop marker
+WHITE_LIMIT        = 85   # final white unload marker
+STOP_COUNT_GOAL    = 3    # 3x load, then final unload
+LOAD_WAIT_MS       = 2000
+FINAL_WAIT_MS      = 3000
+
+def check_touch_block():
+    if touch.pressed():
+        drive.stop(Stop.BRAKE)
+        brick.speaker.say("you are in my way - please move")
+        while touch.pressed():
+            wait(50)
+        wait(200)
+
+# 1) SEEK LINE
+while color.reflection() > LINE_REF_DARK + 5:
+    check_touch_block()
+    drive.drive(SEEK_SPEED, 0)
+    wait(20)
+drive.stop(Stop.BRAKE)
+
+# 2) FOLLOW LINE WITH STOPS
+stops_done = 0
+mission_running = True
+
+while mission_running:
+    check_touch_block()
+
+    ref   = color.reflection()
+    error = LINE_REF_DARK - ref
+    steer = error * KP
+    drive.drive(SPEED_FWD, steer)
+
+    if ref > BEIGE_LIMIT:
+        drive.stop(Stop.BRAKE)
+
+        if stops_done < STOP_COUNT_GOAL:
+            brick.speaker.say("please load the vehicle")
+            wait(LOAD_WAIT_MS)
+            stops_done += 1
+
+            drive.drive(SPEED_FWD, 0)
+            wait(800)
+            drive.stop(Stop.BRAKE)
+
+            if stops_done == STOP_COUNT_GOAL:
+                drive.drive(SPEED_FWD, 0)
+                wait(FINAL_WAIT_MS)
+                drive.stop(Stop.BRAKE)
+
+        else:
+            # Final white station (unload)
+            brick.speaker.say("please unload the car")
+            wait(1000)
+            brick.speaker.say("job done, ready for the next one")
+            brick.speaker.beep()
+            brick.screen.print("done")
+            wait(1000)
+
+            drive.stop(Stop.BRAKE)
+            mission_running = False
+
+    wait(20)
+
+drive.stop(Stop.BRAKE)
+</pre>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution">Insert</button>
+      <button class="btn" id="close-solution">Close</button>
+    </div>
+  </dialog>
+
+  <script>
+  // ===== DOM ELEMENTS =====
+  const runBtn        = document.getElementById("run-btn");
+  const resetBtn      = document.getElementById("reset-btn");
+  const saveBtn       = document.getElementById("save-btn");
+  const editorEl      = document.getElementById("editor");
+  const statusEl      = document.getElementById("status");
+  const outputEl      = document.getElementById("output");
+  const errorEl       = document.getElementById("error");
+
+  const canvasEl      = document.getElementById("arena");
+
+  const tipsBtn       = document.getElementById("tips-btn");
+  const tipsModal     = document.getElementById("tips-modal");
+  const closeTips     = document.getElementById("close-tips");
+
+  const solutionBtn   = document.getElementById("solution-btn");
+  const solutionModal = document.getElementById("solution-modal");
+  const copySolution  = document.getElementById("copy-solution");
+  const closeSolution = document.getElementById("close-solution");
+
+  function setStatus(cls, txt){
+    statusEl.className = "status " + cls;
+    statusEl.textContent = txt;
+  }
+
+  // ===== SIM SETTINGS =====
+  // Geometry for simulation
+  const LINE_Y        = 200;     // y-position of the black line
+  const START_X       = 80;      // start x (below the line)
+  const START_Y       = 235;     // start y (off the line)
+  const START_HEADING = 0;       // initial heading
+
+  // Station x-positions along the line
+  // We now have 4 stops:
+  //  - first 3 beige (load)
+  //  - last one white (final unload)
+  const STATION_XS    = [150, 300, 450, 580];
+
+  // End of route (used as clamp)
+  const LINE_END_X    = 600;
+
+  // Motion tuning for sim (slow & smooth)
+  const SEEK_SPEED_PX        = 1.0;   // px/frame seek
+  const FOLLOW_SPEED_PX      = 0.6;   // px/frame follow
+  const KP_FOLLOW            = 0.06;  // steering gain in sim
+  const ROTATE_MAX_PER_FRAME = 2;     // deg/frame
+  const STOP_WAIT_FRAMES     = 60;    // pause at each beige station
+  const FINAL_WAIT_FRAMES    = 60;    // tiny wait at final white station
+  const FINAL_ROLL_FRAMES    = 0;     // no extra roll needed (we mark white)
+
+  let running = false;
+  let simulationReady = false;
+
+  // ===== WORLD STATE / RENDERING =====
+  const ctx = canvasEl.getContext("2d");
+  const deg2rad = d => d * Math.PI/180;
+
+  const WORLD = {
+    robot: { x: START_X, y: START_Y, heading: START_HEADING, r: 6 }
+  };
+
+  function drawWorld(label){
+    // Clear bg + border
+    ctx.fillStyle="#fff";
+    ctx.fillRect(0,0,canvasEl.width,canvasEl.height);
+
+    ctx.strokeStyle="#111";
+    ctx.lineWidth=2;
+    ctx.strokeRect(0,0,canvasEl.width,canvasEl.height);
+
+    // black transport line
+    ctx.strokeStyle="#000";
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.moveTo(0, LINE_Y);
+    ctx.lineTo(canvasEl.width, LINE_Y);
+    ctx.stroke();
+
+    // draw stations:
+    // first 3 beige, last one white
+    STATION_XS.forEach((xPos, idx) => {
+      ctx.strokeStyle = (idx === STATION_XS.length - 1) ? "#ffffff" : "#e7e3c2";
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(xPos, LINE_Y-20);
+      ctx.lineTo(xPos, LINE_Y+20);
+      ctx.stroke();
+    });
+
+    // draw robot (green circle)
+    const r = WORLD.robot;
+    ctx.fillStyle="#16a34a";
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.r, 0, Math.PI*2);
+    ctx.fill();
+
+    // heading arrow
+    ctx.strokeStyle="#16a34a";
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(r.x, r.y);
+    ctx.lineTo(
+      r.x + Math.cos(deg2rad(r.heading))*15,
+      r.y + Math.sin(deg2rad(r.heading))*15
+    );
+    ctx.stroke();
+
+    if (label){
+      ctx.fillStyle="#374151";
+      ctx.font="12px sans-serif";
+      ctx.fillText(label, 10, 20);
+    }
+  }
+
+  function resetWorld(){
+    WORLD.robot.x = START_X;
+    WORLD.robot.y = START_Y;
+    WORLD.robot.heading = START_HEADING;
+    drawWorld("ready (off the line)");
+  }
+
+  function stepForward(px){
+    WORLD.robot.x += Math.cos(deg2rad(WORLD.robot.heading)) * px;
+    WORLD.robot.y += Math.sin(deg2rad(WORLD.robot.heading)) * px;
+  }
+
+  function turnToward(targetDeg, maxStepDeg){
+    let cur = WORLD.robot.heading;
+    let diff = ((targetDeg - cur + 540) % 360) - 180;
+    const step = Math.sign(diff) * Math.min(Math.abs(diff), maxStepDeg);
+    WORLD.robot.heading = (cur + step + 360) % 360;
+  }
+
+  // === SEEK PHASE (down-to-line)
+  // We'll travel "up" toward LINE_Y.
+  function simSeekLine(){
+    return new Promise(resolve=>{
+      const needUp = WORLD.robot.y > LINE_Y;
+      WORLD.robot.heading = needUp ? 270 : 90; // 270° up, 90° down (just in case)
+
+      function tick(){
+        if (!running) return resolve();
+
+        stepForward(SEEK_SPEED_PX);
+        drawWorld("seeking line…");
+
+        const closeEnough = Math.abs(WORLD.robot.y - LINE_Y) <= 1;
+        const crossed = needUp
+          ? (WORLD.robot.y <= LINE_Y)
+          : (WORLD.robot.y >= LINE_Y);
+
+        if (closeEnough || crossed){
+          WORLD.robot.y = LINE_Y;
+          WORLD.robot.heading = 0; // face right along the line
+          drawWorld("line found");
+          return resolve();
+        }
+        requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    });
+  }
+
+  // basic line-follow step (keeps y near LINE_Y using kp)
+  function gentleFollowStep(){
+    const desiredHeading = 0;               // we want to go right
+    const errorY = LINE_Y - WORLD.robot.y;  // vertical offset
+    const correction = errorY * KP_FOLLOW;  // proportional correction
+    const targetHeading = desiredHeading + correction * 180;
+    turnToward(targetHeading, ROTATE_MAX_PER_FRAME);
+    stepForward(FOLLOW_SPEED_PX);
+  }
+
+  // follow with stops at stations 0..2 (beige), then final white (station 3)
+  function simFollowStations(){
+    return new Promise(resolve=>{
+      let stationIndex = 0;
+      let phase = "drive";
+      let waitFrames = 0;
+
+      function tick(){
+        if (!running) return resolve();
+
+        // completed all stations?
+        if (stationIndex >= STATION_XS.length){
+          // clamp at end
+          if (WORLD.robot.x > LINE_END_X) WORLD.robot.x = LINE_END_X;
+          drawWorld('final done / "job done"');
+          return resolve();
+        }
+
+        const finalStation = (stationIndex === STATION_XS.length - 1);
+
+        if (phase === "drive"){
+          gentleFollowStep();
+          drawWorld(finalStation
+            ? "heading to final unload"
+            : `heading to station ${stationIndex+1}`
+          );
+
+          // reached x of this station?
+          if (WORLD.robot.x >= STATION_XS[stationIndex]){
+            phase = "wait";
+            waitFrames = 0;
+          }
+          requestAnimationFrame(tick);
+          return;
+        }
+
+        if (phase === "wait"){
+          if (finalStation){
+            // final white station
+            drawWorld('Final: "please unload the car" / "job done..."');
+            waitFrames++;
+            if (waitFrames >= FINAL_WAIT_FRAMES){
+              stationIndex++;
+              phase = "drive";
+            }
+          } else {
+            // beige load station
+            drawWorld(`Station ${stationIndex+1}: "please load the vehicle"`);
+            waitFrames++;
+            if (waitFrames >= STOP_WAIT_FRAMES){
+              stationIndex++;
+              phase = "drive";
+            }
+          }
+
+          requestAnimationFrame(tick);
+          return;
+        }
+      }
+
+      requestAnimationFrame(tick);
+    });
+  }
+
+  // main animation
+  async function runMission(){
+    if (!simulationReady){
+      setStatus("error","ERROR");
+      errorEl.textContent = "⚠️ Click 'Solution → Insert' first!";
+      return;
+    }
+    if (running) return;
+
+    running = true;
+    setStatus("running","running…");
+    outputEl.textContent = "";
+    errorEl.textContent  = "";
+
+    resetWorld();
+
+    // 1) seek line
+    await simSeekLine();
+
+    // 2) follow through all 4 stations
+    await simFollowStations();
+
+    running = false;
+    setStatus("ok","done.");
+    outputEl.textContent =
+      'Simulation: seek line → 3× "please load the vehicle" → final white station "please unload the car" / "job done...". Touch stop is safety in real robot.';
+  }
+
+  // ===== BUTTONS =====
+  runBtn.onclick = runMission;
+
+  resetBtn.onclick = ()=>{
+    running = false;
+    setStatus("","");
+    outputEl.textContent="";
+    errorEl.textContent="";
+    resetWorld();
+  };
+
+  saveBtn.onclick = ()=>{
+    const blob = new Blob([editorEl.value], {type:"text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download="main.py";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  // tips modal
+  tipsBtn.onclick = ()=>{
+    if (tipsModal.showModal) tipsModal.showModal();
+    else tipsModal.setAttribute("open","");
+  };
+  closeTips.onclick = ()=>{
+    if (tipsModal.close) tipsModal.close();
+    else tipsModal.removeAttribute("open","");
+  };
+
+  // solution modal
+  solutionBtn.onclick = ()=>{
+    if (solutionModal.showModal) solutionModal.showModal();
+    else solutionModal.setAttribute("open","");
+  };
+  closeSolution.onclick = ()=>{
+    if (solutionModal.close) solutionModal.close();
+    else solutionModal.removeAttribute("open","");
+  };
+
+  // copy solution into editor (unlocks Run)
+  copySolution.onclick = ()=>{
+    editorEl.value = document.getElementById("solution-code").textContent;
+    simulationReady = true;
+
+    if (solutionModal.close) solutionModal.close();
+    else solutionModal.removeAttribute("open","");
+
+    setStatus("ok","Ready to run");
+    outputEl.textContent = "Solution code inserted. Press ▶ Run.";
+    errorEl.textContent  = "";
+    resetWorld();
+  };
+
+  // init
+  resetWorld();
+  setStatus("","");
+  </script>
+</body>
+</html>
