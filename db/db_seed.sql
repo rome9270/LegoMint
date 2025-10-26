@@ -12,4 +12,6 @@ INSERT INTO tasks (title, description, html_file) VALUES
 ('EV3 - eight', 'Pybricks Step 4', '03_07LegoEV3_I.html'),
 ('EV3 - eight', 'Pybricks Step 4', '03_08LegoEV3_I.html'),
 ('EV3 - eight', 'Pybricks Step 4', '03_09LegoEV3_I.html'),
-('EV3 - eight', 'Pybricks Step 4', '03_10LegoEV3_I.html');
+('EV3 - line follower', 'task 10', '03_10LegoEV3_I.html'),
+('EV3 - pick up line follower', 'high school 1', '04_01LegoEV3_I.html'),
+('EV3 - eight', 'Pybricks Step 4', '04_02LegoEV3_I.html');

@@ -3,35 +3,244 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!--<title>Overview – Python Basics</title>
+  <title>Overview – EV3 Course</title>
 
-  <!-- CSS template -->
   <link rel="stylesheet" href="../css/01_main.css" />
+
+  <style>
+    /* General spacing */
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 20px;
+    }
+
+    h1 { margin-bottom: 0.5em; }
+
+    /* Navigation grid spacing */
+    .link-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px; /* gap between top buttons */
+      margin-bottom: 32px;
+    }
+
+    .topic {
+      display: inline-block;
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      line-height: 1.3;
+      transition: background 0.2s;
+    }
+    .topic:hover { background: #f3f4f6; }
+
+    /* Accordion sections */
+    .course-section {
+      margin-bottom: 32px;
+    }
+    .accordion {
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .accordion summary {
+      background: #f3f4f6;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .accordion summary:hover {
+      background: #e5e7eb;
+    }
+    .accordion summary::-webkit-details-marker { display: none; }
+
+    .accordion-content {
+      padding: 8px 16px 12px;
+      background: #fff;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    /* Task list */
+    .task-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .task-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .task-item:last-child {
+      border-bottom: none;
+    }
+    .task-title {
+      flex: 1;
+      color: #111;
+    }
+    .task-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .open-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      text-decoration: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .open-btn.primary {
+      background: #e0e7ff;
+      border-color: #c7cfff;
+      font-weight: 600;
+    }
+    .done-btn {
+      background: #dcfce7;
+      border: 1px solid #86efac;
+      border-radius: 6px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .done-btn.done {
+      background: #bbf7d0;
+      font-weight: 600;
+      color: #166534;
+    }
+    .done-btn:hover {
+      background: #a7f3d0;
+    }
+
+    .level-grid {
+      margin-top: 32px;
+    }
+    .level-btn {
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+    }
+  </style>
 </head>
 
 <body>
   <h1>Choose your topic</h1>
   <hr>
 
-  <!-- Themen-Grid -->
+  <!-- TOP BUTTONS -->
   <nav class="link-grid" aria-label="Topic selection">
     <a class="topic" href="../html/03_0LegoEV3TEST_engine.html">Function test engine</a>
     <a class="topic" href="../html/03_0LegoEV3TEST_sensor.html">Function test sensors</a>
     <a class="topic" href="../html/03_01LegoEV3.html">LegoEV3 Basics (Elementary school)</a>
     <a class="topic" href="../html/04_01LegoEV3.html">LegoEV3 (Middle school)</a>
-    <!--
-    <a class="topic" href="task-01.html">Python Modules (Middle school)</a>
-    <a class="topic" href="task-01.html">Python Data Structures (Middle school)</a>
-    <a class="topic" href="task-01.html">Python OOP (High school)</a>
-    <a class="topic" href="task-01.html">Python AI (High school)</a>
-    -->
   </nav>
 
-  <hr>
+  <!-- BASIC COURSE -->
+  <section class="course-section">
+    <details class="accordion" open>
+      <summary>Basic Course (Grundkurs) <span>▼</span></summary>
+      <div class="accordion-content">
+        <ul class="task-list" id="basic-list">
+          <!-- tasks added via JS -->
+        </ul>
+      </div>
+    </details>
+  </section>
 
-  <!-- Back-Button -->
+  <!-- ADVANCED COURSE -->
+  <section class="course-section">
+    <details class="accordion">
+      <summary>Advanced Course (Oberstufe) <span>▼</span></summary>
+      <div class="accordion-content">
+        <ul class="task-list" id="advanced-list">
+          <!-- tasks added via JS -->
+        </ul>
+      </div>
+    </details>
+  </section>
+
+  <hr>
   <div class="level-grid" aria-label="Navigation">
-  <a class="level-btn" href="../app/01_main.php">← Go back to main</a>
+    <a class="level-btn" href="../app/01_main.php">← Go back to main</a>
   </div>
+
+  <script>
+    // ===== TASK DEFINITIONS =====
+    const basicTasks = [
+      { id: "03_01LegoEV3_I", name: "EV3 Step 1: Two Beeps & Name" },
+      { id: "03_02LegoEV3_I", name: "Drive a Square" },
+      { id: "03_03LegoEV3_I", name: "Figure-8 Driving" },
+      { id: "03_04LegoEV3_I", name: "Touch + Gyro (bump 2 walls & exit)" },
+      { id: "03_05LegoEV3_I", name: "Gyro Square (turn 90°)" },
+      { id: "03_06LegoEV3_I", name: "Line Follower (P control)" },
+      { id: "03_07LegoEV3_I", name: "Seek Line → Follow Straight" },
+      { id: "03_08LegoEV3_I", name: "Warehouse Mission (3x load + unload)" },
+      { id: "03_09LegoEV3_I", name: "Sensor Function Check" },
+      { id: "03_10LegoEV3_I", name: "Engine / Motor Check" }
+    ];
+
+    const advancedTasks = [
+      { id: "04_01LegoEV3_I", name: "Autonomous navigation (obstacle avoidance)" },
+      { id: "04_02LegoEV3_I", name: "Pickup & dropoff routine" },
+      { id: "04_03LegoEV3_I", name: "Sensor fusion challenge" },
+      { id: "04_04LegoEV3_I", name: "Free project / open challenge" }
+    ];
+
+    // ===== BUILD TASK LIST =====
+    function renderTasks(listEl, tasks, storageKeyPrefix) {
+      const doneSet = JSON.parse(localStorage.getItem(storageKeyPrefix)) || {};
+      listEl.innerHTML = "";
+      tasks.forEach(task => {
+        const li = document.createElement("li");
+        li.className = "task-item";
+
+        const title = document.createElement("div");
+        title.className = "task-title";
+        title.textContent = task.name;
+
+        const actions = document.createElement("div");
+        actions.className = "task-actions";
+
+        const open = document.createElement("a");
+        open.className = "open-btn primary";
+        open.href = `../html/${task.id}.html`;
+        open.textContent = "Open task →";
+
+        const done = document.createElement("button");
+        done.className = "done-btn";
+        done.textContent = doneSet[task.id] ? "✓ Done" : "Mark done";
+        if (doneSet[task.id]) done.classList.add("done");
+
+        done.addEventListener("click", () => {
+          const newVal = !doneSet[task.id];
+          doneSet[task.id] = newVal;
+          localStorage.setItem(storageKeyPrefix, JSON.stringify(doneSet));
+          done.textContent = newVal ? "✓ Done" : "Mark done";
+          done.classList.toggle("done", newVal);
+        });
+
+        actions.appendChild(open);
+        actions.appendChild(done);
+        li.appendChild(title);
+        li.appendChild(actions);
+        listEl.appendChild(li);
+      });
+    }
+
+    renderTasks(document.getElementById("basic-list"), basicTasks, "basicCourseProgress");
+    renderTasks(document.getElementById("advanced-list"), advancedTasks, "advancedCourseProgress");
+  </script>
 </body>
 </html>
