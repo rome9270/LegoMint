@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EV3 Line Follower · Debug Version</title>
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      line-height: 1.4;
+      padding: 1rem;
+      color: #111;
+      background: #fff;
+    }
+
+    nav.link-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      display: inline-block;
+      background: #e5e7eb;
+      border: 1px solid #111;
+      border-radius: .5rem;
+      padding: .5rem .75rem;
+      font-size: 14px;
+      line-height: 1.2;
+      cursor: pointer;
+      user-select: none;
+    }
+    .btn.primary {
+      background: #10b981;
+      color: #fff;
+      border-color: #065f46;
+      font-weight: 600;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: .5rem;
+    }
+
+    main.layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .card {
+      background: #fff;
+      border: 2px solid #111;
+      border-radius: .75rem;
+      padding: 1rem;
+      box-shadow: 4px 4px 0 #111;
+    }
+
+    h1, h2 {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      line-height: 1.2;
+      font-weight: 700;
+      margin: 0 0 .5rem;
+    }
+
+    h2 { font-size: 1.1rem; }
+
+    #arena {
+      background:#f9fafb;
+      border:2px solid #111;
+      width:100%;
+      max-width:900px;
+      height:260px;
+      border-radius:10px;
+      display:block;
+    }
+
+    textarea#editor {
+      width:100%;
+      min-height:18rem;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 15px;
+      line-height: 1.4;
+      border:1px solid #111;
+      border-radius:.5rem;
+      padding:.75rem;
+      background:#fff;
+      color:#111;
+    }
+
+    pre#output {
+      min-height:4rem;
+      background:#f9fafb;
+      border:1px solid #d1d5db;
+      border-radius:6px;
+      padding:0.75rem;
+      text-align:left;
+      font-family:ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size:14px;
+      line-height:1.4;
+      color:#111;
+      white-space:pre-wrap;
+    }
+
+    #error {
+      font-family:ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size:14px;
+      margin-top:0.5rem;
+      color:#b91c1c;
+      min-height:2rem;
+      white-space:pre-wrap;
+    }
+
+    .status.ok { color:#15803d; }
+    .status.error { color:#b91c1c; }
+    .status.running { color:#374151; }
+
+    .muted { color:#6b7280; font-size:.9rem; }
+  </style>
+
+  <!-- Skulpt (Python in Browser) -->
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="link-grid" aria-label="Topic selection">
+    <button class="btn" disabled>⬅️ Back</button>
+    <button class="btn" disabled>🚪 Logout</button>
+    <button class="btn" disabled>Next →</button>
+  </nav>
+
+  <!-- HEADER -->
+  <header class="row" style="justify-content: space-between;">
+    <div style="flex:1 1 auto; min-width:260px;">
+      <h1>EV3 Line Follower · Debug Simulation</h1>
+      <p style="margin-top:0">
+        Links: dein (Pybricks-ähnlicher) Python.<br>
+        Rechts: Canvas-Roboter. Wir testen hier gerade,
+        ob Bewegung &amp; Wartezeiten wirklich sichtbar laufen.
+      </p>
+      <p class="muted">
+        Grüner Punkt = Roboter. Pfeil = Richtung.<br>
+        Schwarze Wellenlinie = Spur.<br>
+        Wenn du ▶ Run drückst, <b>muss</b> der Roboter losfahren.<br>
+        Falls er nicht fährt, sag mir das bitte direkt, das ist wichtig.
+      </p>
+    </div>
+
+    <div class="row" style="align-self:flex-start;">
+      <span id="status" class="status" aria-live="polite" style="font-weight:600;">IDLE</span>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <main class="layout">
+
+    <!-- EDITOR -->
+    <section class="card">
+      <h2>Editor</h2>
+
+      <div class="row" style="margin-bottom:.5rem;">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+      </div>
+
+<textarea id="editor" spellcheck="false">
+from pybricks.hubs import EV3Brick
+from pybricks.ev3devices import Motor, ColorSensor
+from pybricks.parameters import Port, Stop
+from pybricks.tools import wait
+from pybricks.robotics import DriveBase
+
+brick = EV3Brick()
+
+left   = Motor(Port.A)
+right  = Motor(Port.B)
+color  = ColorSensor(Port.S1)
+
+drive  = DriveBase(left, right, 56, 114)
+
+runtime = 0
+
+# DEBUG VERSION:
+# Einfach stumpf nach vorne fahren (kein Linienfolger),
+# damit wir SICHER eine sichtbare Bewegung haben.
+while runtime < 2000:
+    drive.drive(100, 0)  # speed=100, steer=0
+    wait(50)             # 50 ms Pause (sichtbarer Schritt)
+    runtime += 50
+
+drive.stop(Stop.BRAKE)
+brick.speaker.beep()
+brick.screen.print("Fertig.")
+</textarea>
+
+      <div class="muted" style="margin-top:.5rem;">
+        Wenn du hier später deinen echten Linienfolger-Code reinkopierst
+        (mit <code>steer = error * kp</code> usw.), dann folgt er der Linie.
+      </div>
+    </section>
+
+    <!-- SIM -->
+    <section class="card">
+      <h2>Simulation</h2>
+
+      <canvas id="arena" width="640" height="260"></canvas>
+      <p class="muted">
+        Schwarze Linie = Spur.<br>
+        Grüner Punkt = Roboter (Start oben links, nicht auf der Linie).<br>
+        Pfeil zeigt Fahrtrichtung.<br><br>
+        Der Roboter sollte <b>nach unten rechts fahren</b>, Schritt für Schritt.
+      </p>
+
+      <pre id="output"></pre>
+      <div id="error"></div>
+    </section>
+  </main>
+
+  <script>
+    // ========== DOM REFS ==========
+    const editorEl   = document.getElementById("editor");
+    const runBtn     = document.getElementById("run-btn");
+    const resetBtn   = document.getElementById("reset-btn");
+    const saveBtn    = document.getElementById("save-btn");
+    const statusEl   = document.getElementById("status");
+    const outputEl   = document.getElementById("output");
+    const errorEl    = document.getElementById("error");
+
+    const canvasEl   = document.getElementById("arena");
+    const ctx        = canvasEl.getContext("2d");
+
+    function setStatus(cls, txt){
+      statusEl.className = "status " + cls;
+      statusEl.textContent = txt;
+    }
+
+    // ========== WELT / STARTZUSTAND ==========
+    // Hier bestimmst du, wo der Roboter startet.
+    // heading in Grad:
+    //   0   = schaut nach rechts
+    //   90  = schaut nach unten
+    //   110 = schräg nach unten rechts
+    const WORLD = {
+      robot: {
+        x: 80,      // Startposition X (Pixel)
+        y: 100,     // Startposition Y (Pixel) -> über der Linie
+        heading: 110, // Startwinkel
+        r: 6        // Zeichenradius
+      }
+    };
+
+    // Wellenlinie = schwarze Spur
+    function lineY(x){
+      const baseY     = 150; // vertikale Grundlinie
+      const amp       = 40;  // Kurvige Auslenkung
+      const waveScale = 60;  // Wellenlänge
+      return baseY + Math.sin(x / waveScale) * amp;
+    }
+
+    // Roboter + Linie zeichnen
+    function drawWorld(){
+      ctx.fillStyle="#fff";
+      ctx.fillRect(0,0,canvasEl.width,canvasEl.height);
+
+      // Linie
+      ctx.strokeStyle="#000";
+      ctx.lineWidth=4;
+      ctx.beginPath();
+      for(let x=0;x<=canvasEl.width;x+=2){
+        const y=lineY(x);
+        if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+
+      // Roboter als grüner Kreis
+      const r = WORLD.robot;
+      ctx.fillStyle="#16a34a";
+      ctx.beginPath();
+      ctx.arc(r.x,r.y,r.r,0,Math.PI*2);
+      ctx.fill();
+
+      // Pfeil (Heading)
+      const hx = r.x + Math.cos(r.heading*Math.PI/180)*(r.r+10);
+      const hy = r.y + Math.sin(r.heading*Math.PI/180)*(r.r+10);
+      ctx.strokeStyle="#16a34a";
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(r.x,r.y);
+      ctx.lineTo(hx,hy);
+      ctx.stroke();
+    }
+
+    // Reset = Roboter an Start zurück
+    function resetWorld(){
+      WORLD.robot = {
+        x: 80,
+        y: 100,
+        heading: 110,
+        r: 6
+      };
+      drawWorld();
+    }
+
+    // ========== HARDWARE-SIMULATION ==========
+    // Das ist unsere "Fake-DriveBase.drive()".
+    // Wird von Python aufgerufen, um Motoren zu setzen.
+    function jsDriveStep(speed, steer){
+      const r = WORLD.robot;
+
+      console.log("[jsDriveStep] speed=",speed," steer=",steer);
+
+      // Lenkempfindlichkeit
+      const steerGain = 0.2; // größer = dreht stärker
+      r.heading += steer * steerGain;
+
+      // Fahrgeschwindigkeit
+      const speedGain = 0.3; // sehr hoch, damit man es SIEHT
+      const rad = r.heading * Math.PI/180;
+
+      r.x += Math.cos(rad) * speed * speedGain;
+      r.y += Math.sin(rad) * speed * speedGain;
+
+      drawWorld();
+    }
+
+    // Stoppen am Ende
+    function jsDriveStop(mode){
+      outputEl.textContent += "\n[drive.stop(" + mode + ")]";
+    }
+
+    // Fake-Lichtsensor: Distanz zur Linie -> Helligkeit 0..100
+    function jsReflection(){
+      const idealY = lineY(WORLD.robot.x);
+      const diff   = Math.abs(idealY - WORLD.robot.y);
+      let val = 20 + diff * 2.5;
+      if(val < 0)   val = 0;
+      if(val > 100) val = 100;
+      return val;
+    }
+
+    function jsBeep(){
+      outputEl.textContent += "\n[BEEP]";
+    }
+
+    function jsScreenPrint(msg){
+      outputEl.textContent += "\n[SCREEN] " + msg;
+    }
+
+    // ========== Pybricks-Fake-Module für Skulpt ==========
+    function installPybricksModulesIntoSkulpt() {
+      const hubsPy = `
+class _Speaker:
+    def beep(self):
+        js_beep()
+
+class _Screen:
+    def print(self, msg):
+        js_screen_print(str(msg))
+
+class EV3Brick:
+    def __init__(self):
+        self.speaker = _Speaker()
+        self.screen = _Screen()
+`;
+
+      const ev3devicesPy = `
+class Motor:
+    def __init__(self, port):
+        self.port = port
+
+class ColorSensor:
+    def __init__(self, port):
+        self.port = port
+    def reflection(self):
+        return js_reflection()
+`;
+
+      const roboticsPy = `
+class DriveBase:
+    def __init__(self, left_motor, right_motor, wheel_diameter, axle_track):
+        self._left  = left_motor
+        self._right = right_motor
+        self._wheel = wheel_diameter
+        self._axle  = axle_track
+    def drive(self, speed, steer):
+        js_drive_step(speed, steer)
+    def stop(self, mode):
+        js_drive_stop(mode)
+`;
+
+      const parametersPy = `
+class _PortVals:
+    A  = "A"
+    B  = "B"
+    S1 = "S1"
+Port = _PortVals()
+
+class _StopVals:
+    BRAKE = "BRAKE"
+Stop = _StopVals()
+`;
+
+      // ACHTUNG: wait() ruft in Python "js_wait(ms)" auf
+      const toolsPy = `
+def wait(ms):
+    js_wait(ms)
+`;
+
+      if (!Sk.builtinFiles) Sk.builtinFiles = {files:{}};
+      const f = Sk.builtinFiles.files;
+      f["src/lib/pybricks/__init__.py"]   = "";
+      f["src/lib/pybricks/hubs.py"]       = hubsPy;
+      f["src/lib/pybricks/ev3devices.py"] = ev3devicesPy;
+      f["src/lib/pybricks/robotics.py"]   = roboticsPy;
+      f["src/lib/pybricks/parameters.py"] = parametersPy;
+      f["src/lib/pybricks/tools.py"]      = toolsPy;
+    }
+
+    // ========== BRIDGE JS <-> SKULPT ==========
+    // WICHTIG: js_wait benutzt promiseToSuspension
+    // DAS ist der "macht wirklich Pause"-Trick.
+    function installBridgesIntoSkulpt() {
+      Sk.builtins.js_drive_step = new Sk.builtin.func((speed, steer)=>{
+        jsDriveStep(Sk.ffi.remapToJs(speed), Sk.ffi.remapToJs(steer));
+        return Sk.builtin.none.none$;
+      });
+
+      Sk.builtins.js_drive_stop = new Sk.builtin.func((mode)=>{
+        jsDriveStop(Sk.ffi.remapToJs(mode));
+        return Sk.builtin.none.none$;
+      });
+
+      Sk.builtins.js_reflection = new Sk.builtin.func(()=>{
+        return Sk.ffi.remapToPy(jsReflection());
+      });
+
+      // WICHTIGSTE FUNKTION:
+      // Diese Funktion sorgt dafür, dass wait(ms)
+      // die Schleife NICHT sofort durchballert, sondern
+      // Frame für Frame fährt.
+      Sk.builtins.js_wait = new Sk.builtin.func((ms)=>{
+        const msJs = Sk.ffi.remapToJs(ms);
+
+        // Wir zeichnen vor der Pause nochmal.
+        drawWorld();
+
+        // Promise, das nach msJs ms fertig ist
+        const p = new Promise(res => setTimeout(res, msJs));
+
+        // Promise -> Suspension => echte Pause für Skulpt
+        console.log("[js_wait] pausing for", msJs, "ms");
+        return Sk.misceval.promiseToSuspension(p);
+      });
+
+      Sk.builtins.js_beep = new Sk.builtin.func(()=>{
+        jsBeep();
+        return Sk.builtin.none.none$;
+      });
+
+      Sk.builtins.js_screen_print = new Sk.builtin.func((msg)=>{
+        jsScreenPrint(Sk.ffi.remapToJs(msg));
+        return Sk.builtin.none.none$;
+      });
+    }
+
+    // ========== Python ausführen ==========
+    async function runSkulpt(){
+      outputEl.textContent = "";
+      errorEl.textContent  = "";
+      setStatus("running","RUNNING…");
+      console.log("=== RUN ===");
+
+      // Roboter neu an Start setzen
+      resetWorld();
+
+      Sk.configure({
+        output: (text)=>{
+          outputEl.textContent += text;
+        },
+        read: (x)=>{
+          if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined){
+            throw "File not found: '" + x + "'";
+          }
+          return Sk.builtinFiles["files"][x];
+        },
+        python3: true,
+        asyncSuspension: true // <-- ohne das keine Pausen
+      });
+
+      installPybricksModulesIntoSkulpt();
+      installBridgesIntoSkulpt();
+
+      try {
+        await Sk.misceval.asyncToPromise(() =>
+          Sk.importMainWithBody("<stdin>", false, editorEl.value, true)
+        );
+        setStatus("ok","DONE.");
+      } catch (err){
+        console.error(err);
+        setStatus("error","ERROR");
+        errorEl.textContent = err.toString();
+      }
+    }
+
+    // Datei speichern als main.py
+    function saveFile(){
+      const blob = new Blob([editorEl.value], {type:"text/plain"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "main.py";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    // Buttons
+    runBtn.onclick   = runSkulpt;
+    resetBtn.onclick = resetWorld;
+    saveBtn.onclick  = saveFile;
+
+    // initial einmal zeichnen
+    resetWorld();
+  </script>
+</body>
+</html>
