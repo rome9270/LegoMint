@@ -160,7 +160,7 @@ wait(500)
     /* ---------- SEND EVENT TO BACKEND ---------- */
     // Wird vom Dashboard ausgewertet: "sim" = Simulation geschafft, "download" = Code gespeichert
     function sendEvent(ev){
-      fetch("/LegoMint/app/event_update.php", {
+      fetch("../app/event_update.php", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
