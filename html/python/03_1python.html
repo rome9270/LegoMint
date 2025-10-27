@@ -1,21 +1,41 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Python Task Template</title>
-  <link rel="stylesheet" href="../css/03_python.css" />
+  <title>Python · Step 1: Hello World</title>
+
+  <!-- CSS jetzt lokal neben der Seite -->
+  <link rel="stylesheet" href="./03_python.css" />
+
+  <style>
+    .status.ok { color:#15803d; }
+    .status.error { color:#b91c1c; }
+    .status.running { color:#374151; }
+    #error { color:#b91c1c; white-space:pre-wrap; }
+  </style>
+
+  <!-- Pyodide -->
+  <script
+    src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"
+    crossorigin="anonymous">
+  </script>
 </head>
 <body>
-  <div class="nav-row">
-    <a href="01_main.html" class="btn" id="back-btn">← Back</a>
-    <a href="03_2python.html" class="btn primary" id="next-btn">Next →</a>
-  </div>
+  <!-- NAVIGATION -->
+  <nav class="link-grid" aria-label="Topic selection">
+    <a class="btn" href="../../app/01_main.php" id="go-main" aria-label="Back to main">⬅️ Main</a>
+    <a class="btn" href="../../app/logout.php">🚪 Logout</a>
+    <a class="btn primary" id="next-btn" href="03_2variables.html">Next →</a>
+  </nav>
 
   <header class="row" style="justify-content: space-between;">
     <div>
-      <h1 id="task-title">Task 1: The print() function</h1>
-      <p id="task-desc">Write a Python program that prints <code>Hello, World!</code></p>
+      <h1 id="task-title">Python · Step 1: Hello World</h1>
+      <p id="task-desc">
+        Schreibe dein erstes Python-Programm.<br />
+        Es soll einfach <code>Hello, World!</code> auf dem Bildschirm ausgeben.
+      </p>
     </div>
     <div class="row">
       <button class="btn" id="tips-btn">💡 Tips</button>
@@ -24,6 +44,7 @@
   </header>
 
   <main class="layout">
+    <!-- EDITOR -->
     <section class="card">
       <h2>Editor</h2>
       <div class="row">
@@ -32,9 +53,15 @@
         <button class="btn" id="save-btn">💾 Save</button>
         <span id="status" class="status" aria-live="polite"></span>
       </div>
-      <textarea id="editor" spellcheck="false"></textarea>
+
+<textarea id="editor" spellcheck="false"># TODO:
+# Schreibe ein Programm, das "Hello, World!" ausgibt.
+# Beispiel:
+# print("Hello, World!")
+</textarea>
     </section>
 
+    <!-- OUTPUT -->
     <section class="card">
       <h2>Output</h2>
       <pre id="output"></pre>
@@ -65,22 +92,33 @@
     </div>
   </dialog>
 
-  <!-- Skulpt -->
-  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
-
   <script>
+    // === TASK ===
     const TASK = {
-      title: "Task 1: Use the print() function",
-      description: 'Write a Python program that prints "Hello, World!".',
-      starterCode: "",
-      tips: ["Use print() function", "Put text in quotes", "Include the !"],
-      solution: 'print("Hello, World!")',
-      filename: "task1.py",
-      prevUrl: "#",
-      nextUrl: "#"
+      taskId: 1,
+      studentNumber: 1, // TODO per Session/PHP einsetzen
+      title: "Python · Step 1: Hello World",
+      description: `
+        Verwende die Funktion <code>print()</code>, um Text auszugeben.<br>
+        Beispiel: <code>print("Hello, World!")</code>
+      `,
+      starterCode:
+`# Schreibe dein erstes Python-Programm hier:
+print("Hello, World!")`,
+      tips: [
+        'Text muss in Anführungszeichen stehen: <code>"..."</code> oder <code>\'...\'</code>.',
+        '<code>print(...)</code> zeigt Text unten im Output-Feld.',
+        'Achte auf Klammern: <code>print("Hello, World!")</code>.',
+        'Wenn du fertig bist, klick auf ▶ Run.'
+      ],
+      solution:
+`# Lösung:
+print("Hello, World!")`,
+      filename: "main.py",
+      nextUrl: "03_2variables.html"
     };
-// Dialog für TIPS 
+
+    // === DOM ===
     const els = {
       title:  document.getElementById("task-title"),
       desc:   document.getElementById("task-desc"),
@@ -100,98 +138,125 @@
       solutionCode: document.getElementById("solution-code"),
       copySolution: document.getElementById("copy-solution"),
       closeSolution: document.getElementById("close-solution"),
-      back: document.getElementById("back-btn"),
       next: document.getElementById("next-btn")
     };
 
-    // Init
+    // === INIT UI ===
     document.title = TASK.title;
     els.title.textContent = TASK.title;
     els.desc.innerHTML = TASK.description;
     els.solutionCode.textContent = TASK.solution;
-    els.tipsList.innerHTML = (TASK.tips || []).slice(0,3).map(t=>"<li>"+t+"</li>").join("");
+    els.tipsList.innerHTML = (TASK.tips || []).map(t=>"<li>"+t+"</li>").join("");
+    els.editor.value = TASK.starterCode;
 
-    // Helpers
-    function setStatus(state, text){
-      els.status.className = "status" + (state ? (" " + state) : "");
-      els.status.textContent = text || "";
-    }
-    function builtinRead(x){
-      if(!Sk.builtinFiles || !Sk.builtinFiles["files"][x]) throw "File not found:"+x;
-      return Sk.builtinFiles["files"][x];
-    }
-    function openDialog(dlg){
-      if (dlg && typeof dlg.showModal === "function") dlg.showModal();
-      else if (dlg) { dlg.setAttribute("open",""); document.documentElement.style.overflow="hidden"; }
-    }
-    function closeDialog(dlg){
-      if (dlg && typeof dlg.close === "function") dlg.close();
-      else if (dlg) { dlg.removeAttribute("open"); document.documentElement.style.overflow=""; }
+    // === Status-Helfer ===
+    function setStatus(cls, txt){
+      els.status.className = "status " + cls;
+      els.status.textContent = txt;
     }
 
-    // Run
-    async function runCode(){
-      els.output.textContent = "";
-      els.error.textContent = "";
-      setStatus("running", "running…");
+    // === Pyodide Setup ===
+    let pyReady = false;
+    let py = null;
 
-      Sk.configure({
-        output: t => els.output.textContent += t,
-        read: builtinRead,
-        __future__: Sk.python3,
-        inputfun: (p) => window.prompt(p || "Input:") ?? "",
-        inputfunTakesPrompt: true,
-        execLimit: 10000
+    async function ensurePyodide(){
+      if (pyReady) return;
+      setStatus("running","loading python…");
+
+      py = await loadPyodide({
+        stdout: (t)=>{ els.output.textContent += t + "\n"; },
+        stderr: (t)=>{ els.error.textContent  += t + "\n"; }
       });
 
+      pyReady = true;
+      setStatus("", "");
+    }
+
+    // === Server-Event melden ===
+    function sendEvent(ev){
+      fetch("../../app/event_update.php", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          task_id: String(TASK.taskId),
+          nummer:  String(TASK.studentNumber),
+          event:   ev
+        })
+      }).catch(err => console.warn("sendEvent failed:", err));
+    }
+
+    // === Run ===
+    async function runCode(){
+      els.output.textContent = "";
+      els.error.textContent  = "";
+      setStatus("running","running…");
+
       try {
-        await Sk.misceval.asyncToPromise(
-          () => Sk.importMainWithBody("<stdin>", false, els.editor.value, true)
-        );
-        setStatus("ok", "done.");
-      } catch(e) {
-        setStatus("error", "error");
-        els.error.textContent = String(e);
+        await ensurePyodide();
+
+        const userCode = els.editor.value;
+        await py.runPythonAsync(userCode);
+
+        setStatus("ok","done.");
+        sendEvent("sim"); // Erfolg melden
+
+      } catch(err){
+        setStatus("error","ERROR");
+        els.error.textContent = String(err);
       }
     }
 
-    // Reset / Save
+    // === Reset ===
     function reset(){
-      els.editor.value = TASK.starterCode || "";
+      els.editor.value = TASK.starterCode;
       els.output.textContent = "";
-      els.error.textContent = "";
+      els.error.textContent  = "";
       setStatus("", "");
     }
+
+    // === Save ===
     function save(){
-      const b = new Blob([els.editor.value], {type:"text/plain"});
+      const blob = new Blob([els.editor.value], {type:"text/plain"});
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(b);
-      a.download = TASK.filename || "solution.py";
+      a.href = URL.createObjectURL(blob);
+      a.download = TASK.filename || "main.py";
       a.click();
       URL.revokeObjectURL(a.href);
+
+      sendEvent("download");
     }
 
-    // Buttons
-    els.run.onclick = runCode;
-    els.reset.onclick = reset;
-    els.save.onclick = save;
+    // === Modals ===
+    function openDialog(d){
+      if(d?.showModal) d.showModal();
+      else d?.setAttribute("open","");
+    }
+    function closeDialog(d){
+      if(d?.close) d.close();
+      else d?.removeAttribute("open");
+    }
 
-    // Dialog Buttons
     els.tipsBtn.onclick = () => openDialog(els.tipsModal);
     els.closeTips.onclick = () => closeDialog(els.tipsModal);
+
     els.solutionBtn.onclick = () => openDialog(els.solutionModal);
     els.closeSolution.onclick = () => closeDialog(els.solutionModal);
+
     els.copySolution.onclick = () => {
-      els.editor.value = TASK.solution || "";
+      els.editor.value = els.solutionCode.textContent;
       closeDialog(els.solutionModal);
+
       els.output.textContent = "";
-      els.error.textContent = "";
+      els.error.textContent  = "";
       setStatus("", "");
     };
 
-    // Navigation
-    els.back.onclick = () => TASK.prevUrl!="#" ? location.href = TASK.prevUrl : alert("No previous task");
-    els.next.onclick = () => TASK.nextUrl!="#" ? location.href = TASK.nextUrl : alert("No next task");
+    // === Button Events ===
+    els.run.onclick   = runCode;
+    els.reset.onclick = reset;
+    els.save.onclick  = save;
+
   </script>
 </body>
 </html>
