@@ -236,7 +236,7 @@ function toggleBox(idHead, idBody){
         <?php
           $num   = fmt_id($t['id']);
           $title = $t['title'];
-          $href  = './' . $t['html_file']; // z.B. ./03_01LegoEV3_I.html
+          $href  = '../html/' . $t['html_file']; // z.B. ../html/03_01LegoEV3_I.html
         ?>
         <div class="task-row">
           <div class="task-num"><?= htmlspecialchars($num) ?></div>
@@ -263,7 +263,7 @@ function toggleBox(idHead, idBody){
         <?php
           $num   = fmt_id($t['id']);
           $title = $t['title'];
-          $href  = './' . $t['html_file'];
+          $href  = '../html/' . $t['html_file']; // z.B. ../html/03_01LegoEV3_I.html
         ?>
         <div class="task-row">
           <div class="task-num"><?= htmlspecialchars($num) ?></div>
