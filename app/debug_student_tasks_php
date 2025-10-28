@@ -1,0 +1,45 @@
+<?php
+// app/debug_student_tasks.php
+session_start();
+require __DIR__ . '/db.php';
+
+echo "<h2>SESSION user</h2><pre>";
+var_dump($_SESSION['user'] ?? null);
+echo "</pre>";
+
+echo "<h2>student_tasks Inhalt</h2>";
+
+$stmt = $pdo->query("
+    SELECT user_id, task_id, status,
+           sim_ok, download_ok,
+           sim_at, download_at,
+           updated_at
+    FROM student_tasks
+    ORDER BY user_id, task_id
+");
+$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if (!$rows) {
+    echo "<p><b>Keine Einträge in student_tasks</b></p>";
+} else {
+    echo "<table border='1' cellpadding='6'>";
+    echo "<tr>
+            <th>user_id</th>
+            <th>task_id</th>
+            <th>status</th>
+            <th>sim_ok</th>
+            <th>download_ok</th>
+            <th>updated_at</th>
+          </tr>";
+    foreach ($rows as $r) {
+        echo "<tr>";
+        echo "<td>".htmlspecialchars($r['user_id'])."</td>";
+        echo "<td>".htmlspecialchars($r['task_id'])."</td>";
+        echo "<td>".htmlspecialchars($r['status'])."</td>";
+        echo "<td>".htmlspecialchars($r['sim_ok'])."</td>";
+        echo "<td>".htmlspecialchars($r['download_ok'])."</td>";
+        echo "<td>".htmlspecialchars($r['updated_at'])."</td>";
+        echo "</tr>";
+    }
+    echo "</table>";
+}
