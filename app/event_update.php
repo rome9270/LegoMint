@@ -2,6 +2,10 @@
 // app/event_update.php
 session_start();
 require __DIR__ . '/db.php';
+file_put_contents(__DIR__ . '/last_event_debug.log',
+    date('c') . ' ' . json_encode($_POST) . PHP_EOL,
+    FILE_APPEND
+);
 
 header('Content-Type: application/json');
 

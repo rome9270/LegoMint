@@ -170,7 +170,7 @@ print("Hello, World!")`,
 
     // === Server-Event melden ===
     function sendEvent(ev){
-      fetch("../../app/event_update.php", {
+      fetch("../app/event_update.php", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
