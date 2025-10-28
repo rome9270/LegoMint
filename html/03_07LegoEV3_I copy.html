@@ -476,45 +476,11 @@ brick.speaker.beep()
     }
 
     /* ---------- Run / Reset / Save ---------- */
-        document.getElementById("next-btn").onclick = (e)=>{ e.preventDefault(); alert("No next task configured yet."); };
-  </script>    /* ---------- Run / Reset / Save + Server Update ---------- */
-
-    // Fortschritt an Server melden (Simulation / Download)
-    function sendEvent(ev){
-      fetch("../app/event_update.php", {
-        method: "POST",
-        credentials: "include", // wichtig: Session-Cookie mitsenden
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          task_id: String(TASK.taskId),
-          event: ev
-        })
-      })
-      .then(r => r.json())
-      .then(data => console.log("Server response:", data))
-      .catch(err => console.warn("sendEvent failed:", err));
-    }
-
-    function reset(){
-      setStatus("",""); els.output.textContent=""; els.error.textContent="";
-      resetWorld();
-    }
-
-    function save(){
-      const b=new Blob([els.editor.value],{type:"text/plain"});
-      const a=document.createElement("a");
-      a.href=URL.createObjectURL(b);
-      a.download="main.py";
-      a.click();
-      URL.revokeObjectURL(a.href);
-
-      // Fortschritt: Datei wurde gespeichert
-      sendEvent("download");
-    }
+    function reset(){ setStatus("",""); els.output.textContent=""; els.error.textContent=""; resetWorld(); }
+    function save(){ const b=new Blob([els.editor.value],{type:"text/plain"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="main.py"; a.click(); URL.revokeObjectURL(a.href); }
 
     async function runCode(){
-      els.output.textContent="";
-      els.error.textContent="";
+      els.output.textContent=""; els.error.textContent="";
       const raw = els.editor.value;
       const codeNoComments = stripComments(raw).trim();
       if(!codeNoComments){
@@ -524,36 +490,29 @@ brick.speaker.beep()
       }
 
       setStatus("running","checking…");
-      const { ok, errors, backMm, firstTurn, secondTurn } = validate(raw);
+      const { ok, errors, backMm } = validate(raw);
       if(!ok){
         setStatus("error","ERROR");
         els.output.textContent = "Please fix first:\n" + errors.join("\n");
         return;
       }
 
-      // Passed → simulate scripted sequence
+      // Passed → simulate scripted sequence (right turns of -90° each)
       setStatus("running","running…");
       resetWorld();
       try{
-        // 1) Up → top wall
         await forwardUntilTop();
-        await straightPx(-(backMm/10));      // mm → cm(px)
-        await turnBy(firstTurn);              // typically -90 (right)
+        await straightPx(-(backMm/10));
+        await turnBy(-90);
 
-        // 2) Right → right wall
         await forwardUntilRight();
         await straightPx(-(backMm/10));
-        await turnBy(secondTurn);             // typically -90 (right) → facing down
+        await turnBy(-90);
 
-        // 3) Exit via bottom-right door
         await forwardOutDoor();
 
         setStatus("ok","done.");
-        els.output.textContent = `Simulated: bumped top, back ${backMm} mm, turn ${firstTurn}° → bumped right, back ${backMm} mm, turn ${secondTurn}° → exited.`;
-
-        // Fortschritt: Simulation erfolgreich
-        sendEvent("sim");
-
+        els.output.textContent = `Simulated: bumped top, back ${backMm} mm, gyro-turn ~90° right → bumped right, back ${backMm} mm, gyro-turn ~90° right → exited.`;
       }catch(e){
         setStatus("error","ERROR");
         els.error.textContent = String(e.message || e);
@@ -565,6 +524,7 @@ brick.speaker.beep()
     els.save.onclick = save;
 
     render();
-
+    document.getElementById("next-btn").onclick = (e)=>{ e.preventDefault(); alert("No next task configured yet."); };
+  </script>
 </body>
 </html>
