@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Python · Step 1: Hello World</title>
 
-  <!-- CSS jetzt lokal neben der Seite -->
-  <link rel="stylesheet" href="../css/03_python.css" />
+  <link rel="stylesheet" href="../CSS/03_python.css" />
 
   <style>
     .status.ok { color:#15803d; }
@@ -15,7 +14,6 @@
     #error { color:#b91c1c; white-space:pre-wrap; }
   </style>
 
-  <!-- Pyodide -->
   <script
     src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"
     crossorigin="anonymous">
@@ -54,10 +52,8 @@
         <span id="status" class="status" aria-live="polite"></span>
       </div>
 
-<textarea id="editor" spellcheck="false"># TODO:
-# Schreibe ein Programm, das "Hello, World!" ausgibt.
-# Beispiel:
-# print("Hello, World!")
+<textarea id="editor" spellcheck="false"># Schreibe dein erstes Python-Programm hier:
+print("Hello, World!")
 </textarea>
     </section>
 
@@ -93,10 +89,10 @@
   </dialog>
 
   <script>
-    // === TASK ===
+    // === TASK (angepasst) ===
     const TASK = {
-      taskId: 1,
-      studentNumber: 1, // TODO per Session/PHP einsetzen
+      taskId: 13, // <-- Python Step 1 hat ID 13 laut db_seed.sql
+      studentNumber: 1, // TODO später Session/Backend
       title: "Python · Step 1: Hello World",
       description: `
         Verwende die Funktion <code>print()</code>, um Text auszugeben.<br>
@@ -115,7 +111,7 @@ print("Hello, World!")`,
 `# Lösung:
 print("Hello, World!")`,
       filename: "main.py",
-      nextUrl: "03_2variables.html"
+      nextUrl: "03_02python.html"
     };
 
     // === DOM ===
@@ -199,7 +195,7 @@ print("Hello, World!")`,
         await py.runPythonAsync(userCode);
 
         setStatus("ok","done.");
-        sendEvent("sim"); // Erfolg melden
+        sendEvent("sim");
 
       } catch(err){
         setStatus("error","ERROR");
@@ -252,10 +248,12 @@ print("Hello, World!")`,
       setStatus("", "");
     };
 
-    // === Button Events ===
+    // === Buttons ===
     els.run.onclick   = runCode;
     els.reset.onclick = reset;
     els.save.onclick  = save;
+    // optional, falls du JS-Navigation statt href willst:
+    // els.next.onclick = () => { location.href = TASK.nextUrl; };
 
   </script>
 </body>
