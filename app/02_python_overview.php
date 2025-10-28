@@ -3,23 +3,34 @@ session_start();
 require __DIR__ . '/../app/db.php';
 
 /*
-  EV3-Aufgaben:
-  Wir filtern alles, was NICHT unter python/ liegt.
-  (Wenn du später z.B. nur Basic = IDs 1-7 etc. willst -> hier anpassen.)
+  Wir holen alle Python-Aufgaben.
+  Annahme: Alle Python-Seiten liegen unter html/python/..., z.B. python/03_1python.html
 */
 $stmt = $pdo->query("
     SELECT id, title, html_file
     FROM tasks
-    WHERE html_file NOT LIKE 'python/%'
+    WHERE html_file LIKE 'python/%'
     ORDER BY id
 ");
 $allTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-/* Simple Aufteilung in Basic/Advanced (erste Hälfte vs zweite Hälfte) */
+/*
+  Wir teilen in zwei Gruppen:
+  - Basic Course
+  - Advanced Course
+
+  Aktuell machen wir das stumpf:
+  erste Hälfte -> Basic
+  zweite Hälfte -> Advanced
+
+  Du kannst das später auch steuern über eigene Spalte in DB ('level'),
+  oder über ID-Bereiche. Aber das hier läuft sofort.
+*/
 $mid = intdiv(count($allTasks), 2);
 $basicTasks    = array_slice($allTasks, 0, $mid === 0 ? count($allTasks) : $mid);
 $advancedTasks = array_slice($allTasks, $mid);
 
+/* Helper für Anzeige 01, 02, 03 ... */
 function fmt_id($n){
     $n = (int)$n;
     return $n < 10 ? '0'.$n : (string)$n;
@@ -30,7 +41,7 @@ function fmt_id($n){
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>EV3 · Übersicht</title>
+<title>Python · Übersicht</title>
 <link rel="stylesheet" href="./python/03_python.css" />
 <style>
   body.page-width {
@@ -75,6 +86,7 @@ function fmt_id($n){
     padding-bottom:1.5rem;
   }
 
+  /* Grüne Kurs-Buttons */
   .topic-row {
     display:flex;
     flex-wrap:wrap;
@@ -99,6 +111,7 @@ function fmt_id($n){
     filter:brightness(1.05);
   }
 
+  /* Accordion container */
   .accordion-box {
     border:1px solid #d1d5db;
     border-radius:8px;
@@ -123,6 +136,7 @@ function fmt_id($n){
     user-select:none;
     border-bottom:1px solid #d1d5db;
   }
+
   .accordion-head .arrow {
     font-size:1rem;
     font-weight:600;
@@ -202,21 +216,23 @@ function toggleBox(idHead, idBody){
 </head>
 <body class="page-width">
 
+  <!-- kleine Navi oben -->
   <div class="top-nav">
-    <a href="../app/01_main.php">⬅️ Main</a>
-    <a href="../app/logout.php">Logout</a>
-    <a href="./overview_python.php">Python Übersicht</a>
+    <a href="01_main.php">⬅️ Main</a>
+    <a href="logout.php">Logout</a>
+    <a href="overview_ev3.php">EV3 Übersicht</a>
   </div>
 
   <h1 class="page-title">Choose your topic</h1>
   <div class="page-subline"></div>
 
+  <!-- Zwei große Kurs-Buttons -->
   <div class="topic-row">
-    <a class="topic-btn" href="./03_01LegoEV3_I.html">
-      EV3 Basic Course (Grundkurs)
+    <a class="topic-btn" href="./python/03_1python.html">
+      Python Basic Course (Elementary school)
     </a>
-    <a class="topic-btn" href="./04_01LegoEV3_I.html">
-      EV3 Advanced Course (Oberstufe)
+    <a class="topic-btn" href="./python/03_2variables.html">
+      Python Advanced Course (Middle school)
     </a>
   </div>
 
@@ -235,7 +251,7 @@ function toggleBox(idHead, idBody){
         <?php
           $num   = fmt_id($t['id']);
           $title = $t['title'];
-          $href  = './' . $t['html_file']; // z.B. ./03_01LegoEV3_I.html
+          $href  = './' . $t['html_file']; // ./python/03_1python.html
         ?>
         <div class="task-row">
           <div class="task-num"><?= htmlspecialchars($num) ?></div>
