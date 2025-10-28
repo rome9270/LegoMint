@@ -3,34 +3,22 @@ session_start();
 require __DIR__ . '/../app/db.php';
 
 /*
-  Wir holen alle Python-Aufgaben.
-  Annahme: Alle Python-Seiten liegen unter html/python/..., z.B. python/03_1python.html
+  Python-Übersicht
+  ---------------------------
+  Zeigt alle Python-Aufgaben aus tasks (category = 'python'),
+  getrennt in basic / advanced per Spalte "level".
 */
-$stmt = $pdo->query("
-    SELECT id, title, html_file
+
+$allTasks = $pdo->query("
+    SELECT id, title, html_file, level
     FROM tasks
-    WHERE html_file LIKE 'python/%'
+    WHERE category = 'python'
     ORDER BY id
-");
-$allTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+")->fetchAll(PDO::FETCH_ASSOC);
 
-/*
-  Wir teilen in zwei Gruppen:
-  - Basic Course
-  - Advanced Course
+$basicTasks = array_filter($allTasks, fn($t) => $t['level'] === 'basic');
+$advancedTasks = array_filter($allTasks, fn($t) => $t['level'] === 'advanced');
 
-  Aktuell machen wir das stumpf:
-  erste Hälfte -> Basic
-  zweite Hälfte -> Advanced
-
-  Du kannst das später auch steuern über eigene Spalte in DB ('level'),
-  oder über ID-Bereiche. Aber das hier läuft sofort.
-*/
-$mid = intdiv(count($allTasks), 2);
-$basicTasks    = array_slice($allTasks, 0, $mid === 0 ? count($allTasks) : $mid);
-$advancedTasks = array_slice($allTasks, $mid);
-
-/* Helper für Anzeige 01, 02, 03 ... */
 function fmt_id($n){
     $n = (int)$n;
     return $n < 10 ? '0'.$n : (string)$n;
@@ -41,168 +29,101 @@ function fmt_id($n){
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Python · Übersicht</title>
-<link rel="stylesheet" href="./python/03_python.css" />
+<title>Python – Aufgabenübersicht</title>
 <style>
-  body.page-width {
-    max-width: 1100px;
-    margin: 20px auto 60px auto;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  }
-
-  .top-nav {
-    font-size: 1rem;
-    margin-bottom: 1.5rem;
-    display:flex;
-    flex-wrap:wrap;
-    gap:1rem;
-    align-items:center;
-  }
-  .top-nav a {
-    text-decoration:none;
-    color:#1e40af;
-    font-weight:500;
-    display:inline-flex;
-    align-items:center;
-    gap:.4em;
-  }
-
-  h1.page-title {
-    text-align:center;
-    font-size:2rem;
-    font-weight:600;
-    color:#111827;
-    line-height:1.2;
-    margin:0 0 1rem 0;
-  }
-  .page-subline {
-    max-width:900px;
-    margin:0 auto 2rem auto;
-    text-align:center;
-    color:#111827;
-    font-size:1rem;
-    line-height:1.4;
-    border-bottom:1px solid #d1d5db;
-    padding-bottom:1.5rem;
-  }
-
-  /* Grüne Kurs-Buttons */
-  .topic-row {
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:2rem;
-    margin:2rem auto 2rem auto;
-  }
-  .topic-btn {
-    background:#34a853;
-    color:#fff;
-    font-size:1.25rem;
-    line-height:1.3;
-    padding:1rem 2rem;
-    border-radius:2rem;
-    font-weight:600;
-    text-decoration:none;
-    text-align:center;
-    min-width:320px;
-    box-shadow:0 12px 24px rgb(0 0 0 / .08);
-  }
-  .topic-btn:hover {
-    filter:brightness(1.05);
-  }
-
-  /* Accordion container */
-  .accordion-box {
-    border:1px solid #d1d5db;
-    border-radius:8px;
-    background:#fff;
-    box-shadow:0 24px 48px rgb(0 0 0 / .05);
-    overflow:hidden;
-    max-width:1600px;
-    margin:0 auto 2rem auto;
-  }
-
-  .accordion-head {
-    background:#f9fafb;
-    font-size:1.5rem;
-    font-weight:500;
-    color:#111827;
-    line-height:1.4;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:1rem 1.25rem;
-    cursor:pointer;
-    user-select:none;
-    border-bottom:1px solid #d1d5db;
-  }
-
-  .accordion-head .arrow {
-    font-size:1rem;
-    font-weight:600;
-    color:#000;
-  }
-
-  .task-row {
-    display:grid;
-    grid-template-columns: auto 1fr auto;
-    align-items:center;
-    column-gap:1rem;
-    row-gap:0;
-    padding:1rem 1.25rem;
-    border-bottom:1px solid #d1d5db;
-  }
-
-  .task-num {
-    min-width:2ch;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size:1.1rem;
-    font-weight:600;
-    color:#111827;
-  }
-
-  .task-title {
-    font-size:1.25rem;
-    line-height:1.4;
-    color:#111827;
-    font-weight:500;
-  }
-
-  .open-btn {
-    background:#e0e7ff;
-    color:#1e1e5a;
-    border:1px solid #c7d2fe;
-    border-radius:8px;
-    padding:.75rem 1rem;
-    font-size:1rem;
-    font-weight:500;
-    text-decoration:none;
-    white-space:nowrap;
-    display:inline-flex;
-    align-items:center;
-    gap:.5em;
-    justify-content:center;
-    min-width:9rem;
-  }
-
-  @media (max-width:700px){
-    h1.page-title { font-size:1.5rem; }
-    .accordion-head { font-size:1.2rem; }
-    .task-title { font-size:1rem; }
-    .topic-btn {
-      min-width:240px;
-      font-size:1rem;
-      padding:.75rem 1rem;
-    }
-  }
+body.page-width {
+  max-width: 1100px;
+  margin: 20px auto 60px auto;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.topic-row {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:2rem;
+  margin:2rem auto 2rem auto;
+}
+.topic-btn {
+  background:#34a853;
+  color:#fff;
+  font-size:1.25rem;
+  line-height:1.3;
+  padding:1rem 2rem;
+  border-radius:2rem;
+  font-weight:600;
+  text-decoration:none;
+  text-align:center;
+  min-width:320px;
+  box-shadow:0 12px 24px rgb(0 0 0 / .08);
+}
+.accordion-box {
+  border:1px solid #d1d5db;
+  border-radius:8px;
+  background:#fff;
+  box-shadow:0 24px 48px rgb(0 0 0 / .05);
+  overflow:hidden;
+  max-width:1600px;
+  margin:0 auto 2rem auto;
+}
+.accordion-head {
+  background:#f9fafb;
+  font-size:1.5rem;
+  font-weight:500;
+  color:#111827;
+  line-height:1.4;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:1rem 1.25rem;
+  cursor:pointer;
+  user-select:none;
+  border-bottom:1px solid #d1d5db;
+}
+.arrow { font-size:1rem; font-weight:600; color:#000; }
+.task-row {
+  display:grid;
+  grid-template-columns: auto 1fr auto;
+  align-items:center;
+  column-gap:1rem;
+  padding:1rem 1.25rem;
+  border-bottom:1px solid #d1d5db;
+}
+.task-num {
+  min-width:2ch;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size:1.1rem;
+  font-weight:600;
+  color:#111827;
+}
+.task-title {
+  font-size:1.25rem;
+  line-height:1.4;
+  color:#111827;
+  font-weight:500;
+}
+.open-btn {
+  background:#e0e7ff;
+  color:#1e1e5a;
+  border:1px solid #c7d2fe;
+  border-radius:8px;
+  padding:.75rem 1rem;
+  font-size:1rem;
+  font-weight:500;
+  text-decoration:none;
+  white-space:nowrap;
+  display:inline-flex;
+  align-items:center;
+  gap:.5em;
+  justify-content:center;
+  min-width:9rem;
+}
 </style>
 <script>
 function toggleBox(idHead, idBody){
-  const body = document.getElementById(idBody);
-  const head = document.getElementById(idHead);
-  const arrow = head.querySelector('.arrow');
-  const isOpen = body.getAttribute('data-open') === '1';
-  if(isOpen){
+  const body  = document.getElementById(idBody);
+  const arrow = document.querySelector('#'+idHead+' .arrow');
+  const open  = body.getAttribute('data-open') === '1';
+  if(open){
     body.style.display = 'none';
     body.setAttribute('data-open','0');
     arrow.textContent = '▼';
@@ -216,31 +137,14 @@ function toggleBox(idHead, idBody){
 </head>
 <body class="page-width">
 
-  <!-- kleine Navi oben -->
-  <div class="top-nav">
-    <a href="01_main.php">⬅️ Main</a>
-    <a href="logout.php">Logout</a>
-    <a href="overview_ev3.php">EV3 Übersicht</a>
-  </div>
-
-  <h1 class="page-title">Choose your topic</h1>
-  <div class="page-subline"></div>
-
-  <!-- Zwei große Kurs-Buttons -->
   <div class="topic-row">
-    <a class="topic-btn" href="./python/03_1python.html">
-      Python Basic Course (Elementary school)
-    </a>
-    <a class="topic-btn" href="./python/03_2variables.html">
-      Python Advanced Course (Middle school)
-    </a>
+    <div class="topic-btn">Python Basic Course (Elementary school)</div>
+    <div class="topic-btn">Python Advanced Course (Middle school)</div>
   </div>
 
-  <!-- BASIC COURSE BOX -->
+  <!-- BASIC -->
   <section class="accordion-box">
-
-    <div class="accordion-head"
-         id="basic-head"
+    <div class="accordion-head" id="basic-head"
          onclick="toggleBox('basic-head','basic-body')">
       <span>Basic Course (Grundkurs)</span>
       <span class="arrow">▲</span>
@@ -251,7 +155,7 @@ function toggleBox(idHead, idBody){
         <?php
           $num   = fmt_id($t['id']);
           $title = $t['title'];
-          $href  = './' . $t['html_file']; // ./python/03_1python.html
+          $href  = '../html/' . $t['html_file'];
         ?>
         <div class="task-row">
           <div class="task-num"><?= htmlspecialchars($num) ?></div>
@@ -260,14 +164,11 @@ function toggleBox(idHead, idBody){
         </div>
       <?php endforeach; ?>
     </div>
-
   </section>
 
-  <!-- ADVANCED COURSE BOX -->
+  <!-- ADVANCED -->
   <section class="accordion-box">
-
-    <div class="accordion-head"
-         id="adv-head"
+    <div class="accordion-head" id="adv-head"
          onclick="toggleBox('adv-head','adv-body')">
       <span>Advanced Course (Oberstufe)</span>
       <span class="arrow">▼</span>
@@ -278,7 +179,7 @@ function toggleBox(idHead, idBody){
         <?php
           $num   = fmt_id($t['id']);
           $title = $t['title'];
-          $href  = './' . $t['html_file'];
+          $href  = '../html/' . $t['html_file'];
         ?>
         <div class="task-row">
           <div class="task-num"><?= htmlspecialchars($num) ?></div>
@@ -287,7 +188,6 @@ function toggleBox(idHead, idBody){
         </div>
       <?php endforeach; ?>
     </div>
-
   </section>
 
 </body>
