@@ -1,7 +1,9 @@
 <?php
+// my_status.php
 session_start();
 require __DIR__ . '/db.php';
 
+// --- Helper: Sicherstellen, dass User eingeloggt ist ---
 if (empty($_SESSION['user'])) {
     header('Location: login.html');
     exit;
@@ -9,22 +11,28 @@ if (empty($_SESSION['user'])) {
 
 $user = $_SESSION['user'];
 
-// Nutzer-ID aus Session holen (robust)
-$uid = null;
-if (isset($user['id'])) {
-    $uid = $user['id'];
-} elseif (isset($user['user_id'])) {
-    $uid = $user['user_id'];
-}
+// Wir brauchen eine gültige user_id für student_tasks.
+// login.php MUSS 'id' setzen: $_SESSION['user']['id'] = $row['id'];
+$uid = isset($user['id']) ? $user['id'] : null;
 
-// Falls immer noch leer: Wir können trotzdem Status anzeigen,
-// nur ohne student_tasks-Infos. Wir setzen dann $uid = -1,
-// dann matched das LEFT JOIN eh nicht und wir sehen status = null.
+// Fallback: Wenn es keinen user-id gibt (z.B. Demo Benutzer), wir machen -1.
+// Das lässt den LEFT JOIN weiter funktionieren, nur gibt's dann halt keinen Eintrag in student_tasks.
 if ($uid === null) {
     $uid = -1;
 }
 
-// Helper: DB-Lader nach Kategorie
+// Hilfsfunktionen für Anzeige
+function fmtStatus($s) {
+    if (!$s) return 'nicht_bearbeitet';
+    return $s;
+}
+function fmtTime($t) {
+    if (!$t) return '-';
+    // nice formatting
+    return date('d.m.Y, H:i', strtotime($t)) . ' Uhr';
+}
+
+// Lädt ALLE Tasks einer Kategorie (z.B. 'ev3' oder 'python')
 function loadTasksForCategory(PDO $pdo, $uid, $category) {
     $stmt = $pdo->prepare("
         SELECT
@@ -36,98 +44,39 @@ function loadTasksForCategory(PDO $pdo, $uid, $category) {
             st.updated_at
         FROM tasks t
         LEFT JOIN student_tasks st
-          ON st.task_id = t.id AND st.user_id = :uid
+          ON st.task_id = t.id
+         AND st.user_id = :uid
         WHERE t.category = :cat
-        ORDER BY t.id
+        ORDER BY t.id ASC
     ");
     $stmt->execute([
         ':uid' => $uid,
-        ':cat' => $category
+        ':cat' => $category,
     ]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-$ev3Rows    = loadTasksForCategory($pdo, $uid, 'ev3');
-$pythonRows = loadTasksForCategory($pdo, $uid, 'python');
-
-// Formatter
-function fmtStatus($s) {
-    return $s !== null ? $s : 'nicht_bearbeitet';
-}
-function fmtTime($ts) {
-    if (!$ts) return '-';
-    $dt = new DateTime($ts, new DateTimeZone('Europe/Berlin'));
-    return $dt->format('d.m.Y, H:i') . ' Uhr';
-}
+// echte Daten holen
+$ev3Rows     = loadTasksForCategory($pdo, $uid, 'ev3');
+$pythonRows  = loadTasksForCategory($pdo, $uid, 'python');
 ?>
 <!doctype html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mein Status</title>
-
-<style>
-body {
-    font-family: system-ui, sans-serif;
-    background:#fff;
-    color:#111;
-    max-width:1200px;
-    margin:20px auto 80px auto;
-    padding:0 16px;
-    line-height:1.4;
-}
-.top-nav {
-    display:flex;
-    gap:1rem;
-    align-items:baseline;
-    font-size:0.95rem;
-    margin-bottom:1.5rem;
-}
-.top-nav a.btn-nav {
-    background:#34a853;
-    color:#fff;
-    font-weight:600;
-    padding:.5rem .75rem;
-    border-radius:.5rem;
-    text-decoration:none;
-}
-h1 {
-    font-size:2rem;
-    font-weight:600;
-    margin:0 0 .75rem 0;
-}
-.section-head {
-    font-size:1.25rem;
-    font-weight:600;
-    margin:2rem 0 .5rem 0;
-}
-.status-table {
-    width:100%;
-    border-collapse:collapse;
-    font-size:1rem;
-    margin-bottom:2rem;
-}
-.status-table th {
-    text-align:left;
-    background:#f9fafb;
-    border-bottom:1px solid #d1d5db;
-    font-weight:600;
-    padding:.75rem;
-}
-.status-table td {
-    border-bottom:1px solid #e5e7eb;
-    padding:.75rem;
-    vertical-align:top;
-    font-size:1rem;
-}
-.note {
-    font-size:.9rem;
-    color:#666;
-    margin-bottom:1rem;
-    font-style:italic;
-}
-</style>
+  <meta charset="utf-8">
+  <title>Mein Status</title>
+  <link rel="stylesheet" href="../CSS/01_main.css">
+  <style>
+    body { max-width: 1200px; margin: 20px auto; font-family: system-ui, sans-serif; line-height:1.4; }
+    h1 { font-size:2.2rem; margin-bottom:0.5rem; }
+    nav.top-nav { display:flex; gap:12px; align-items:center; margin-bottom:24px; }
+    nav.top-nav .btn-nav { padding:6px 10px; border:1px solid #ccc; border-radius:8px; text-decoration:none; color:#111; background:#f3f4f6; font-size:0.95rem; }
+    .section-head { font-size:1.5rem; font-weight:600; margin:32px 0 12px 0; }
+    table.status-table { width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,.04); border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; }
+    table.status-table th { text-align:left; background:#f9fafb; font-weight:600; padding:12px 16px; border-bottom:1px solid #e5e7eb; font-size:1.1rem; }
+    table.status-table td { padding:14px 16px; border-bottom:1px solid #e5e7eb; font-size:1.1rem; }
+    .note { color:#6b7280; font-size:0.95rem; font-style:italic; padding:8px 0 16px; }
+  </style>
 </head>
 <body>
 
@@ -145,8 +94,9 @@ h1 {
 
 <!-- EV3 -->
 <div class="section-head">EV3</div>
+
 <?php if (count($ev3Rows) === 0): ?>
-    <div class="note">Keine EV3-Aufgaben gefunden. (Evtl. nicht eingeloggt mit ID?)</div>
+    <div class="note">Keine EV3-Aufgaben gefunden.</div>
 <?php else: ?>
 <table class="status-table">
     <tr>
@@ -155,19 +105,21 @@ h1 {
         <th style="width:25%">Zuletzt geändert</th>
     </tr>
     <?php foreach ($ev3Rows as $row): ?>
-        <tr>
-            <td><?= htmlspecialchars($row['title']) ?></td>
-            <td><?= htmlspecialchars(fmtStatus($row['status'])) ?></td>
-            <td><?= htmlspecialchars(fmtTime($row['updated_at'])) ?></td>
-        </tr>
+    <tr>
+        <td><?= htmlspecialchars($row['title']) ?></td>
+        <td><?= htmlspecialchars(fmtStatus($row['status'])) ?></td>
+        <td><?= htmlspecialchars(fmtTime($row['updated_at'])) ?></td>
+    </tr>
     <?php endforeach; ?>
 </table>
 <?php endif; ?>
 
-<!-- Python -->
+
+<!-- PYTHON -->
 <div class="section-head">Python</div>
+
 <?php if (count($pythonRows) === 0): ?>
-    <div class="note">Keine Python-Aufgaben gefunden. (Evtl. nicht eingeloggt mit ID?)</div>
+    <div class="note">Keine Python-Aufgaben gefunden.</div>
 <?php else: ?>
 <table class="status-table">
     <tr>
@@ -176,11 +128,11 @@ h1 {
         <th style="width:25%">Zuletzt geändert</th>
     </tr>
     <?php foreach ($pythonRows as $row): ?>
-        <tr>
-            <td><?= htmlspecialchars($row['title']) ?></td>
-            <td><?= htmlspecialchars(fmtStatus($row['status'])) ?></td>
-            <td><?= htmlspecialchars(fmtTime($row['updated_at'])) ?></td>
-        </tr>
+    <tr>
+        <td><?= htmlspecialchars($row['title']) ?></td>
+        <td><?= htmlspecialchars(fmtStatus($row['status'])) ?></td>
+        <td><?= htmlspecialchars(fmtTime($row['updated_at'])) ?></td>
+    </tr>
     <?php endforeach; ?>
 </table>
 <?php endif; ?>
