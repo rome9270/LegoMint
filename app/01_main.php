@@ -30,7 +30,7 @@ $user = $_SESSION['user']; // ['name','role',...]
 
   <h2>Choose your topic</h2>
   <div class="link-grid">
-    <a class="level-btn" href="/LegoMint/html/02_python_overview.html">Python</a>
+    <a class="level-btn" href="02_python_overview.php">Python</a>
     <a class="level-btn" href="02_LegoEV3_I.php">Lego EV3</a>
   </div>
   

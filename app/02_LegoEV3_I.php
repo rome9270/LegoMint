@@ -3,9 +3,8 @@ session_start();
 require __DIR__ . '/../app/db.php';
 
 /*
-  EV3-Aufgaben:
-  Wir filtern alles, was NICHT unter python/ liegt.
-  (Wenn du später z.B. nur Basic = IDs 1-7 etc. willst -> hier anpassen.)
+  Filterung EV3-Aufgaben
+
 */
 $stmt = $pdo->query("
     SELECT id, title, html_file
@@ -15,10 +14,11 @@ $stmt = $pdo->query("
 ");
 $allTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-/* Simple Aufteilung in Basic/Advanced (erste Hälfte vs zweite Hälfte) */
+/* Aufteilung in Basic/Advanced anhand der ID's */
 $mid = intdiv(count($allTasks), 2);
-$basicTasks    = array_slice($allTasks, 0, $mid === 0 ? count($allTasks) : $mid);
-$advancedTasks = array_slice($allTasks, $mid);
+$basicTasks = array_filter($allTasks, fn($t) => $t['id'] <= 10);
+$advancedTasks = array_filter($allTasks, fn($t) => $t['id'] > 10);
+
 
 function fmt_id($n){
     $n = (int)$n;
@@ -32,6 +32,7 @@ function fmt_id($n){
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>EV3 · Übersicht</title>
 <link rel="stylesheet" href="./python/03_python.css" />
+
 <style>
   body.page-width {
     max-width: 1100px;
@@ -203,19 +204,19 @@ function toggleBox(idHead, idBody){
 <body class="page-width">
 
   <div class="top-nav">
-    <a href="../app/01_main.php">⬅️ Main</a>
-    <a href="../app/logout.php">Logout</a>
-    <a href="./overview_python.php">Python Übersicht</a>
+    <a href="01_main.php">⬅️ Main</a>
+    <a href="logout.php">Logout</a>
+    <a href="02_python_overview.php">Python Übersicht</a>
   </div>
 
   <h1 class="page-title">Choose your topic</h1>
   <div class="page-subline"></div>
 
   <div class="topic-row">
-    <a class="topic-btn" href="./03_01LegoEV3_I.html">
+    <a class="topic-btn" href="../html/03_01LegoEV3_I.html">
       EV3 Basic Course (Grundkurs)
     </a>
-    <a class="topic-btn" href="./04_01LegoEV3_I.html">
+    <a class="topic-btn" href="../html/04_01LegoEV3_I.html">
       EV3 Advanced Course (Oberstufe)
     </a>
   </div>
