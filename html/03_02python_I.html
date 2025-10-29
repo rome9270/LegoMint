@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Python · Step 2: Variables & input()</title>
 
-  <!-- deine Styles -->
   <link rel="stylesheet" href="../CSS/03_python.css" />
 
   <style>
@@ -15,7 +14,7 @@
     #error { color:#b91c1c; white-space:pre-wrap; }
   </style>
 
-  <!-- Skulpt Runtime statt Pyodide -->
+  <!-- Skulpt Runtime -->
   <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
 </head>
@@ -24,7 +23,6 @@
   <nav class="link-grid" aria-label="Topic selection">
     <a class="btn" href="../app/01_main.php" aria-label="Back to main">⬅️ Main</a>
     <a class="btn" href="../app/logout.php">🚪 Logout</a>
-    <!-- hier geht's weiter zur nächsten/Step 3 Seite -->
     <a class="btn primary" id="next-btn" href="../html/03_03python.html">Next →</a>
   </nav>
 
@@ -102,13 +100,8 @@ print("The sum is:", num1 + num2)
 
   <script>
     // === TASK-Metadaten für Step 2 ===
-    const TASK = {taskId: 14, // <-- Python Step 1 hat ID 13 laut db_seed.sql
-      studentNumber: 1, // TODO später Session/Backend
-
-      // Falls du später wieder event_update.php anbinden willst:
-      // taskId: 14, // laut db_seed.sql wäre Step 2 ID 14
-      // studentNumber: 1,
-
+    const TASK = {
+      taskId: 14,          // <- GANZ WICHTIG: Python Step 2 in tasks.id
       title: "Python · Step 2: Variables & input()",
       description: `
         Ask the user for 2 whole numbers. Convert them to int with <code>int(...)</code>.<br>
@@ -174,14 +167,28 @@ print("The sum is:", num1 + num2)`,
     els.tipsList.innerHTML = (TASK.tips || []).map(t=>"<li>"+t+"</li>").join("");
     els.editor.value = TASK.starterCode;
 
-    // === Status helper ===
     function setStatus(cls, txt){
       els.status.className = "status " + cls;
       els.status.textContent = txt;
     }
 
-    // === Skulpt helpers ===
-    // builtinRead liefert die Skulpt-Standardbibliothek
+    // --- Fortschritt an Server senden (gleich wie bei Step 1) ---
+    function sendEvent(ev){
+      fetch("../app/event_update.php", {
+        method: "POST",
+        credentials: "include", // Session-Cookie mitgeben
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          task_id: String(TASK.taskId),
+          event:   ev               // "sim" oder "download"
+        })
+      })
+      .then(r => r.json())
+      .then(data => console.log("server says:", data))
+      .catch(err => console.warn("sendEvent failed:", err));
+    }
+
+    // Skulpt braucht builtinRead
     function builtinRead(x) {
       if (!Sk.builtinFiles || !Sk.builtinFiles["files"][x]) {
         throw "File not found: '" + x + "'";
@@ -190,51 +197,41 @@ print("The sum is:", num1 + num2)`,
     }
 
     async function runCode(){
-      // Reset output / error
       els.output.textContent = "";
       els.error.textContent  = "";
       setStatus("running","running…");
 
-      // Skulpt konfigurieren
       Sk.configure({
         output: function (text) {
           els.output.textContent += text;
         },
         read: builtinRead,
         __future__: Sk.python3,
-        // input() -> wir benutzen window.prompt() im Browser
         inputfun: function (promptText) {
           const reply = window.prompt(promptText || "Input:");
-          return reply === null ? "" : reply; // falls abgebrochen => leere Zeichenkette
+          return reply === null ? "" : reply;
         },
         inputfunTakesPrompt: true,
-        execLimit: 10000 // ms, Sicherheitsnetz
+        execLimit: 10000
       });
 
       try {
-        // Code aus dem Editor holen
         const userCode = els.editor.value;
-
-        // async Ausführung in Skulpt
         await Sk.misceval.asyncToPromise(() =>
           Sk.importMainWithBody("<stdin>", false, userCode, true)
         );
 
         setStatus("ok","done.");
 
-        // Wenn du deine Fortschritt-API wieder aktivierst:
-        // sendEvent("sim");
+        // <-- Fortschritt "sim" melden
+        sendEvent("sim");
 
       } catch (err) {
         setStatus("error","ERROR");
         els.error.textContent = String(err);
-
-        // sendEvent("download") etc. würdest du hier natürlich NICHT machen;
-        // das ist nur bei Save relevant.
       }
     }
 
-    // === Reset ===
     function reset(){
       els.editor.value = TASK.starterCode;
       els.output.textContent = "";
@@ -242,7 +239,6 @@ print("The sum is:", num1 + num2)`,
       setStatus("", "");
     }
 
-    // === Save (Download .py) ===
     function save(){
       const blob = new Blob([els.editor.value], {type:"text/plain"});
       const a = document.createElement("a");
@@ -251,11 +247,11 @@ print("The sum is:", num1 + num2)`,
       a.click();
       URL.revokeObjectURL(a.href);
 
-      // Wenn du willst, dass "Save" als Fortschritt zählt:
-      // sendEvent("download");
+      // <-- Fortschritt "download" melden
+      sendEvent("download");
     }
 
-    // === Modals ===
+    // Modals
     function openDialog(d){
       if (d?.showModal) d.showModal();
       else d?.setAttribute("open","");
@@ -265,11 +261,9 @@ print("The sum is:", num1 + num2)`,
       else d?.removeAttribute("open");
     }
 
-    // Tips modal
     els.tipsBtn.onclick = () => openDialog(els.tipsModal);
     els.closeTips.onclick = () => closeDialog(els.tipsModal);
 
-    // Solution modal
     els.solutionBtn.onclick = () => openDialog(els.solutionModal);
     els.closeSolution.onclick = () => closeDialog(els.solutionModal);
 
@@ -282,13 +276,10 @@ print("The sum is:", num1 + num2)`,
       setStatus("", "");
     };
 
-    // === Buttons ===
+    // Buttons
     els.run.onclick   = runCode;
     els.reset.onclick = reset;
     els.save.onclick  = save;
-    // Navigation (du hast ja schon href im <a>, also JS ist optional)
-    // els.next.onclick = () => { location.href = TASK.nextUrl; };
-
   </script>
 </body>
 </html>
