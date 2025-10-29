@@ -1,0 +1,99 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #ffffff
+skinparam classBackgroundColor #f9fafb
+skinparam classBorderColor #111111
+skinparam ArrowColor #111111
+skinparam Shadowing false
+skinparam dpi 150
+
+' --------------------------
+' Klassen
+' --------------------------
+
+class EV3Brick {
+    +speaker : Speaker
+    +screen  : Screen
+    --
+    +beep() : void
+    +screen.print(text : str) : void
+    +speaker.say(text : str) : void
+}
+
+class Motor {
+    -port : Port
+    --
+    +run(speed: int) : void
+    +stop() : void
+}
+
+class Sensor {
+    <<abstract>>
+    -port : Port
+}
+
+class ColorSensor {
+    +reflection() : int
+}
+class TouchSensor {
+    +pressed() : bool
+}
+class GyroSensor {
+    +angle() : int
+    +reset_angle(deg : int) : void
+}
+class InfraredSensor {
+    +distance() : int
+}
+
+Sensor <|-- ColorSensor
+Sensor <|-- TouchSensor
+Sensor <|-- GyroSensor
+Sensor <|-- InfraredSensor
+
+class DriveBase {
+    -left_motor  : Motor
+    -right_motor : Motor
+    -wheel_diam_mm : number
+    -axle_track_mm : number
+    --
+    +drive(speed_mm_s : int, steer_deg_s : int) : void
+    +straight(mm : int) : void
+    +turn(deg : int) : void
+    +stop(mode : Stop) : void
+    +distance() : int
+}
+
+' --------------------------
+' Beziehungen
+' --------------------------
+
+EV3Brick "1" o-- "1..2" Motor : controls via ports A/B
+EV3Brick "1" o-- Sensor : reads from
+EV3Brick "1" o-- DriveBase
+
+DriveBase "1" *-- "1" Motor : left
+DriveBase "1" *-- "1" Motor : right
+
+' Beispiel-Szenario-Klasse (Mission Logic)
+class WarehouseMissionController {
+    -brick : EV3Brick
+    -drive : DriveBase
+    -lineSensor : ColorSensor
+    -touchFront : TouchSensor
+    -irFront : InfraredSensor
+    --
+    +seekLine() : void
+    +followLine() : void
+    +stopAtStation() : void
+    +safetyPauseIfPerson() : void
+    +runMission() : void
+}
+
+WarehouseMissionController --> EV3Brick
+WarehouseMissionController --> DriveBase
+WarehouseMissionController --> ColorSensor
+WarehouseMissionController --> TouchSensor
+WarehouseMissionController --> InfraredSensor
+
+@enduml
