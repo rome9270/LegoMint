@@ -17,4 +17,4 @@ INSERT INTO tasks (title, html_file, category, level) VALUES
   ('Python · Step 1: Hello World',                  '03_01python_I.html',     'python', 'basic'),
   ('Python · Step 2: variables & print()',          '03_02python_I.html',     'python', 'basic'),
   ('Python · Step 3: If Statements',                '03_03python_I.html',         'python', 'basic'),
-  ('Python · Step 4: Loops',                        '03_04loops_I.html',      'python', 'basic');
+  ('Python · Step 4: Loops',                        '03_04python_I.html',      'python', 'basic');
