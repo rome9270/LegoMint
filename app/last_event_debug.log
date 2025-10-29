@@ -32,3 +32,17 @@
 2025-10-29T10:36:34+01:00 {"task_id":"7","event":"sim"}
 2025-10-29T11:30:59+01:00 {"task_id":"7","event":"download"}
 2025-10-29T11:31:39+01:00 {"task_id":"8","event":"download"}
+2025-10-29T16:26:46+01:00 {"task_id":"7","event":"download"}
+2025-10-29T16:27:09+01:00 {"task_id":"8","event":"download"}
+2025-10-29T16:27:29+01:00 {"task_id":"9","event":"sim"}
+2025-10-29T16:27:31+01:00 {"task_id":"9","event":"download"}
+2025-10-29T16:28:31+01:00 {"task_id":"10","event":"sim"}
+2025-10-29T16:28:33+01:00 {"task_id":"10","event":"download"}
+2025-10-29T16:29:25+01:00 {"task_id":"10","event":"sim"}
+2025-10-29T16:29:27+01:00 {"task_id":"10","event":"download"}
+2025-10-29T16:30:23+01:00 {"task_id":"11","event":"sim"}
+2025-10-29T16:30:26+01:00 {"task_id":"11","event":"download"}
+2025-10-29T16:31:50+01:00 {"task_id":"12","event":"sim"}
+2025-10-29T16:31:52+01:00 {"task_id":"12","event":"download"}
+2025-10-29T16:32:27+01:00 {"task_id":"15","event":"sim"}
+2025-10-29T16:32:29+01:00 {"task_id":"15","event":"download"}

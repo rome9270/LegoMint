@@ -1,99 +1,100 @@
 @startuml
-skinparam classAttributeIconSize 0
-skinparam backgroundColor #ffffff
-skinparam classBackgroundColor #f9fafb
-skinparam classBorderColor #111111
-skinparam ArrowColor #111111
-skinparam Shadowing false
-skinparam dpi 150
+title LegoMint System - Komponentenübersicht
 
-' --------------------------
-' Klassen
-' --------------------------
+' ===========================
+' Akteure
+' ===========================
+actor Student
+actor Teacher
 
-class EV3Brick {
-    +speaker : Speaker
-    +screen  : Screen
-    --
-    +beep() : void
-    +screen.print(text : str) : void
-    +speaker.say(text : str) : void
+' ===========================
+' Web-Frontend (Aufgaben-Seiten)
+' ===========================
+package "Task Pages (html/*.html)" as TaskPages {
+  [Task N HTML+JS\n(03_XXLegoEV3_I.html)]
 }
 
-class Motor {
-    -port : Port
-    --
-    +run(speed: int) : void
-    +stop() : void
+' ===========================
+' PHP Backend / App Layer
+' ===========================
+package "App (PHP)" as AppLayer {
+
+  [login.php\n- prüft Credentials\n- startet Session] as Login
+  [logout.php\n- beendet Session] as Logout
+
+  [event_update.php\n- POST from JS sendEvent()\n- schreibt Fortschritt\n- loggt Events] as EventUpdate
+
+  [update_status.php\n- Fortschritt speichern\n- user_task_status updaten] as UpdateStatus
+
+  [my_status.php\n- Ansicht für Schüler\n- eigener Fortschritt] as MyStatus
+
+  [teacher_overview.php\n- Ansicht für Lehrkräfte\n- alle Schüler/Tasks] as TeacherOverview
+  [teacher_quick.php\n- schnelle Übersicht / Dashboard] as TeacherQuick
+
+  [upload_users.php\n- CSV Import Schülerkonten] as UploadUsers
+
+  [init_db.php\n- erstellt DB falls nötig\n- lädt Schema & Seed] as InitDB
 }
 
-class Sensor {
-    <<abstract>>
-    -port : Port
+' ===========================
+' Datenbank / Persistence
+' ===========================
+database "SQLite (schule.db)" as DB {
+  frame "Tables" {
+    [users\n(id, student_number, name, role, password_hash)]
+    [tasks\n(id, title, html_file)]
+    [user_task_status\n(user_id, task_id, status,\nsim_ok, sim_at,\ndownload_ok, download_at,\nupdated_at)]
+    [event_log\n(id, user_id, task_id, event,\ncreated_at)]
+  }
 }
 
-class ColorSensor {
-    +reflection() : int
-}
-class TouchSensor {
-    +pressed() : bool
-}
-class GyroSensor {
-    +angle() : int
-    +reset_angle(deg : int) : void
-}
-class InfraredSensor {
-    +distance() : int
-}
+' ===========================
+' Hilfskomponente
+' ===========================
+[db.php\n- stellt PDO $pdo bereit\n- PRAGMA foreign_keys=ON] as DBPHP
 
-Sensor <|-- ColorSensor
-Sensor <|-- TouchSensor
-Sensor <|-- GyroSensor
-Sensor <|-- InfraredSensor
+' ===========================
+' Beziehungen (Frontend -> Backend)
+' ===========================
+Student --> TaskPages : öffnet Seite\narbeitet an Aufgabe
+TaskPages --> EventUpdate : fetch(\"event_update.php\",\n{task_id,event})
+EventUpdate --> DBPHP
+DBPHP --> DB
 
-class DriveBase {
-    -left_motor  : Motor
-    -right_motor : Motor
-    -wheel_diam_mm : number
-    -axle_track_mm : number
-    --
-    +drive(speed_mm_s : int, steer_deg_s : int) : void
-    +straight(mm : int) : void
-    +turn(deg : int) : void
-    +stop(mode : Stop) : void
-    +distance() : int
-}
+' ===========================
+' Beziehungen (Statusanzeige Schüler)
+' ===========================
+Student --> MyStatus : ruft Statusseite
+MyStatus --> DBPHP
+DBPHP --> DB
 
-' --------------------------
-' Beziehungen
-' --------------------------
+' ===========================
+' Beziehungen (Lehrerübersicht)
+' ===========================
+Teacher --> TeacherOverview
+Teacher --> TeacherQuick
+TeacherOverview --> DBPHP
+TeacherQuick --> DBPHP
+DBPHP --> DB
 
-EV3Brick "1" o-- "1..2" Motor : controls via ports A/B
-EV3Brick "1" o-- Sensor : reads from
-EV3Brick "1" o-- DriveBase
+' ===========================
+' Beziehungen (Auth)
+' ===========================
+Student --> Login : POST credentials
+Teacher --> Login : POST credentials
+Login --> DBPHP
+DBPHP --> DB
+Student --> Logout
+Teacher --> Logout
 
-DriveBase "1" *-- "1" Motor : left
-DriveBase "1" *-- "1" Motor : right
+' ===========================
+' Beziehungen (User Import / Init)
+' ===========================
+Teacher --> UploadUsers : CSV hochladen
+UploadUsers --> DBPHP
+DBPHP --> DB
 
-' Beispiel-Szenario-Klasse (Mission Logic)
-class WarehouseMissionController {
-    -brick : EV3Brick
-    -drive : DriveBase
-    -lineSensor : ColorSensor
-    -touchFront : TouchSensor
-    -irFront : InfraredSensor
-    --
-    +seekLine() : void
-    +followLine() : void
-    +stopAtStation() : void
-    +safetyPauseIfPerson() : void
-    +runMission() : void
-}
-
-WarehouseMissionController --> EV3Brick
-WarehouseMissionController --> DriveBase
-WarehouseMissionController --> ColorSensor
-WarehouseMissionController --> TouchSensor
-WarehouseMissionController --> InfraredSensor
+InitDB --> DBPHP
+DBPHP --> DB
 
 @enduml

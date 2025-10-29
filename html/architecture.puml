@@ -1,0 +1,192 @@
+@startuml
+title LegoMint - Logisches Klassendiagramm (Service-Architektur)
+
+' =========[ MODEL-KLASSEN / ENTITÄTEN ]=========
+class User {
+  +id: int
+  +studentNumber: string
+  +name: string
+  +role: string        << "student" | "teacher" >>
+  +passwordHash: string
+}
+
+class Task {
+  +id: int
+  +title: string
+  +htmlFile: string    << Pfad zur Übungsseite >>
+}
+
+class UserTaskStatus {
+  +userId: int
+  +taskId: int
+  +status: string          << "nicht_bearbeitet" | "korrekt" | "nicht_korrekt" >>
+  +simOk: bool
+  +simAt: datetime
+  +downloadOk: bool
+  +downloadAt: datetime
+  +updatedAt: datetime
+}
+
+class EventLog {
+  +id: int
+  +userId: int
+  +taskId: int
+  +event: string          << "sim" | "download" >>
+  +createdAt: datetime
+}
+
+' =========[ INFRASTRUKTUR / DB ACCESS ]=========
+class Database {
+  -pdo: PDO
+  +getConnection(): PDO
+}
+
+class UserRepository {
+  -db: Database
+  +findByLogin(studentNumber: string): User?
+  +createManyFromCSV(csvData: string): void
+  +findAllStudents(): User[]
+}
+
+class TaskRepository {
+  -db: Database
+  +getAllTasks(): Task[]
+  +getTaskById(taskId: int): Task?
+}
+
+class StatusRepository {
+  -db: Database
+  +getStatusForUser(userId: int): UserTaskStatus[]
+  +upsertProgress(userId: int, taskId: int, event: string): void
+  +markManualStatus(userId: int, taskId: int, status: string): void
+}
+
+class EventRepository {
+  -db: Database
+  +logEvent(userId: int, taskId: int, event: string): void
+}
+
+
+' =========[ BUSINESS-LOGIK / SERVICES ]=========
+class AuthService {
+  -users: UserRepository
+  +login(studentNumber: string, passwordPlain: string): User?
+  +logout(session): void
+  +requireAuth(session): User        ' throws/abort if not logged in
+  +requireTeacher(user: User): void  ' throws/abort if not teacher
+}
+
+class ProgressService {
+  -statusRepo: StatusRepository
+  -eventRepo: EventRepository
+  +reportEvent(user: User, taskId: int, event: string): UserTaskStatus
+  +getStudentOverview(user: User): UserTaskStatus[]
+  +getClassOverview(): map<User, UserTaskStatus[]>  ' for teacher
+}
+
+class TeacherService {
+  -userRepo: UserRepository
+  -statusRepo: StatusRepository
+  +getAllStudentsWithProgress(): map<User, UserTaskStatus[]>
+  +importStudents(csvData: string): void
+  +overrideStatus(userId: int, taskId: int, status: string): void
+}
+
+
+' =========[ CONTROLLER-EBENE / ENDPOINTS ]=========
+class LoginController {
+  -auth: AuthService
+  +POST_login(studentNumber, password): session
+  +GET_logout(): void
+}
+
+class EventController {
+  -auth: AuthService
+  -progress: ProgressService
+  +POST_eventUpdate(taskId: int, event: string): json
+}
+
+class StudentDashboardController {
+  -auth: AuthService
+  -progress: ProgressService
+  -taskRepo: TaskRepository
+  +GET_myStatus(): html
+}
+
+class TeacherDashboardController {
+  -auth: AuthService
+  -teacher: TeacherService
+  -taskRepo: TaskRepository
+  +GET_overview(): html
+  +POST_uploadStudents(csvFile): html
+  +POST_overrideStatus(userId, taskId, status): json
+}
+
+
+' =========[ BEZIEHUNGEN / ASsoziationen ]=========
+
+' Infrastruktur
+Database "1" o--> "1..*" UserRepository
+Database "1" o--> "1..*" TaskRepository
+Database "1" o--> "1..*" StatusRepository
+Database "1" o--> "1..*" EventRepository
+
+' Repos -> Models
+UserRepository --> User
+TaskRepository --> Task
+StatusRepository --> UserTaskStatus
+EventRepository --> EventLog
+
+' Services benutzen Repositories
+AuthService --> UserRepository
+ProgressService --> StatusRepository
+ProgressService --> EventRepository
+TeacherService --> UserRepository
+TeacherService --> StatusRepository
+
+' Controller benutzen Services/Repos
+LoginController --> AuthService
+EventController --> AuthService
+EventController --> ProgressService
+StudentDashboardController --> AuthService
+StudentDashboardController --> ProgressService
+StudentDashboardController --> TaskRepository
+TeacherDashboardController --> AuthService
+TeacherDashboardController --> TeacherService
+TeacherDashboardController --> TaskRepository
+
+' Controller liefern Views
+class TaskPageHTML <<frontend page>> {
+  +JS sendEvent(taskId,event)
+  +shows editor/simulation
+}
+
+class TeacherOverviewHTML <<frontend page>> {
+  +table: students x tasks
+  +manual override buttons
+}
+
+class StudentStatusHTML <<frontend page>> {
+  +table: my tasks
+  +status badges (sim/download/korrekt)
+}
+
+' Frontend Pages bekommen Daten aus Controllern
+StudentStatusHTML ..> StudentDashboardController : rendered by
+TeacherOverviewHTML ..> TeacherDashboardController : rendered by
+TaskPageHTML ..> EventController : fetch("../app/event_update.php")
+
+
+' =========[ USERS / ACTORS ]=========
+actor Student
+actor Teacher
+
+Student --> LoginController : login/logout
+Student --> TaskPageHTML : arbeitet an Aufgabe
+Student --> StudentStatusHTML : prüft eigenen Fortschritt
+
+Teacher --> LoginController : login/logout
+Teacher --> TeacherOverviewHTML : sieht Klasse
+Teacher --> TeacherDashboardController : upload CSV / override status
+
+@enduml
