@@ -3,12 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EV3 - find the door(touch&gyro)</title>
+  <title>EV3 - find the door (touch & gyro)</title>
 
   <link rel="stylesheet" href="../css/03_python.css" />
 
   <style>
-    #arena { background:#f9fafb; border:2px solid #111; width:100%; height:240px; max-width:900px; border-radius:10px; display:block; margin-top:10px; }
+    #arena {
+      background:#f9fafb;
+      border:2px solid #111;
+      width:100%;
+      height:240px;
+      max-width:900px;
+      border-radius:10px;
+      display:block;
+      margin-top:10px;
+    }
     .status.ok { color:#15803d; }
     .status.error { color:#b91c1c; }
     .status.running { color:#374151; }
@@ -17,22 +26,30 @@
   </style>
 </head>
 <body>
-  <!--  EINZIGER NAVIGATIONSBLOCK -->
+  <!--  NAVIGATION -->
   <nav class="link-grid" aria-label="Topic selection">
     <a class="btn" href="../app/01_main.php" id="go-main" aria-label="Back to main">⬅️ Going to main</a>
     <a class="btn" href="../app/logout.php">🚪 Logout</a>
-    <a class="btn" href="../html/03_08LegoEV3_I.html">Next →</a>
+    <a class="btn primary" id="next-btn" href="../html/03_08LegoEV3_I.html">Next →</a>
   </nav>
 
   <header class="row" style="justify-content: space-between;">
     <div>
       <h1>EV3 (Pybricks) · Touch + Gyro — Bump 2 walls & leave the building</h1>
       <p>
-        Write a correct <b>Pybricks program</b> (EV3Brick, motors A/B, <b>Touch S3</b>, <b>Gyro S4</b>) that
-        <b>drives upward and bumps the top wall</b>, <b>backs ~50&nbsp;mm</b>, then <b>rotates RIGHT by 90° using the gyroscope</b>,
-        <b>bumps the right wall</b>, <b>backs ~50&nbsp;mm</b>, <b>rotates RIGHT by 90° using the gyroscope</b> again, and finally
-        <b>exits the building</b> through the door on the bottom wall (right side).
-        <br>Use a gyro feedback loop (e.g. <code>gyro.reset_angle(0)</code> then <code>while abs(gyro.angle()) &lt; 90: ...</code>).
+        Write a correct <b>Pybricks program</b> (EV3Brick, motors A/B,
+        <b>Touch S3</b>, <b>Gyro S4</b>) that
+        <b>drives upward and bumps the top wall</b>,
+        <b>backs ~50&nbsp;mm</b>,
+        then <b>rotates RIGHT by 90° using the gyroscope</b>,
+        <b>bumps the right wall</b>,
+        <b>backs ~50&nbsp;mm</b>,
+        <b>rotates RIGHT by 90° using the gyroscope</b> again,
+        and finally
+        <b>exits the building</b> through the door on the bottom wall (right side).<br>
+        Use a gyro feedback loop (e.g.
+        <code>gyro.reset_angle(0)</code> then
+        <code>while abs(gyro.angle()) &lt; 90: ...</code>).
         <b>Do not use <code>drive.turn(...)</code>.</b>
       </p>
     </div>
@@ -43,6 +60,7 @@
   </header>
 
   <main class="layout">
+    <!-- EDITOR -->
     <section class="card">
       <h2>Editor</h2>
       <div class="row">
@@ -53,7 +71,9 @@
       </div>
 
 <textarea id="editor" spellcheck="false">#!/usr/bin/env pybricks-micropython
-# Touch + Gyro task: bump top → back → gyro-right 90; bump right → back → gyro-right 90; exit
+# Touch + Gyro task: bump top → back → gyro-right 90;
+# bump right → back → gyro-right 90; exit bottom-right door
+
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import Motor, TouchSensor, GyroSensor
 from pybricks.parameters import Port, Stop
@@ -68,44 +88,44 @@ touch = TouchSensor(Port.S3)
 gyro  = GyroSensor(Port.S4)           # <-- Gyro on S4
 drive = DriveBase(left, right, 56, 114)
 
-# TIP: use gyro.reset_angle(0) and a loop to hit exactly 90°
-# Example structure (fill in yourself):
-# # 1) Up to top wall
-# drive.drive(150, 0)
-# while not touch.pressed():
-#     wait(10)
-# drive.stop(Stop.BRAKE)
-# drive.straight(-50)
-#
-# # Gyro right turn (~ -90°)
-# gyro.reset_angle(0)
-# drive.drive(0, -90)               # rotate in place to the right
-# while abs(gyro.angle()) < 90:
-#     wait(10)
-# drive.stop(Stop.BRAKE)
-#
-# # 2) Right to right wall
-# drive.drive(150, 0)
-# while not touch.pressed():
-#     wait(10)
-# drive.stop(Stop.BRAKE)
-# drive.straight(-50)
-#
-# # Gyro right turn again (~ -90°) to face downward
-# gyro.reset_angle(0)
-# drive.drive(0, -90)
-# while abs(gyro.angle()) < 90:
-#     wait(10)
-# drive.stop(Stop.BRAKE)
-#
-# # 3) Leave the building (downwards through the bottom-right door)
-# drive.drive(150, 0)
-# wait(1200)  # adjust if needed on the real robot
-# drive.stop(Stop.BRAKE)
-# brick.speaker.beep()
+# 1) Up to top wall
+drive.drive(150, 0)
+while not touch.pressed():
+    wait(10)
+drive.stop(Stop.BRAKE)
+drive.straight(-50)
+
+# Gyro right turn ~90°
+gyro.reset_angle(0)
+drive.drive(0, -90)               # rotate in place to the right
+while abs(gyro.angle()) < 90:
+    wait(10)
+drive.stop(Stop.BRAKE)
+
+# 2) Right to right wall
+drive.drive(150, 0)
+while not touch.pressed():
+    wait(10)
+drive.stop(Stop.BRAKE)
+drive.straight(-50)
+
+# Gyro right turn again ~90° to face downward
+gyro.reset_angle(0)
+drive.drive(0, -90)
+while abs(gyro.angle()) < 90:
+    wait(10)
+drive.stop(Stop.BRAKE)
+
+# 3) Leave the building (downwards through the bottom-right door)
+drive.drive(150, 0)
+wait(1200)  # adjust if needed on the real robot
+drive.stop(Stop.BRAKE)
+brick.speaker.beep()
+brick.screen.print("door found!")
 </textarea>
     </section>
 
+    <!-- SIMULATION -->
     <section class="card">
       <h2>Simulation</h2>
       <canvas id="arena" width="640" height="240"></canvas>
@@ -118,7 +138,7 @@ drive = DriveBase(left, right, 56, 114)
     </section>
   </main>
 
-  <!-- Tips -->
+  <!-- Tips Modal -->
   <dialog id="tips-modal">
     <div class="modal-header">Tips</div>
     <div class="modal-body">
@@ -129,7 +149,7 @@ drive = DriveBase(left, right, 56, 114)
     </div>
   </dialog>
 
-  <!-- Solution -->
+  <!-- Solution Modal -->
   <dialog id="solution-modal">
     <div class="modal-header">Solution (one example)</div>
     <div class="modal-body">
@@ -180,6 +200,7 @@ drive.drive(150, 0)
 wait(1200)
 drive.stop(Stop.BRAKE)
 brick.speaker.beep()
+brick.screen.print("door found!")
 </pre>
     </div>
     <div class="modal-actions">
@@ -189,20 +210,21 @@ brick.speaker.beep()
   </dialog>
 
   <script>
-    /* ---------- Tips content ---------- */
+    /* ---------- Task metadata / Tips ---------- */
     const TASK = {
       taskId: 7,
       tips: [
-        'Touch: <code>touch = TouchSensor(Port.S3)</code> ; pressed? <code>touch.pressed()</code>.',
-        'Gyro: <code>gyro = GyroSensor(Port.S4)</code>, then <code>gyro.reset_angle(0)</code> before each rotation.',
-        'Rotate right with feedback: <code>drive.drive(0, -90)</code> and <code>while abs(gyro.angle()) &lt; 90: wait(10)</code>.',
-        'Stop with <code>drive.stop(Stop.BRAKE)</code> after rotation.',
-        'Back off after bumps: <code>drive.straight(-50)</code> (30–200 mm ok).',
-        'Do not use <code>drive.turn(...)</code> for this task; use the gyroscope loop.',
+        'Touch sensor front: <code>touch = TouchSensor(Port.S3)</code> then <code>touch.pressed()</code>.',
+        'Gyro on S4: <code>gyro = GyroSensor(Port.S4)</code>.',
+        'Before each rotation: <code>gyro.reset_angle(0)</code>.',
+        'Rotate in place to the RIGHT: <code>drive.drive(0, -90)</code> while <code>abs(gyro.angle()) &lt; 90</code>.',
+        'After each bump: back off with <code>drive.straight(-50)</code>.',
+        'Do NOT use <code>drive.turn(...)</code> in this mission.',
+        'At the end, exit through the bottom-right “door”, then beep and print a message.'
       ]
     };
 
-    /* ---------- DOM ---------- */
+    /* ---------- DOM refs ---------- */
     const els = {
       editor: document.getElementById("editor"),
       run: document.getElementById("run-btn"),
@@ -219,36 +241,80 @@ brick.speaker.beep()
       solutionBtn: document.getElementById("solution-btn"),
       solutionModal: document.getElementById("solution-modal"),
       copySolution: document.getElementById("copy-solution"),
-      closeSolution: document.getElementById("close-solution")
+      closeSolution: document.getElementById("close-solution"),
     };
 
-    /* ---------- UI ---------- */
-    els.tipsList.innerHTML = TASK.tips.map(t=>"<li>"+t+"</li>").join("");
-    function setStatus(cls, txt){ els.status.className="status "+(cls||""); els.status.textContent=txt||""; }
-    function openDialog(d){ if(d?.showModal) d.showModal(); else d?.setAttribute("open",""); }
-    function closeDialog(d){ if(d?.close) d.close(); else d?.removeAttribute("open"); }
-    els.tipsBtn.onclick = () => openDialog(els.tipsModal);
-    els.closeTips.onclick = () => closeDialog(els.tipsModal);
-    els.solutionBtn.onclick = () => openDialog(els.solutionModal);
-    els.closeSolution.onclick = () => closeDialog(els.solutionModal);
-    els.copySolution.onclick = () => { els.editor.value = document.getElementById("solution-code").textContent; closeDialog(els.solutionModal); els.output.textContent=""; els.error.textContent=""; setStatus("",""); };
+    /* ---------- Status + Modals ---------- */
+    function setStatus(cls, txt){
+      els.status.className = "status "+(cls||"");
+      els.status.textContent = txt||"";
+    }
+    function openDialog(d){
+      if(!d) return;
+      if(d.showModal) d.showModal();
+      else d.setAttribute("open","");
+    }
+    function closeDialog(d){
+      if(!d) return;
+      if(d.close) d.close();
+      else d.removeAttribute("open");
+    }
 
-    /* ---------- Helpers ---------- */
-    function stripComments(s){
-      let x = s.replace(/^[ \t]*#.*$/gm, "");  // full-line comments
-      x = x.replace(/[ \t]+#.*$/gm, "");       // trailing comments
+    els.tipsList.innerHTML = TASK.tips.map(t=>"<li>"+t+"</li>").join("");
+
+    els.tipsBtn.onclick = ()=>openDialog(els.tipsModal);
+    els.closeTips.onclick = ()=>closeDialog(els.tipsModal);
+
+    els.solutionBtn.onclick = ()=>openDialog(els.solutionModal);
+    els.closeSolution.onclick = ()=>closeDialog(els.solutionModal);
+    els.copySolution.onclick = ()=>{
+      els.editor.value = document.getElementById("solution-code").textContent;
+      closeDialog(els.solutionModal);
+      els.output.textContent="";
+      els.error.textContent="";
+      setStatus("ok","Solution inserted. You can run now.");
+    };
+
+    /* ---------- Server-Progress melden ---------- */
+    function sendEvent(ev){
+      fetch("../app/event_update.php", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          task_id: String(TASK.taskId),
+          event: ev
+        })
+      })
+      .then(r => r.json())
+      .then(data => {
+        console.log("Server response:", data);
+      })
+      .catch(err => {
+        console.warn("sendEvent failed:", err);
+      });
+    }
+
+    /* ---------- Strip comments from Python ---------- */
+    function stripComments(src){
+      let x = src.replace(/^[ \t]*#.*$/gm, "");
+      x = x.replace(/[ \t]+#.*$/gm, "");
       return x;
     }
 
     /* ---------- Strict validation (Touch + Gyro) ---------- */
     function validate(src){
-      els.output.textContent=""; els.error.textContent="";
+      els.output.textContent="";
+      els.error.textContent="";
       const raw = src.replace(/\r/g,"");
       const code = stripComments(raw);
       const lines = code.split("\n");
       const errors = [];
 
-      if(code.trim()===""){ errors.push("Please write your Pybricks program first."); return {ok:false, errors}; }
+      if(code.trim()===""){
+        errors.push("Please write your Pybricks program first.");
+        return {ok:false, errors, backMm:50};
+      }
 
       // Required imports
       [
@@ -260,14 +326,17 @@ brick.speaker.beep()
         [/from\s+pybricks\.parameters\s+import\s+.*\bStop\b/, "Missing import: Stop"],
         [/from\s+pybricks\.tools\s+import\s+.*\bwait\b/, "Missing import: wait"],
         [/from\s+pybricks\.robotics\s+import\s+.*\bDriveBase\b/, "Missing import: DriveBase"]
-      ].forEach(([re,msg])=>{ if(!re.test(code)) errors.push("✗ "+msg); });
+      ].forEach(([re,msg])=>{
+        if(!re.test(code)) errors.push("✗ "+msg);
+      });
 
-      // Inits
+      // Inits / wiring
       const leftM  = code.match(/\b(\w+)\s*=\s*Motor\s*\(\s*Port\.A\s*\)/);
       const rightM = code.match(/\b(\w+)\s*=\s*Motor\s*\(\s*Port\.B\s*\)/);
       const touchM = code.match(/\b(\w+)\s*=\s*TouchSensor\s*\(\s*Port\.S3\s*\)/);
       const gyroM  = code.match(/\b(\w+)\s*=\s*GyroSensor\s*\(\s*Port\.S4\s*\)/);
       const driveM = code.match(/\b(\w+)\s*=\s*DriveBase\s*\(/);
+
       if(!/EV3Brick\s*\(\s*\)/.test(code)) errors.push("✗ EV3Brick not initialized");
       if(!leftM)  errors.push("✗ Left motor (Port.A) missing");
       if(!rightM) errors.push("✗ Right motor (Port.B) missing");
@@ -279,67 +348,111 @@ brick.speaker.beep()
       const touchVar = touchM?.[1] || "touch";
       const gyroVar  = gyroM?.[1] || "gyro";
 
-      // Two touch loops (top wall, right wall)
-      const touchLoopRE = new RegExp(`^([ \\t]*)while\\s+not\\s+${touchVar}\\s*\\.\\s*pressed\\s*\\(\\s*\\)\\s*:\\s*$`);
+      // Loop to top wall & right wall: while not touch.pressed()
+      const touchLoopRE = new RegExp(
+        `^([ \\t]*)while\\s+not\\s+${touchVar}\\s*\\.\\s*pressed\\s*\\(\\s*\\)\\s*:\\s*$`
+      );
       const loopIdx = [];
-      for(let i=0;i<lines.length;i++){ if(lines[i].match(touchLoopRE)) loopIdx.push(i); }
-      if(loopIdx.length < 2) errors.push("✗ You must have two loops: while not touch.pressed(): (for the two walls)");
+      for(let i=0;i<lines.length;i++){
+        if(lines[i].match(touchLoopRE)) loopIdx.push(i);
+      }
+      if(loopIdx.length < 2){
+        errors.push("✗ Need two loops: while not touch.pressed(): (top wall and right wall)");
+      }
 
-      // drive.drive before loops
-      const driveStartRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*drive\\s*\\(\\s*\\d+\\s*,\\s*0\\s*\\)`);
-      if(!driveStartRe.test(code)) errors.push("✗ Missing drive.drive(150, 0) before the touch loops");
+      // drive.drive(150,0) before those loops
+      const driveStartRe = new RegExp(
+        `\\b${driveVar}\\s*\\.\\s*drive\\s*\\(\\s*\\d+\\s*,\\s*0\\s*\\)`
+      );
+      if(!driveStartRe.test(code)){
+        errors.push("✗ Missing drive.drive(150, 0) before the touch loops");
+      }
 
-      // wait() inside each touch loop
+      // wait(...) inside each touch loop
       for(const idx of loopIdx){
-        let hasWait=false, indent=(lines[idx].match(/^([ \t]*)/)||["",""])[1];
+        let hasWait=false;
+        const indent=(lines[idx].match(/^([ \t]*)/)||["",""])[1];
         for(let j=idx+1;j<lines.length;j++){
-          const L=lines[j]; if(L.trim()==="") continue;
+          const L=lines[j];
+          if(L.trim()==="") continue;
           const ind=(L.match(/^([ \t]*)/)||["",""])[1];
           if(ind.length<=indent.length) break;
           if(/\bwait\s*\(/.test(L)){ hasWait=true; break; }
         }
-        if(!hasWait){ errors.push("✗ Missing wait(...) inside the touch loop"); break; }
+        if(!hasWait){
+          errors.push("✗ Missing wait(...) inside while not touch.pressed(): loop");
+          break;
+        }
       }
 
-      // Must NOT use drive.turn(...)
-      if(/\bdrive\s*\.\s*turn\s*\(/.test(code)) errors.push("✗ Do not use drive.turn(...). Use a gyro feedback loop instead.");
+      // must NOT use drive.turn(...)
+      if(/\bdrive\s*\.\s*turn\s*\(/.test(code)){
+        errors.push("✗ Do NOT use drive.turn(...). Use gyro control instead.");
+      }
 
-      // Gyro-based rotations: require at least two while-loops referencing gyro.angle() and 90
-      const gyroWhileRE = new RegExp(`^\\s*while\\s+.*${gyroVar}\\s*\\.\\s*angle\\s*\\(\\s*\\).*90\\s*[:)]`, "i");
+      // gyro part: need at least two loops that watch gyro.angle() vs 90
+      // e.g. while abs(gyro.angle()) < 90:
+      const gyroWhileRE = new RegExp(
+        `^\\s*while\\s+.*${gyroVar}\\s*\\.\\s*angle\\s*\\(\\s*\\).*90\\s*[:)]`,
+        "i"
+      );
       let gyroLoops = 0;
-      for(const L of lines){ if(gyroWhileRE.test(L)) gyroLoops++; }
-      if(gyroLoops < 2) errors.push("✗ Provide two gyro loops, e.g. while abs(gyro.angle()) < 90: ...");
+      for(const L of lines){
+        if(gyroWhileRE.test(L)) gyroLoops++;
+      }
+      if(gyroLoops < 2){
+        errors.push("✗ Need two gyro loops (while abs(gyro.angle()) < 90: ...)");
+      }
 
-      // Rotation actuation inside rotation phase
-      // Accept either drive.drive(0, ±omega) or opposite motor run pattern
-      const hasDriveOmega = new RegExp(`\\b${driveVar}\\s*\\.\\s*drive\\s*\\(\\s*0\\s*,\\s*-?\\d+\\s*\\)`).test(code);
-      const hasOppMotors  = /\bleft\s*\.run\s*\(\s*-?\d+\s*\)\s*[\s\S]*\bright\s*\.run\s*\(\s*-\s*\d+\s*\)/.test(code)
-                          || /\bright\s*\.run\s*\(\s*-?\d+\s*\)\s*[\s\S]*\bleft\s*\.run\s*\(\s*-\s*\d+\s*\)/.test(code);
-      if(!(hasDriveOmega || hasOppMotors)) errors.push("✗ Rotate using drive.drive(0, ±ω) or opposite motor.run(...) inside the gyro loop");
+      // rotation actuation: drive.drive(0, -90) or opposite motor runs
+      const hasDriveOmega =
+        new RegExp(`\\b${driveVar}\\s*\\.\\s*drive\\s*\\(\\s*0\\s*,\\s*-?\\d+\\s*\\)`).test(code);
+      const hasOppMotors =
+        /\bleft\s*\.run\s*\(\s*-?\d+\s*\)[\s\S]*\bright\s*\.run\s*\(\s*-\s*\d+\s*\)/.test(code) ||
+        /\bright\s*\.run\s*\(\s*-?\d+\s*\)[\s\S]*\bleft\s*\.run\s*\(\s*-\s*\d+\s*\)/.test(code);
+      if(!(hasDriveOmega || hasOppMotors)){
+        errors.push("✗ Rotate using drive.drive(0, ±ω) or opposite motor.run(...) while checking gyro");
+      }
 
-      // stop after each rotation
-      const stopRe = new RegExp(`\\b${driveVar}\\s*\\.\\s*stop\\s*\\(\\s*Stop\\.BRAKE\\s*\\)`);
-      if(!stopRe.test(code)) errors.push("✗ Missing drive.stop(Stop.BRAKE) after rotations");
+      // stop after rotations
+      const stopRe = new RegExp(
+        `\\b${driveVar}\\s*\\.\\s*stop\\s*\\(\\s*Stop\\.BRAKE\\s*\\)`
+      );
+      if(!stopRe.test(code)){
+        errors.push("✗ Missing drive.stop(Stop.BRAKE) after rotations");
+      }
 
-      // back-offs (at least two)
-      const backMatches = code.match(new RegExp(`\\b${driveVar}\\s*\\.\\s*straight\\s*\\(\\s*-(\\d+)\\s*\\)`, "g"));
-      if(!(backMatches && backMatches.length>=2)) errors.push("✗ Back off with drive.straight(-50) twice (30–200 mm accepted)");
+      // must back off twice with drive.straight(-N)
+      const backMatches = code.match(
+        new RegExp(`\\b${driveVar}\\s*\\.\\s*straight\\s*\\(\\s*-(\\d+)\\s*\\)`, "g")
+      );
+      if(!(backMatches && backMatches.length>=2)){
+        errors.push("✗ Need two backups: drive.straight(-50) (30–200 mm ok)");
+      }
 
-      // Beep (finish)
-      if(!/brick\s*\.\s*speaker\s*\.\s*beep\s*\(\s*\)/.test(code)) errors.push("✗ Missing brick.speaker.beep() at the end");
+      // final beep + screen.print(...)
+      if(!/brick\s*\.\s*speaker\s*\.\s*beep\s*\(\s*\)/.test(code)){
+        errors.push("✗ Missing brick.speaker.beep() at the end");
+      }
+      if(!/brick\s*\.\s*screen\s*\.\s*print\s*\(/.test(code)){
+        errors.push("✗ Missing brick.screen.print(...) at the end");
+      }
 
-      // Parameters for sim
+      // backMm param for sim (take first backup distance)
       let backMm = 50;
       if(backMatches){
-        const first = parseInt((/-(\d+)/.exec(backMatches[0])||[,"50"])[1],10);
-        if(Number.isFinite(first)) backMm = Math.min(200, Math.max(30, first));
+        const first = /-(\d+)/.exec(backMatches[0]);
+        const mm = first ? parseInt(first[1],10) : 50;
+        if(Number.isFinite(mm)){
+          backMm = Math.min(200, Math.max(30, mm));
+        }
       }
 
       return { ok: errors.length===0, errors, backMm };
     }
 
-    /* ---------- Canvas simulation (1 px = 1 cm) ---------- */
-    const ctx = els.canvas.getContext("2d");
+    /* ---------- Canvas / simulation ---------- */
+    const ctx2 = els.canvas.getContext("2d");
     const WORLD = {
       W: els.canvas.width,
       H: els.canvas.height,
@@ -347,99 +460,161 @@ brick.speaker.beep()
         left:   { type:'v', x:40,  y1:40,  y2:200 },
         top:    { type:'h', y:40,  x1:40,  x2:600 },
         right:  { type:'v', x:600, y1:40,  y2:200 },
-        bottom1:{ type:'h', y:200, x1:40,  x2:560 }, // bottom gap 560..600 is the door
+        bottom1:{ type:'h', y:200, x1:40,  x2:560 }, // solid segment
+        // gap 560..600 is door
       },
-      robot: { x:120, y:120, heading:90, r:6 } // start inside, facing up (90°)
+      robot: { x:120, y:120, heading:90, r:6 } // start up-facing
     };
     let runToken = 0;
-
     const rad = d => d*Math.PI/180;
 
     function clear(){
-      ctx.fillStyle="#fff"; ctx.fillRect(0,0,WORLD.W,WORLD.H);
-      ctx.strokeStyle="#111"; ctx.lineWidth=2; ctx.strokeRect(0,0,WORLD.W,WORLD.H);
+      ctx2.fillStyle="#fff";
+      ctx2.fillRect(0,0,WORLD.W,WORLD.H);
+      ctx2.strokeStyle="#111";
+      ctx2.lineWidth=2;
+      ctx2.strokeRect(0,0,WORLD.W,WORLD.H);
     }
     function drawWalls(){
-      ctx.strokeStyle="#111"; ctx.lineWidth=4;
+      ctx2.strokeStyle="#111";
+      ctx2.lineWidth=4;
       const w = WORLD.walls;
       // top
-      ctx.beginPath(); ctx.moveTo(w.top.x1||40, w.top.y); ctx.lineTo(w.top.x2||600, w.top.y); ctx.stroke();
+      ctx2.beginPath();
+      ctx2.moveTo(w.top.x1||40, w.top.y);
+      ctx2.lineTo(w.top.x2||600, w.top.y);
+      ctx2.stroke();
       // left
-      ctx.beginPath(); ctx.moveTo(w.left.x, w.left.y1); ctx.lineTo(w.left.x, w.left.y2); ctx.stroke();
+      ctx2.beginPath();
+      ctx2.moveTo(w.left.x, w.left.y1);
+      ctx2.lineTo(w.left.x, w.left.y2);
+      ctx2.stroke();
       // right
-      ctx.beginPath(); ctx.moveTo(w.right.x, w.right.y1); ctx.lineTo(w.right.x, w.right.y2); ctx.stroke();
+      ctx2.beginPath();
+      ctx2.moveTo(w.right.x, w.right.y1);
+      ctx2.lineTo(w.right.x, w.right.y2);
+      ctx2.stroke();
       // bottom (left segment)
-      ctx.beginPath(); ctx.moveTo(w.bottom1.x1, w.bottom1.y); ctx.lineTo(w.bottom1.x2, w.bottom1.y); ctx.stroke();
+      ctx2.beginPath();
+      ctx2.moveTo(w.bottom1.x1, w.bottom1.y);
+      ctx2.lineTo(w.bottom1.x2, w.bottom1.y);
+      ctx2.stroke();
       // dashed door hint
-      ctx.setLineDash([6,6]); ctx.strokeStyle="#9ca3af";
-      ctx.beginPath(); ctx.moveTo(560, 200); ctx.lineTo(600, 200); ctx.stroke();
-      ctx.setLineDash([]); ctx.strokeStyle="#111";
+      ctx2.setLineDash([6,6]);
+      ctx2.strokeStyle="#9ca3af";
+      ctx2.beginPath();
+      ctx2.moveTo(560, 200);
+      ctx2.lineTo(600, 200);
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+      ctx2.strokeStyle="#111";
     }
     function drawRobot(){
       const r=WORLD.robot;
-      // body
-      ctx.fillStyle="#16a34a"; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,2*Math.PI); ctx.fill();
-      // "front" tick (shows heading)
-      const hx=r.x+Math.cos(rad(r.heading))*(r.r+12), hy=r.y+Math.sin(rad(r.heading))*(r.r+12);
-      ctx.strokeStyle="#16a34a"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(r.x,r.y); ctx.lineTo(hx,hy); ctx.stroke();
+      ctx2.fillStyle="#16a34a";
+      ctx2.beginPath();
+      ctx2.arc(r.x,r.y,r.r,0,2*Math.PI);
+      ctx2.fill();
+      const hx=r.x+Math.cos(rad(r.heading))*(r.r+12);
+      const hy=r.y+Math.sin(rad(r.heading))*(r.r+12);
+      ctx2.strokeStyle="#16a34a";
+      ctx2.lineWidth=2;
+      ctx2.beginPath();
+      ctx2.moveTo(r.x,r.y);
+      ctx2.lineTo(hx,hy);
+      ctx2.stroke();
     }
-    function render(){ clear(); drawWalls(); drawRobot(); }
-    function resetWorld(){ runToken++; WORLD.robot={x:120,y:120,heading:90,r:6}; render(); }
+    function render(){
+      clear(); drawWalls(); drawRobot();
+    }
+    function resetWorld(){
+      runToken++;
+      WORLD.robot={x:120,y:120,heading:90,r:6};
+      render();
+    }
 
-    function contactTopWall(nextY){ const r=WORLD.robot; return (r.heading%360===90 && r.y>40 && nextY <= 40 + r.r); }
-    function contactRightWall(nextX){ const r=WORLD.robot; return (r.heading%360===0 && r.x<600 && nextX >= 600 - r.r); }
+    function contactTopWall(nextY){
+      const r=WORLD.robot;
+      return (r.heading%360===90 && r.y>40 && nextY <= 40 + r.r);
+    }
+    function contactRightWall(nextX){
+      const r=WORLD.robot;
+      return (r.heading%360===0 && r.x<600 && nextX >= 600 - r.r);
+    }
 
     async function forwardUntilTop(){
-      const my=++runToken; const r=WORLD.robot; const step=1;
+      const my=++runToken;
+      const r=WORLD.robot;
+      const step=1;
       return new Promise(resolve=>{
         function tick(){
           if(my!==runToken) return resolve();
           const nx=r.x, ny=r.y - step;
-          if(contactTopWall(ny)){ r.y = 40 + r.r; render(); return resolve(); }
-          r.x=nx; r.y=ny; render();
+          if(contactTopWall(ny)){
+            r.y = 40 + r.r;
+            render();
+            return resolve();
+          }
+          r.x=nx; r.y=ny;
+          render();
           requestAnimationFrame(tick);
         }
         requestAnimationFrame(tick);
       });
     }
+
     async function forwardUntilRight(){
-      const my=runToken; const r=WORLD.robot; const step=1;
+      const my=runToken;
+      const r=WORLD.robot;
+      const step=1;
       return new Promise(resolve=>{
         function tick(){
           if(my!==runToken) return resolve();
           const nx=r.x + step, ny=r.y;
-          if(contactRightWall(nx)){ r.x = 600 - r.r; render(); return resolve(); }
-          r.x=nx; r.y=ny; render();
+          if(contactRightWall(nx)){
+            r.x = 600 - r.r;
+            render();
+            return resolve();
+          }
+          r.x=nx; r.y=ny;
+          render();
           requestAnimationFrame(tick);
         }
         requestAnimationFrame(tick);
       });
     }
+
     async function straightPx(deltaPx){
-      const my=runToken; const r=WORLD.robot; const step = deltaPx>=0 ? 1 : -1;
-      let remaining = Math.abs(deltaPx);
+      const my=runToken;
+      const r=WORLD.robot;
+      const step = deltaPx>=0 ? 1 : -1;
+      let remain = Math.abs(deltaPx);
       return new Promise(resolve=>{
         function tick(){
           if(my!==runToken) return resolve();
-          const move = Math.min(1, remaining);
-          r.x += Math.cos(rad(r.heading)) * step * move;
-          r.y += Math.sin(rad(r.heading)) * step * move;
+          const mv = Math.min(1, remain);
+          r.x += Math.cos(rad(r.heading)) * step * mv;
+          r.y += Math.sin(rad(r.heading)) * step * mv;
           render();
-          remaining -= move;
-          if(remaining>0) requestAnimationFrame(tick); else resolve();
+          remain -= mv;
+          if(remain>0) requestAnimationFrame(tick); else resolve();
         }
         requestAnimationFrame(tick);
       });
     }
+
     async function turnBy(deg){
-      const my=runToken; const r=WORLD.robot;
-      const total = Math.abs(deg); const sign = deg>=0 ? 1 : -1; const step=3*sign;
+      const my=runToken;
+      const r=WORLD.robot;
+      const total = Math.abs(deg);
+      const sign = deg>=0 ? 1 : -1;
+      const step=3*sign;
       let turned=0;
       return new Promise(resolve=>{
         function tick(){
           if(my!==runToken) return resolve();
-          const d = Math.min(3, total-turned) * sign;
-          r.heading = (r.heading + d + 360) % 360;
+          const d = Math.min(3, total-turned)*sign;
+          r.heading = (r.heading + d + 360)%360;
           turned += Math.abs(d);
           render();
           if(turned<total) requestAnimationFrame(tick); else resolve();
@@ -447,27 +622,36 @@ brick.speaker.beep()
         requestAnimationFrame(tick);
       });
     }
+
     async function forwardOutDoor(){
-      const my=runToken; const r=WORLD.robot; const step=1;
+      const my=runToken;
+      const r=WORLD.robot;
+      const step=1;
       return new Promise(resolve=>{
         function tick(){
           if(my!==runToken) return resolve();
+
           const nx = r.x + Math.cos(rad(r.heading))*step;
           const ny = r.y + Math.sin(rad(r.heading))*step;
 
-          // bottom wall except the door [560..600]
+          // bottom wall except door (560..600)
           if(r.heading%360===270){
             const doorL=560, doorR=600, bottom=200;
             const inDoor = (r.x >= doorL) && (r.x <= doorR);
             if(!inDoor && r.y < bottom && ny >= bottom - r.r){
-              r.y = bottom - r.r; render();
-              throw new Error("Hit the bottom wall outside the door. Adjust your turns/position.");
+              r.y = bottom - r.r;
+              render();
+              throw new Error("Hit bottom wall (not at door). Adjust turns in your code.");
             }
             if(inDoor && r.y < bottom && ny >= bottom + r.r){
-              r.y = bottom + r.r; render(); return resolve();
+              r.y = bottom + r.r;
+              render();
+              return resolve();
             }
           }
-          r.x = nx; r.y = ny; render();
+
+          r.x = nx; r.y = ny;
+          render();
           if(r.y > 210) return resolve();
           requestAnimationFrame(tick);
         }
@@ -475,83 +659,66 @@ brick.speaker.beep()
       });
     }
 
-    /* ---------- Run / Reset / Save ---------- */
-        document.getElementById("next-btn").onclick = (e)=>{ e.preventDefault(); alert("No next task configured yet."); };
-  </script>    /* ---------- Run / Reset / Save + Server Update ---------- */
-
-    // Fortschritt an Server melden (Simulation / Download)
-    function sendEvent(ev){
-      fetch("../app/event_update.php", {
-        method: "POST",
-        credentials: "include", // wichtig: Session-Cookie mitsenden
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          task_id: String(TASK.taskId),
-          event: ev
-        })
-      })
-      .then(r => r.json())
-      .then(data => console.log("Server response:", data))
-      .catch(err => console.warn("sendEvent failed:", err));
-    }
-
+    /* ---------- Run / Reset / Save + Server Update ---------- */
     function reset(){
-      setStatus("",""); els.output.textContent=""; els.error.textContent="";
+      setStatus("","");
+      els.output.textContent="";
+      els.error.textContent="";
       resetWorld();
     }
 
     function save(){
-      const b=new Blob([els.editor.value],{type:"text/plain"});
-      const a=document.createElement("a");
-      a.href=URL.createObjectURL(b);
+      const b = new Blob([els.editor.value], {type:"text/plain"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(b);
       a.download="main.py";
       a.click();
       URL.revokeObjectURL(a.href);
 
-      // Fortschritt: Datei wurde gespeichert
+      // Fortschritt melden: Datei gespeichert
       sendEvent("download");
     }
 
     async function runCode(){
       els.output.textContent="";
       els.error.textContent="";
+
       const raw = els.editor.value;
       const codeNoComments = stripComments(raw).trim();
       if(!codeNoComments){
         setStatus("error","ERROR");
-        els.output.textContent="Please write your Pybricks program first.";
+        els.output.textContent = "Please write your Pybricks program first.";
         return;
       }
 
       setStatus("running","checking…");
-      const { ok, errors, backMm, firstTurn, secondTurn } = validate(raw);
+      const { ok, errors, backMm } = validate(raw);
+
       if(!ok){
         setStatus("error","ERROR");
         els.output.textContent = "Please fix first:\n" + errors.join("\n");
         return;
       }
 
-      // Passed → simulate scripted sequence
+      // Code scheint gültig → Simulation fahren
       setStatus("running","running…");
       resetWorld();
       try{
-        // 1) Up → top wall
         await forwardUntilTop();
-        await straightPx(-(backMm/10));      // mm → cm(px)
-        await turnBy(firstTurn);              // typically -90 (right)
+        await straightPx(-(backMm/10));   // mm -> cm(px)
+        await turnBy(-90);                // Gyro-right ~90°
 
-        // 2) Right → right wall
         await forwardUntilRight();
         await straightPx(-(backMm/10));
-        await turnBy(secondTurn);             // typically -90 (right) → facing down
+        await turnBy(-90);                // again right -> facing down
 
-        // 3) Exit via bottom-right door
         await forwardOutDoor();
 
         setStatus("ok","done.");
-        els.output.textContent = `Simulated: bumped top, back ${backMm} mm, turn ${firstTurn}° → bumped right, back ${backMm} mm, turn ${secondTurn}° → exited.`;
+        els.output.textContent =
+          `Simulated: bump top, back ${backMm} mm, gyro-turn → bump right, back ${backMm} mm, gyro-turn → exit door.`;
 
-        // Fortschritt: Simulation erfolgreich
+        // Fortschritt melden: Simulation erfolgreich
         sendEvent("sim");
 
       }catch(e){
@@ -564,7 +731,12 @@ brick.speaker.beep()
     els.reset.onclick = reset;
     els.save.onclick = save;
 
-    render();
+    // initial draw
+    resetWorld();
+    setStatus("","");
 
+    // next button just goes to next page as given in nav
+    // (kein alert override mehr)
+  </script>
 </body>
 </html>
