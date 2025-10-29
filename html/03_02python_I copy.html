@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Python · Step 2: Variables & input()</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="../css/03_python.css" />
+</head>
+<body>
+  <!-- NAVIGATION  -->
+  <div class="nav-row" style="margin-top:20px; display:flex; justify-content:space-between;">
+    <a href="../app/01_main.php" class="btn" id="back-btn">← Back</a>
+    <a href="03_03python.html" class="btn primary" id="next-btn">Next →</a>
+  </div>
+
+  <header class="row" style="justify-content: space-between;">
+    <div>
+      <h1 id="task-title">Python · Step 2: Ask for numbers and add them</h1>
+      <p id="task-desc">
+        Write a program that:<br />
+        1. asks the user for two whole numbers using <code>input()</code><br />
+        2. converts them to <code>int</code><br />
+        3. prints the sum in this format:<br />
+        <code>The sum is: 12</code>
+      </p>
+    </div>
+
+    <div class="row">
+      <button class="btn" id="tips-btn">💡 Tips</button>
+      <button class="btn" id="solution-btn">✅ Solution</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- LEFT: Editor -->
+    <section class="card">
+      <h2>Editor</h2>
+      <div class="row">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+        <span id="status"></span>
+      </div>
+
+      <textarea id="editor" spellcheck="false"></textarea>
+    </section>
+
+    <!-- RIGHT: Output + Check -->
+    <section class="card">
+      <h2>Output</h2>
+      <pre id="output"></pre>
+      <div id="error" style="color:#b91c1c; white-space:pre-wrap;"></div>
+
+      <h3>Check</h3>
+      <div id="checkbar" class="checkbar">
+        <span class="dot"></span>
+        <span id="checkmsg">No check yet</span>
+      </div>
+    </section>
+  </main>
+
+  <!-- Tips modal -->
+  <dialog id="tips-modal">
+    <div class="modal-header">Tips</div>
+    <div class="modal-body">
+      <ul id="tips-list"></ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Solution modal -->
+  <dialog id="solution-modal">
+    <div class="modal-header">Solution</div>
+    <div class="modal-body">
+      <pre id="solution-code" style="white-space:pre-wrap;"></pre>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution">Insert</button>
+      <button class="btn" id="close-solution">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Skulpt Runtime -->
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+
+  <script>
+    /* ---------- TASK CONFIG ---------- */
+    const TASK = {
+      title: "Python · Step 2: Variables & input()",
+      description: `
+        Write a program that:<br>
+        1. asks for two whole numbers using <code>input()</code><br>
+        2. converts them with <code>int(...)</code><br>
+        3. prints <code>The sum is: X</code> where X is the total.
+      `,
+      starterCode:
+`# Ask the user for two numbers, add them and print the result.
+# Example:
+# num1 = int(input('Enter first number: '))
+# num2 = int(input('Enter second number: '))
+# print('The sum is:', num1 + num2)
+
+`,
+
+      // We'll consider it correct if output contains a line "The sum is: <number>"
+      expectedOutputRegex: /^The\s+sum\s+is:\s*\d+$/m,
+
+      tips: [
+        "Use input() to ask the user for a number.",
+        "Wrap input() in int(...) to convert text to an integer.",
+        "Use print('The sum is:', num1 + num2).",
+        "Make sure there is a colon : after 'The sum is'"
+      ],
+
+      solution:
+`num1 = int(input('Enter first number: '))
+num2 = int(input('Enter second number: '))
+print('The sum is:', num1 + num2)
+`,
+
+      filename: "task2.py",
+
+      // navigation targets
+      prevUrl: "03_1python.html",
+      nextUrl: "03_3python.html"
+    };
+
+    /* ---------- DOM REFS ---------- */
+    const els = {
+      title:  document.getElementById("task-title"),
+      desc:   document.getElementById("task-desc"),
+      editor: document.getElementById("editor"),
+      run:    document.getElementById("run-btn"),
+      reset:  document.getElementById("reset-btn"),
+      save:   document.getElementById("save-btn"),
+      output: document.getElementById("output"),
+      error:  document.getElementById("error"),
+      status: document.getElementById("status"),
+      checkbar: document.getElementById("checkbar"),
+      checkmsg: document.getElementById("checkmsg"),
+
+      tipsBtn: document.getElementById("tips-btn"),
+      tipsModal: document.getElementById("tips-modal"),
+      tipsList: document.getElementById("tips-list"),
+      closeTips: document.getElementById("close-tips"),
+
+      solutionBtn: document.getElementById("solution-btn"),
+      solutionModal: document.getElementById("solution-modal"),
+      solutionCode: document.getElementById("solution-code"),
+      copySolution: document.getElementById("copy-solution"),
+      closeSolution: document.getElementById("close-solution"),
+
+      back: document.getElementById("back-btn"),
+      next: document.getElementById("next-btn")
+    };
+
+    /* ---------- INIT PAGE CONTENT ---------- */
+    document.title = TASK.title;
+    els.title.textContent = TASK.title;
+    els.desc.innerHTML = TASK.description;
+    els.editor.value = TASK.starterCode || "";
+    els.solutionCode.textContent = TASK.solution;
+    els.tipsList.innerHTML = (TASK.tips || [])
+      .map(t => "<li>" + t + "</li>")
+      .join("");
+
+    // back / next links
+    if (TASK.prevUrl && TASK.prevUrl !== "#") els.back.setAttribute("href", TASK.prevUrl);
+    if (TASK.nextUrl && TASK.nextUrl !== "#") els.next.setAttribute("href", TASK.nextUrl);
+
+    /* ---------- CHECKBAR HELPERS ---------- */
+    function setCheckIdle() {
+      els.checkbar.className = "checkbar";
+      els.checkmsg.textContent = "No check yet";
+    }
+    function setCheckPassed(msg) {
+      els.checkbar.className = "checkbar passed";
+      els.checkmsg.textContent = msg || "Passed";
+    }
+    function setCheckFailed(msg) {
+      els.checkbar.className = "checkbar failed";
+      els.checkmsg.textContent = msg || "Not matched";
+    }
+    setCheckIdle();
+
+    /* ---------- Skulpt helpers ---------- */
+    function builtinRead(x) {
+      if (!Sk.builtinFiles || !Sk.builtinFiles["files"][x]) {
+        throw "File not found: '" + x + "'";
+      }
+      return Sk.builtinFiles["files"][x];
+    }
+
+    async function runCode() {
+      // clear UI
+      els.output.textContent = "";
+      els.error.textContent  = "";
+      els.status.textContent = "running…";
+      setCheckIdle();
+
+      // configure Skulpt
+      Sk.configure({
+        output: function (text) {
+          els.output.textContent += text;
+        },
+        read: builtinRead,
+        __future__: Sk.python3,
+        // <-- This enables input() with a browser prompt()
+        inputfun: function (promptText) {
+          const ans = window.prompt(promptText || "Input:");
+          // if user cancels, treat as empty string
+          return ans === null ? "" : ans;
+        },
+        inputfunTakesPrompt: true,
+
+        execLimit: 10000 // ms safety
+      });
+
+      try {
+        await Sk.misceval.asyncToPromise(() =>
+          Sk.importMainWithBody("<stdin>", false, els.editor.value, true)
+        );
+
+        els.status.textContent = "done.";
+        validateOutput();
+      } catch (err) {
+        els.status.textContent = "error";
+        els.error.textContent  = String(err);
+        setCheckFailed("Fix errors");
+      }
+    }
+
+    /* ---------- Validation ---------- */
+    function validateOutput() {
+      const out = els.output.textContent.trim();
+
+      let ok = false;
+      if (typeof TASK.validate === "function") {
+        ok = !!TASK.validate(out);
+      } else if (TASK.expectedOutputRegex) {
+        ok = TASK.expectedOutputRegex.test(out);
+      } else {
+        ok = true; // default: no check
+      }
+
+      if (ok) {
+        setCheckPassed("Looks good!");
+      } else {
+        setCheckFailed("Output mismatch");
+      }
+    }
+
+    /* ---------- Reset / Save ---------- */
+    function resetCode() {
+      els.editor.value = TASK.starterCode || "";
+      els.output.textContent = "";
+      els.error.textContent  = "";
+      els.status.textContent = "";
+      setCheckIdle();
+    }
+
+    function saveCode() {
+      const blob = new Blob([els.editor.value], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = TASK.filename || "solution.py";
+      a.click();
+      URL.revokeObjectURL(a.href);
+
+      // sendEvent("download")
+    }
+
+    /* ---------- Button bindings ---------- */
+    els.run.onclick   = runCode;
+    els.reset.onclick = resetCode;
+    els.save.onclick  = saveCode;
+
+    els.tipsBtn.onclick    = () => els.tipsModal.showModal();
+    els.closeTips.onclick  = () => els.tipsModal.close();
+
+    els.solutionBtn.onclick = () => els.solutionModal.showModal();
+    els.closeSolution.onclick = () => els.solutionModal.close();
+
+    els.copySolution.onclick = () => {
+      els.editor.value = TASK.solution || "";
+      els.solutionModal.close();
+      els.output.textContent = "";
+      els.error.textContent  = "";
+      els.status.textContent = "";
+      setCheckIdle();
+    };
+  </script>
+</body>
+</html>

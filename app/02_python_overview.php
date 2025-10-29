@@ -185,12 +185,12 @@ function toggleBox(headId, bodyId) {
 <!-- Zwei grünen Kurs-"Buttons" -->
 <div class="course-row">
     <!-- Basic-Button: direkt zur ersten Python-Basic-HTML -->
-    <a class="course-pill" href="../html/03_01python.html">
+    <a class="course-pill" href="../html/03_01python_I.html">
         Python Basic Course (Elementary school)
     </a>
 
     <!-- Advanced-Button: direkt zur ersten Advanced-Aufgabe -->
-    <a class="course-pill" href="../html/python/03_3if.html">
+    <a class="course-pill" href="../html/03_02python_I.html">
         Python Advanced Course (Middle school)
     </a>
 </div>
