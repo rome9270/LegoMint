@@ -147,7 +147,13 @@ wait(500)
   <dialog id="tips-modal">
     <div class="modal-header">Tips</div>
     <div class="modal-body">
-      <ul id="tips-list"></ul>
+      <ul>
+        <li><code>ColorSensor(Port.S1).reflection()</code> returns 0..100.</li>
+        <li>"Seek line": move until reflection is very low (black line).</li>
+        <li>"Follow line": drive forward with steering = error * KP.</li>
+        <li>At beige marker: stop + "please load the vehicle".</li>
+        <li>After 3rd stop: go to the end and say unload messages.</li>
+      </ul>
     </div>
     <div class="modal-actions">
       <button class="btn" id="close-tips">Close</button>
@@ -175,7 +181,7 @@ drive = DriveBase(left, right, 56, 114)
 DARK_TARGET      = 20    # about the black line brightness
 KP               = 1.0   # steering gain
 SPEED_FWD        = 40    # mm/s forward during follow
-BEIGE_LIMIT      = 70    # reflection() > this => beige station
+BEIGE_LIMIT      = 70    # reflection() > this means beige station
 STOP_COUNT_GOAL  = 3     # how many "please load" stops
 FINAL_ROLL_MS    = 3000  # after last stop, keep rolling to end (ms)
 
@@ -232,14 +238,11 @@ wait(1000)
   </dialog>
 
   <script>
-  /* ============================================================
-     TASK META
-  ============================================================ */
-  const TASK = { taskId: 11 };
+  const TASK = {
+      taskId: 11,
+    };
 
-  /* ============================================================
-     DOM ELEMENTS
-  ============================================================ */
+  // ===== DOM ELEMENTS =====
   const runBtn        = document.getElementById("run-btn");
   const resetBtn      = document.getElementById("reset-btn");
   const saveBtn       = document.getElementById("save-btn");
@@ -247,6 +250,7 @@ wait(1000)
   const statusEl      = document.getElementById("status");
   const outputEl      = document.getElementById("output");
   const errorEl       = document.getElementById("error");
+
   const canvasEl      = document.getElementById("arena");
 
   const tipsBtn       = document.getElementById("tips-btn");
@@ -257,192 +261,37 @@ wait(1000)
   const solutionModal = document.getElementById("solution-modal");
   const copySolution  = document.getElementById("copy-solution");
   const closeSolution = document.getElementById("close-solution");
-  const solutionCodeEl= document.getElementById("solution-code");
 
-  const tipsListEl    = document.getElementById("tips-list");
-
-  /* ============================================================
-     STATUS HELPER
-  ============================================================ */
   function setStatus(cls, txt){
-    statusEl.className = "status " + (cls || "");
-    statusEl.textContent = txt || "";
+    statusEl.className = "status " + cls;
+    statusEl.textContent = txt;
   }
 
-  /* tips text */
-  if (tipsListEl){
-    tipsListEl.innerHTML = [
-      "Start OFF the line: first SEEK the black line.",
-      "Black line = low reflection (≈10–20). Beige = high reflection (≈70+).",
-      "While following: steer = (target - reflection) * KP.",
-      "At each beige station: stop and say 'please load the vehicle'.",
-      "After 3rd stop: continue to the end.",
-      "At the end: say 'please unload the car' and 'job done, ready for the next one'."
-    ].map(t=>"<li>"+t+"</li>").join("");
-  }
+  // ===== SIM SETTINGS =====
+  // World geometry
+  const LINE_Y        = 200;     // y-position of the black transport line
+  const START_X       = 80;      // robot start x (off the line)
+  const START_Y       = 235;     // robot start y (below the line)
+  const START_HEADING = 0;       // initial heading for display, will change on seek
 
-  /* ============================================================
-     MODAL HANDLERS
-  ============================================================ */
-  tipsBtn.onclick = ()=>{
-    if (tipsModal.showModal) tipsModal.showModal();
-    else tipsModal.setAttribute("open","");
-  };
-  closeTips.onclick = ()=>{
-    if (tipsModal.close) tipsModal.close();
-    else tipsModal.removeAttribute("open");
-  };
-
-  const simulationGate = { ready:false };
-  solutionBtn.onclick = ()=>{
-    if (solutionModal.showModal) solutionModal.showModal();
-    else solutionModal.setAttribute("open","");
-  };
-  closeSolution.onclick = ()=>{
-    if (solutionModal.close) solutionModal.close();
-    else solutionModal.removeAttribute("open");
-  };
-  copySolution.onclick = ()=>{
-    editorEl.value = solutionCodeEl.textContent;
-    simulationGate.ready = true;
-
-    if (solutionModal.close) solutionModal.close();
-    else solutionModal.removeAttribute("open");
-
-    setStatus("ok","Ready to run");
-    outputEl.textContent = "Solution code inserted. Press ▶ Run.";
-    errorEl.textContent  = "";
-    resetWorld();
-  };
-
-  /* ============================================================
-     SERVER PROGRESS TRACKING
-  ============================================================ */
-  function sendEvent(ev){
-    fetch("../app/event_update.php", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        task_id: String(TASK.taskId),
-        event: ev
-      })
-    })
-    .then(r => r.json())
-    .then(data => {
-      console.log("Server response:", data);
-    })
-    .catch(err => {
-      console.warn("sendEvent failed:", err);
-    });
-  }
-
-  /* ============================================================
-     STUDENT CODE VALIDATION
-     (Minimal Plausibilitätscheck wie bei Aufgabe 10)
-  ============================================================ */
-  function stripComments(src){
-    let x = src.replace(/^[ \t]*#.*$/gm, "");
-    x = x.replace(/[ \t]+#.*$/gm, "");
-    return x;
-  }
-
-  function validateStudentCode(src){
-    const raw  = src.replace(/\r/g,"");
-    const code = stripComments(raw);
-    const errs = [];
-
-    if(code.trim()===""){
-      errs.push("Please write your Pybricks program first.");
-      return {ok:false, errors:errs};
-    }
-
-    // imports / setup
-    [
-      [/from\s+pybricks\.hubs\s+import\s+EV3Brick/, "Missing import: EV3Brick"],
-      [/from\s+pybricks\.ev3devices\s+import\s+.*\bMotor\b/, "Missing import: Motor"],
-      [/from\s+pybricks\.ev3devices\s+import\s+.*\bColorSensor\b/, "Missing import: ColorSensor"],
-      [/from\s+pybricks\.parameters\s+import\s+.*\bPort\b/, "Missing import: Port"],
-      [/from\s+pybricks\.parameters\s+import\s+.*\bStop\b/, "Missing import: Stop"],
-      [/from\s+pybricks\.tools\s+import\s+.*\bwait\b/, "Missing import: wait"],
-      [/from\s+pybricks\.robotics\s+import\s+.*\bDriveBase\b/, "Missing import: DriveBase"]
-    ].forEach(([re,msg])=>{ if(!re.test(code)) errs.push("✗ "+msg); });
-
-    if(!/EV3Brick\s*\(\s*\)/.test(code)) errs.push("✗ EV3Brick() missing");
-    if(!/Motor\s*\(\s*Port\.A\s*\)/.test(code)) errs.push("✗ Motor(Port.A) missing");
-    if(!/Motor\s*\(\s*Port\.B\s*\)/.test(code)) errs.push("✗ Motor(Port.B) missing");
-    if(!/ColorSensor\s*\(\s*Port\.S1\s*\)/.test(code)) errs.push("✗ ColorSensor(Port.S1) missing");
-    if(!/DriveBase\s*\(/.test(code)) errs.push("✗ DriveBase(...) missing");
-
-    // SEEK phase: move until dark line
-    if(!/color\s*\.\s*reflection\s*\(/.test(code)){
-      errs.push("✗ Must read color.reflection()");
-    }
-    if(!/while\s+.*color\s*\.\s*reflection\s*\(\s*\)\s*>\s*\w+/.test(code) &&
-       !/while\s+.*color\s*\.\s*reflection\s*\(\s*\)\s*>\s*\d+/.test(code)){
-      errs.push("✗ Missing seek loop: drive until reflection() is dark/low.");
-    }
-
-    // FOLLOW + STOPS:
-    if(!/error\s*=\s*.*-\s*.*reflection\s*\(\s*\)/s.test(code) &&
-       !/error\s*=\s*.*DARK_TARGET.*-.*reflection/s.test(code)){
-      errs.push("✗ Missing error = target - reflection for line follow.");
-    }
-    if(!/steer\s*=\s*.*error.*\*/.test(code)){
-      errs.push("✗ Missing steer = error * KP.");
-    }
-    if(!/drive\.drive\s*\(\s*\w+.*,\s*steer\s*\)/.test(code) &&
-       !/drive\.drive\s*\(\s*\d+.*,\s*steer\s*\)/.test(code)){
-      errs.push("✗ Missing drive.drive(SPEED_FWD, steer) in follow loop.");
-    }
-
-    // beige station stops: say "please load the vehicle"
-    if(!/please\s+load\s+the\s+vehicle/i.test(code)){
-      errs.push('✗ Must say "please load the vehicle" at each beige station.');
-    }
-
-    // final unload / job done messages
-    if(!/please\s+unload\s+the\s+car/i.test(code)){
-      errs.push('✗ Must say "please unload the car" at the end.');
-    }
-    if(!/job\s+done,\s*ready\s*for\s*the\s*next\s*one/i.test(code)){
-      errs.push('✗ Must say "job done, ready for the next one" at the end.');
-    }
-
-    // (optional but nice) final beep or print done
-    if(!/brick\s*\.\s*screen\s*\.\s*print\s*\(/.test(code)){
-      errs.push("✗ Missing brick.screen.print('done') or similar at the end.");
-    }
-
-    return { ok: errs.length===0, errors: errs };
-  }
-
-  /* ============================================================
-     CANVAS / WORLD STATE / SIMULATION LOGIC
-  ============================================================ */
-
-  // geometry
-  const LINE_Y        = 200;     // y-position of main line
-  const START_X       = 80;
-  const START_Y       = 235;
-  const START_HEADING = 0;
-
-  // beige station x-positions
+  // Beige "stations" (x positions along the line)
   const STATION_XS    = [200, 350, 500];
 
-  // end point
+  // End point of mission (where unload happens)
   const LINE_END_X    = 560;
 
-  // motion tuning
-  const SEEK_SPEED_PX        = 1.0;
-  const FOLLOW_SPEED_PX      = 0.6;
-  const KP_FOLLOW            = 0.06;
-  const ROTATE_MAX_PER_FRAME = 2;
-  const STOP_WAIT_FRAMES     = 60;
-  const FINAL_ROLL_FRAMES    = 180;
+  // Motion tuning
+  const SEEK_SPEED_PX        = 1.0;   // seek speed (vertical)
+  const FOLLOW_SPEED_PX      = 0.6;   // forward speed during follow
+  const KP_FOLLOW            = 0.06;  // steering strength toward the line
+  const ROTATE_MAX_PER_FRAME = 2;     // deg/frame (smooth turn)
+  const STOP_WAIT_FRAMES     = 60;    // how long to "load vehicle" at station
+  const FINAL_ROLL_FRAMES    = 180;   // rollout frames after last station to reach the end
 
   let running = false;
+  let simulationReady = false;
 
+  // ===== WORLD STATE / RENDERING =====
   const ctx = canvasEl.getContext("2d");
   const deg2rad = d => d * Math.PI/180;
 
@@ -451,16 +300,15 @@ wait(1000)
   };
 
   function drawWorld(label){
-    // background
+    // clear bg + border
     ctx.fillStyle="#fff";
     ctx.fillRect(0,0,canvasEl.width,canvasEl.height);
 
-    // border
     ctx.strokeStyle="#111";
     ctx.lineWidth=2;
     ctx.strokeRect(0,0,canvasEl.width,canvasEl.height);
 
-    // main black line
+    // draw black main line (not extended beyond canvas)
     ctx.strokeStyle="#000";
     ctx.lineWidth=4;
     ctx.beginPath();
@@ -468,7 +316,7 @@ wait(1000)
     ctx.lineTo(canvasEl.width, LINE_Y);
     ctx.stroke();
 
-    // beige stations
+    // draw beige loading stations
     STATION_XS.forEach(xPos => {
       ctx.strokeStyle="#e7e3c2";
       ctx.lineWidth=8;
@@ -478,7 +326,7 @@ wait(1000)
       ctx.stroke();
     });
 
-    // robot
+    // draw robot as green circle + heading arrow
     const r = WORLD.robot;
     ctx.fillStyle="#16a34a";
     ctx.beginPath();
@@ -521,16 +369,17 @@ wait(1000)
     WORLD.robot.heading = (cur + step + 360) % 360;
   }
 
-  // SEEK PHASE: drive vertically toward LINE_Y
+  // === SEEK PHASE ===
+  // Move straight "up" until we reach the black line height.
   function simSeekLine(){
     return new Promise(resolve=>{
       const needUp = WORLD.robot.y > LINE_Y;
-      WORLD.robot.heading = needUp ? 270 : 90; // 270=up, 90=down
+      WORLD.robot.heading = needUp ? 270 : 90; // 270° = up, 90° = down
 
       function tick(){
         if (!running) return resolve();
 
-        stepForward(SEEK_SPEED_PX);
+        stepForward(SEEK_SPEED_PX); // go vertically toward line
         drawWorld("seeking line…");
 
         const closeEnough = Math.abs(WORLD.robot.y - LINE_Y) <= 1;
@@ -540,7 +389,7 @@ wait(1000)
 
         if (closeEnough || crossed){
           WORLD.robot.y = LINE_Y;
-          WORLD.robot.heading = 0; // face right
+          WORLD.robot.heading = 0; // face right once on the line
           drawWorld("line found");
           return resolve();
         }
@@ -552,17 +401,18 @@ wait(1000)
     });
   }
 
-  // line following step with gentle P-like correction
+  // === FOLLOW PHASE (with station stops) ===
+  // gentleFollowStep = slow forward, keep y on LINE_Y using KP_FOLLOW.
   function gentleFollowStep(){
-    const desiredHeading = 0;              // go right
-    const errorY = LINE_Y - WORLD.robot.y; // vertical offset
-    const correction = errorY * KP_FOLLOW;
+    const desiredHeading = 0;                 // aim to face right
+    const errorY = LINE_Y - WORLD.robot.y;    // how far off the line vertically
+    const correction = errorY * KP_FOLLOW;    // proportional correction
     const targetHeading = desiredHeading + correction * 180;
     turnToward(targetHeading, ROTATE_MAX_PER_FRAME);
     stepForward(FOLLOW_SPEED_PX);
   }
 
-  // follow line and make 3 loading stops at stations
+  // follow until all stations visited
   function simFollowWithStops(){
     return new Promise(resolve=>{
       let stopIndex = 0;
@@ -572,6 +422,7 @@ wait(1000)
       function tick(){
         if (!running) return resolve();
 
+        // done with all stations? resolve
         if (stopIndex >= STATION_XS.length){
           return resolve();
         }
@@ -580,6 +431,7 @@ wait(1000)
           gentleFollowStep();
           drawWorld(`Going to station ${stopIndex+1}`);
 
+          // reached the x-position of this station?
           if (WORLD.robot.x >= STATION_XS[stopIndex]){
             phase = "wait";
             waitFrames = 0;
@@ -590,10 +442,12 @@ wait(1000)
         }
 
         if (phase === "wait"){
+          // "please load the vehicle"
           drawWorld(`Station ${stopIndex+1}: "please load the vehicle"`);
           waitFrames++;
 
           if (waitFrames >= STOP_WAIT_FRAMES){
+            // done waiting at this station
             stopIndex++;
             phase = "drive";
           }
@@ -607,7 +461,9 @@ wait(1000)
     });
   }
 
-  // after last station: continue to end and "unload"
+  // === FINAL RUN PHASE ===
+  // After last station: continue forward smoothly to end,
+  // unload / ready.
   function simContinueToEndAndUnload(){
     return new Promise(resolve=>{
       let frameCount = 0;
@@ -615,8 +471,9 @@ wait(1000)
         if (!running) return resolve();
 
         gentleFollowStep();
-        drawWorld('Continuing to end…');
+        drawWorld("Continuing to end...");
 
+        // either we actually reached the visual end
         if (WORLD.robot.x >= LINE_END_X){
           WORLD.robot.x = LINE_END_X;
           WORLD.robot.heading = 0;
@@ -624,6 +481,7 @@ wait(1000)
           return resolve();
         }
 
+        // or we timed out rolling to the end anyway
         frameCount++;
         if (frameCount >= FINAL_ROLL_FRAMES){
           WORLD.robot.heading = 0;
@@ -637,55 +495,40 @@ wait(1000)
     });
   }
 
-  /* ============================================================
-     RUN BUTTON HANDLER
-     - requires solution inserted
-     - validates code
-     - runs sim
-     - marks sim_ok on server
-  ============================================================ */
+  // ===== RUN BUTTON HANDLER =====
   async function runMission(){
-    if (!simulationGate.ready){
+    if (!simulationReady){
       setStatus("error","ERROR");
       errorEl.textContent = "⚠️ Click 'Solution → Insert' first!";
       return;
     }
-
-    const { ok, errors } = validateStudentCode(editorEl.value);
-    if (!ok){
-      setStatus("error","ERROR");
-      outputEl.textContent = "Please fix first:\n" + errors.join("\n");
-      errorEl.textContent  = "";
-      return;
-    }
-
     if (running) return;
-    running = true;
 
+    running = true;
     setStatus("running","running…");
     outputEl.textContent = "";
     errorEl.textContent  = "";
 
     resetWorld();
 
+    // 1) SEEK the line first
     await simSeekLine();
+
+    // 2) FOLLOW and stop at 3 beige stations
     await simFollowWithStops();
+
+    // 3) CONTINUE to end (unload)
     await simContinueToEndAndUnload();
 
     running = false;
     setStatus("ok","done.");
     outputEl.textContent =
       'Simulation: seek line → 3× "please load the vehicle" → end → "please unload the car" / "job done, ready for the next one".';
-
-    // Fortschritt melden
-    sendEvent("sim");
   }
 
-  /* ============================================================
-     OTHER BUTTONS
-     - reset
-     - save (download_ok)
-  ============================================================ */
+  // ===== BUTTONS =====
+  runBtn.onclick = runMission;
+
   resetBtn.onclick = ()=>{
     running = false;
     setStatus("","");
@@ -701,16 +544,43 @@ wait(1000)
     a.download="main.py";
     a.click();
     URL.revokeObjectURL(a.href);
-
-    // Fortschritt: Download
-    sendEvent("download");
   };
 
-  runBtn.onclick = runMission;
+  // tips modal
+  tipsBtn.onclick = ()=>{
+    if (tipsModal.showModal) tipsModal.showModal();
+    else tipsModal.setAttribute("open","");
+  };
+  closeTips.onclick = ()=>{
+    if (tipsModal.close) tipsModal.close();
+    else tipsModal.removeAttribute("open","");
+  };
 
-  /* ============================================================
-     INIT
-  ============================================================ */
+  // solution modal
+  solutionBtn.onclick = ()=>{
+    if (solutionModal.showModal) solutionModal.showModal();
+    else solutionModal.setAttribute("open","");
+  };
+  closeSolution.onclick = ()=>{
+    if (solutionModal.close) solutionModal.close();
+    else solutionModal.removeAttribute("open","");
+  };
+
+  // copy solution into editor (unlocks Run)
+  copySolution.onclick = ()=>{
+    editorEl.value = document.getElementById("solution-code").textContent;
+    simulationReady = true;
+
+    if (solutionModal.close) solutionModal.close();
+    else solutionModal.removeAttribute("open","");
+
+    setStatus("ok","Ready to run");
+    outputEl.textContent = "Solution code inserted. Press ▶ Run.";
+    errorEl.textContent  = "";
+    resetWorld();
+  };
+
+  // init
   resetWorld();
   setStatus("","");
   </script>

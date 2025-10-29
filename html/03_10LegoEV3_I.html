@@ -120,13 +120,7 @@ wait(500)
   <dialog id="tips-modal">
     <div class="modal-header">Tips</div>
     <div class="modal-body">
-      <ul>
-        <li>ColorSensor(Port.S1).reflection() gives brightness 0..100.</li>
-        <li>You pick a <code>target</code> (like 30) and compute <code>error = target - value</code>.</li>
-        <li>Then <code>steer = error * kp</code> (kp is a tuning factor).</li>
-        <li>Use <code>drive.drive(SLOW_SPEED_MM_S, steer)</code> → <b>slow is better</b>.</li>
-        <li>When TouchSensor is pressed: stop, back up slowly, turn, drive home.</li>
-      </ul>
+      <ul id="tips-list"></ul>
     </div>
     <div class="modal-actions">
       <button class="btn" id="close-tips">Close</button>
@@ -155,16 +149,16 @@ drive = DriveBase(left, right, 56, 114)
 # TUNING FOR REAL ROBOT (SLOW):
 # ------------------------------
 LINE_DETECT_THRESHOLD = 20      # reflection < 20 => black line seen
-FOLLOW_SPEED_MM_S     = 60      # SLOW line-follow speed (was 100)
-KP                     = 1.2    # smaller kp => smoother, less oscillation
-TARGET_REFLECTION     = 30      # "aim" brightness between black & white
+FOLLOW_SPEED_MM_S     = 60      # slow line-follow speed
+KP                     = 1.2    # smaller kp => smoother
+TARGET_REFLECTION     = 30      # aim brightness between black & white
 BACKUP_SPEED_MM_S     = -80     # slow reverse (negative = backwards)
 BACKUP_TIME_MS        = 1000    # 1s back away from wall
-RETURN_SPEED_MM_S     = 120     # go home speed (still not crazy fast)
+RETURN_SPEED_MM_S     = 120     # go home (still not crazy fast)
 
 # === 1) Drive until black line ===
 while True:
-    drive.drive(80, 0)  # approach speed slower than before
+    drive.drive(80, 0)  # approach line slowly
     if color.reflection() < LINE_DETECT_THRESHOLD:
         break
     wait(10)
@@ -176,7 +170,7 @@ while not touch.pressed():
     error = TARGET_REFLECTION - value
     steer = error * KP
     drive.drive(FOLLOW_SPEED_MM_S, steer)
-    wait(15)  # slightly more wait for stability
+    wait(15)
 drive.stop(Stop.BRAKE)
 brick.speaker.beep()
 
@@ -189,7 +183,7 @@ drive.turn(180)
 
 # === 4) Go home (straight) ===
 drive.drive(RETURN_SPEED_MM_S, 0)
-wait(3000)  # depends on how far you drove
+wait(3000)  # approx distance back to start
 drive.stop(Stop.BRAKE)
 
 brick.speaker.beep()
@@ -204,9 +198,11 @@ wait(500)
   </dialog>
 
 <script>
-const TASK = {
-  taskId: 10,
-};
+/* ============================================================
+   TASK META
+============================================================ */
+const TASK = { taskId: 10 };
+
 /* ============================================================
    DOM ELEMENTS
 ============================================================ */
@@ -228,47 +224,206 @@ const solutionModal = document.getElementById("solution-modal");
 const copySolution  = document.getElementById("copy-solution");
 const closeSolution = document.getElementById("close-solution");
 
+const solutionCodeEl = document.getElementById("solution-code");
+
 function setStatus(cls, txt){
-  statusEl.className = "status " + cls;
-  statusEl.textContent = txt;
+  statusEl.className = "status " + (cls || "");
+  statusEl.textContent = txt || "";
+}
+
+/* tips text */
+const tipsListEl = document.getElementById("tips-list");
+if (tipsListEl){
+  tipsListEl.innerHTML = [
+    "Approach line: drive until ColorSensor reflection() < threshold.",
+    "Then follow the line using error = TARGET - reflection.",
+    "steer = error * KP; drive.drive(SLOW_SPEED, steer).",
+    "Stop when TouchSensor (S3) is pressed → wall reached.",
+    "Back up slowly, turn 180°, drive back to start.",
+    "End with beep + print a success message."
+  ].map(t=>"<li>"+t+"</li>").join("");
+}
+
+/* modals */
+tipsBtn.onclick = ()=>{
+  if (tipsModal.showModal) tipsModal.showModal();
+  else tipsModal.setAttribute("open","");
+};
+closeTipsBtn.onclick = ()=>{
+  if (tipsModal.close) tipsModal.close();
+  else tipsModal.removeAttribute("open");
+};
+
+solutionBtn.onclick = ()=>{
+  if (solutionModal.showModal) solutionModal.showModal();
+  else solutionModal.setAttribute("open","");
+};
+closeSolution.onclick = ()=>{
+  if (solutionModal.close) solutionModal.close();
+  else solutionModal.removeAttribute("open");
+};
+
+let simulationReady = false;
+copySolution.onclick = ()=>{
+  editorEl.value = solutionCodeEl.textContent;
+  simulationReady = true;
+
+  if (solutionModal.close) solutionModal.close();
+  else solutionModal.removeAttribute("open");
+
+  setStatus("ok","Ready to run");
+  outputEl.textContent = "Slow solution inserted. Now press ▶ Run.";
+  errorEl.textContent  = "";
+
+  resetWorld();
+};
+
+/* ============================================================
+   Fortschritt an Server (sim / download)
+============================================================ */
+function sendEvent(ev){
+  fetch("../app/event_update.php", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      task_id: String(TASK.taskId),
+      event: ev
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    console.log("Server response:", data);
+  })
+  .catch(err => {
+    console.warn("sendEvent failed:", err);
+  });
 }
 
 /* ============================================================
-   TUNING PARAMETERS FOR SIMULATION
-   (SLOW VERSION FOR REAL ROBOT BEHAVIOR)
-   -------------------------------------------------
-   Diese Werte sind absichtlich langsam markiert.
-   Du kannst sie ändern ohne den Rest anzufassen.
+   VALIDATION of student's Python code
+   (so wir geben sim_ok nur bei sinnvollem Code)
 ============================================================ */
+function stripComments(src){
+  let x = src.replace(/^[ \t]*#.*$/gm, "");
+  x = x.replace(/[ \t]+#.*$/gm, "");
+  return x;
+}
+
+function validateStudentCode(src){
+  const raw  = src.replace(/\r/g,"");
+  const code = stripComments(raw);
+  const errs = [];
+
+  if(code.trim()===""){
+    errs.push("Please write your Pybricks program first.");
+    return { ok:false, errors:errs };
+  }
+
+  // imports we expect
+  [
+    [/from\s+pybricks\.hubs\s+import\s+EV3Brick/, "Missing import: EV3Brick"],
+    [/from\s+pybricks\.ev3devices\s+import\s+.*\bMotor\b/, "Missing import: Motor"],
+    [/from\s+pybricks\.ev3devices\s+import\s+.*\bColorSensor\b/, "Missing import: ColorSensor"],
+    [/from\s+pybricks\.ev3devices\s+import\s+.*\bTouchSensor\b/, "Missing import: TouchSensor"],
+    [/from\s+pybricks\.parameters\s+import\s+.*\bPort\b/, "Missing import: Port"],
+    [/from\s+pybricks\.parameters\s+import\s+.*\bStop\b/, "Missing import: Stop"],
+    [/from\s+pybricks\.tools\s+import\s+.*\bwait\b/, "Missing import: wait"],
+    [/from\s+pybricks\.robotics\s+import\s+.*\bDriveBase\b/, "Missing import: DriveBase"]
+  ].forEach(([re,msg])=>{
+    if(!re.test(code)) errs.push("✗ "+msg);
+  });
+
+  // hardware init
+  if(!/EV3Brick\s*\(\s*\)/.test(code)) errs.push("✗ EV3Brick() missing");
+  if(!/Motor\s*\(\s*Port\.A\s*\)/.test(code)) errs.push("✗ Motor(Port.A) missing");
+  if(!/Motor\s*\(\s*Port\.B\s*\)/.test(code)) errs.push("✗ Motor(Port.B) missing");
+  if(!/ColorSensor\s*\(\s*Port\.S1\s*\)/.test(code)) errs.push("✗ ColorSensor(Port.S1) missing");
+  if(!/TouchSensor\s*\(\s*Port\.S3\s*\)/.test(code)) errs.push("✗ TouchSensor(Port.S3) missing");
+  if(!/DriveBase\s*\(/.test(code)) errs.push("✗ DriveBase(...) missing");
+
+  // phase 1: approach line until reflection<threshold
+  if(!/color\s*\.\s*reflection\s*\(/.test(code)){
+    errs.push("✗ Must read color.reflection()");
+  }
+  if(!/while\s+True\s*:/.test(code) && !/while\s+not\s+\w+\.pressed\s*\(\s*\)\s*:/.test(code)){
+    // we at least want some while-based drive logic before touch
+    // we won't force "while True", but we need some loop structure
+    errs.push("✗ Missing driving loop structure (while ...:)");
+  }
+  // look for threshold check
+  if(!/reflection\s*\(\)\s*<\s*\w+/.test(code) && !/reflection\s*\(\)\s*<\s*\d+/.test(code)){
+    errs.push("✗ Must detect black line with a threshold, e.g. if color.reflection() < LINE_DETECT_THRESHOLD:");
+  }
+
+  // phase 2: line follow with P controller until touch.pressed()
+  if(!/touch\s*\.\s*pressed\s*\(\s*\)/.test(code)){
+    errs.push("✗ Must stop when TouchSensor is pressed (touch.pressed())");
+  }
+  if(!/error\s*=\s*.*TARGET_REFLECTION.*-.*(value|color\.reflection\(\))/s.test(code) &&
+     !/error\s*=\s*.*target.*-.*(value|color\.reflection\(\))/s.test(code)){
+    errs.push("✗ Missing error = TARGET_REFLECTION - value (or similar)");
+  }
+  if(!/steer\s*=\s*.*error.*\*/.test(code)){
+    errs.push("✗ Missing steer = error * KP (or similar)");
+  }
+  if(!/drive\.drive\s*\(\s*\w+.*,\s*steer\s*\)/.test(code) &&
+     !/drive\.drive\s*\(\s*\d+.*,\s*steer\s*\)/.test(code)){
+    errs.push("✗ Missing drive.drive(SLOW_SPEED, steer) during line follow");
+  }
+
+  // phase 3: backup and turn 180
+  // backup usually: drive.drive(negative,0) then wait(...)
+  if(!/drive\.drive\s*\(\s*-\s*\d+.*,\s*0\s*\)/.test(code) &&
+     !/drive\.drive\s*\(\s*BACKUP_SPEED_MM_S\s*,\s*0\s*\)/.test(code)){
+    errs.push("✗ Missing backward drive after wall impact");
+  }
+  if(!/drive\.turn\s*\(\s*180\s*\)/.test(code) &&
+     !/drive\.turn\s*\(\s*-180\s*\)/.test(code)){
+    errs.push("✗ Missing 180° turn to face home");
+  }
+
+  // phase 4: go home (some forward drive again)
+  if(!/drive\.drive\s*\(\s*\w+.*,\s*0\s*\)/.test(code)){
+    errs.push("✗ Missing forward drive back home (drive.drive(RETURN_SPEED_MM_S, 0))");
+  }
+
+  // end feedback (beep + print message)
+  if(!/brick\s*\.\s*speaker\s*\.\s*beep\s*\(\s*\)/.test(code)){
+    errs.push("✗ Missing brick.speaker.beep() at the end");
+  }
+  if(!/brick\s*\.\s*screen\s*\.\s*print\s*\(\s*["'][^"']+["']\s*\)/.test(code)){
+    errs.push("✗ Missing brick.screen.print(...) at the end");
+  }
+
+  return { ok: errs.length===0, errors: errs };
+}
+
+/* ============================================================
+   CANVAS / WORLD STATE & SIMULATION
+============================================================ */
+const ctx = canvasEl.getContext("2d");
+const deg2rad = d => d * Math.PI/180;
+
 // --- START / LINE / WALL GEOMETRY -----------------
 const START_X        = 80;     // px
 const START_Y        = 230;    // px
 const START_HEADING  = -90;    // deg  (-90 = nach oben)
 
-const LINE_Y         = 150;    // px  -> schwarze Linie verläuft horizontal
-const WALL_X         = 480;    // px  -> wo die Wand steht
-const WALL_HEIGHT    = 60;     // px  -> Länge der roten Wand
+const LINE_Y         = 150;    // px
+const WALL_X         = 480;    // px
+const WALL_HEIGHT    = 60;     // px
 
-// --- MOTION + CONTROL (LANGSAM ABGESTIMMT) --------
-// SLOW-TUNED FOR REAL ROBOT:
-const SPEED_APPROACH = 0.25;    // px/frame (war 1.5)  langsamer zur Linie
-const SPEED_FOLLOW   = 0.25;    // px/frame (war 1.5)  langsamer auf Linie
-const KP_FOLLOW      = 0.8;   // (war 0.18) kleiner => weniger Zickzack
-const SPEED_BACK     = 0.6;    // px/frame rückwärts weg von Wand (war 1.2)
-const BACK_FRAMES    = 60;     // länger rückwärts: 60 Frames statt 40
-const TURN_SPEED     = 3;      // deg/frame drehen nach dem Backup (war 6)
-const SPEED_RETURN   = 0.8;    // px/frame Heimfahrt (war 2.0)
+// --- MOTION + CONTROL (langsam) -------------------
+const SPEED_APPROACH = 0.25;
+const SPEED_FOLLOW   = 0.25;
+const KP_FOLLOW      = 0.8;
+const SPEED_BACK     = 0.6;
+const BACK_FRAMES    = 60;
+const TURN_SPEED     = 3;
+const SPEED_RETURN   = 0.8;
 
-// -------------------------------------------------
-// Steuert, ob wir laufen dürfen:
-let simulationReady  = false;
-let running          = false;
-
-/* ============================================================
-   CANVAS / WORLD STATE
-============================================================ */
-const ctx = canvasEl.getContext("2d");
-const deg2rad = d => d * Math.PI/180;
+let running = false;
 
 const WORLD = {
   robot: {
@@ -280,7 +435,6 @@ const WORLD = {
 };
 
 function drawWorld(label){
-  // Hintergrund + Rand
   ctx.fillStyle="#fff";
   ctx.fillRect(0,0,canvasEl.width,canvasEl.height);
 
@@ -288,7 +442,7 @@ function drawWorld(label){
   ctx.lineWidth=2;
   ctx.strokeRect(0,0,canvasEl.width,canvasEl.height);
 
-  // schwarze Linie
+  // black line
   ctx.strokeStyle="#000";
   ctx.lineWidth=4;
   ctx.beginPath();
@@ -296,7 +450,7 @@ function drawWorld(label){
   ctx.lineTo(canvasEl.width, LINE_Y);
   ctx.stroke();
 
-  // rote Wand
+  // red wall
   ctx.strokeStyle="#b91c1c";
   ctx.lineWidth=4;
   ctx.beginPath();
@@ -304,14 +458,13 @@ function drawWorld(label){
   ctx.lineTo(WALL_X, LINE_Y + WALL_HEIGHT/2);
   ctx.stroke();
 
-  // Roboter grün
+  // robot
   const r = WORLD.robot;
   ctx.fillStyle="#16a34a";
   ctx.beginPath();
   ctx.arc(r.x, r.y, r.r, 0, Math.PI*2);
   ctx.fill();
 
-  // Heading-Pfeil
   ctx.strokeStyle="#16a34a";
   ctx.lineWidth=2;
   ctx.beginPath();
@@ -336,9 +489,6 @@ function resetWorld(){
   drawWorld("ready (slow)");
 }
 
-/* ============================================================
-   SMALL HELPERS
-============================================================ */
 function stepForward(px){
   WORLD.robot.x += Math.cos(deg2rad(WORLD.robot.heading)) * px;
   WORLD.robot.y += Math.sin(deg2rad(WORLD.robot.heading)) * px;
@@ -347,73 +497,53 @@ function stepForward(px){
 function rotateTowards(targetDeg, maxStepDeg){
   let cur = WORLD.robot.heading;
   let diff = targetDeg - cur;
-  diff = ((diff + 540) % 360) - 180; // normalize to [-180..180]
+  diff = ((diff + 540) % 360) - 180; // [-180..180]
   const step = Math.sign(diff) * Math.min(Math.abs(diff), maxStepDeg);
   WORLD.robot.heading = (cur + step + 360) % 360;
 }
 
-/* ============================================================
-   PHASE 1:
-   Drive forward (upwards) slowly until we hit the line.
-============================================================ */
+/* Phase 1: approach line */
 function simApproachLine(){
   return new Promise(resolve=>{
     function tick(){
       if(!running) return resolve();
-
-      // vorwärts in aktueller Heading (START_HEADING = -90, also nach oben)
       stepForward(SPEED_APPROACH);
-
       drawWorld("Phase 1: approach line (slow)");
-
-      // schon bei der Linie angekommen?
       if (Math.abs(WORLD.robot.y - LINE_Y) < 2){
         WORLD.robot.y = LINE_Y;
-        WORLD.robot.heading = 0; // nach rechts ausrichten
+        WORLD.robot.heading = 0; // face right
         resolve();
         return;
       }
-
       requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
   });
 }
 
-/* ============================================================
-   PHASE 2:
-   Follow the line to the wall using slow P-control.
-   error = (LINE_Y - current_y)
-   heading += KP_FOLLOW * error
-============================================================ */
+/* Phase 2: follow line to wall */
 function simFollowLineToWall(){
   return new Promise(resolve=>{
     function tick(){
       if(!running) return resolve();
 
       const error = LINE_Y - WORLD.robot.y;
-      const steerDeg = KP_FOLLOW * error; // kleiner KP => weiche Korrektur
+      const steerDeg = KP_FOLLOW * error;
       WORLD.robot.heading = (WORLD.robot.heading + steerDeg + 360) % 360;
 
       stepForward(SPEED_FOLLOW);
-
       drawWorld("Phase 2: follow line (slow)");
 
-      // TouchSensor: Wand erreicht?
       if (WORLD.robot.x + WORLD.robot.r >= WALL_X){
         resolve();
         return;
       }
-
       requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
   });
 }
 
-/* ============================================================
-   BEEP helper
-============================================================ */
 function beepSound(){
   try {
     const ac = new AudioContext();
@@ -426,18 +556,14 @@ function beepSound(){
   } catch(e){}
 }
 
-/* ============================================================
-   PHASE 3:
-   Stop at wall → beep → back up SLOWLY → rotate toward start.
-   This matches: bumper hits, robot backs away, turns.
-============================================================ */
+/* Phase 3: bump, beep, back up slowly, rotate toward home */
 function simTouchBackAndTurn(){
   return new Promise(resolve=>{
     let framesBack = 0;
     let phaseStep = 0;
-    // 0 = beep & pause
-    // 1 = slow reverse
-    // 2 = rotate towards start
+    // 0 -> beep
+    // 1 -> reverse
+    // 2 -> rotate to start
 
     function tick(){
       if(!running) return resolve();
@@ -452,17 +578,14 @@ function simTouchBackAndTurn(){
       }
 
       if (phaseStep === 1){
-        // rückwärts langsam:
-        // Trick: Heading um 180 drehen, vorwärts Schritt, Heading zurück
         WORLD.robot.heading = (WORLD.robot.heading + 180) % 360;
-        stepForward(SPEED_BACK); // SPEED_BACK jetzt klein!
+        stepForward(SPEED_BACK);
         WORLD.robot.heading = (WORLD.robot.heading + 180) % 360;
 
         framesBack++;
-
         drawWorld("Phase 3: backing away (slow)");
 
-        if (framesBack >= BACK_FRAMES){
+        if(framesBack >= BACK_FRAMES){
           phaseStep = 2;
         }
         requestAnimationFrame(tick);
@@ -470,37 +593,28 @@ function simTouchBackAndTurn(){
       }
 
       if (phaseStep === 2){
-        // richte Heading Richtung Start aus (drehe langsam)
         const dx = START_X - WORLD.robot.x;
         const dy = START_Y - WORLD.robot.y;
         const targetDeg = (Math.atan2(dy,dx)*180/Math.PI + 360) % 360;
 
-        rotateTowards(targetDeg, TURN_SPEED); // TURN_SPEED reduziert!
-
+        rotateTowards(targetDeg, TURN_SPEED);
         drawWorld("Phase 3: turning to home");
 
-        // Abbruch wenn wir fast genau heimwärts schauen
         let diff = targetDeg - WORLD.robot.heading;
         diff = ((diff + 540) % 360) - 180;
         if (Math.abs(diff) < 5){
           resolve();
           return;
         }
-
         requestAnimationFrame(tick);
         return;
       }
     }
-
     requestAnimationFrame(tick);
   });
 }
 
-/* ============================================================
-   PHASE 4:
-   Drive back home (slow).
-   Drive until we're basically at START_X / START_Y.
-============================================================ */
+/* Phase 4: go home */
 function simReturnHome(){
   return new Promise(resolve=>{
     function tick(){
@@ -519,12 +633,11 @@ function simReturnHome(){
         return;
       }
 
-      // sanft Richtung Start drehen
       const targetDeg = (Math.atan2(dy,dx)*180/Math.PI + 360) % 360;
-      rotateTowards(targetDeg, 2); // noch langsamer drehen nach Hause
-      stepForward(SPEED_RETURN);   // SPEED_RETURN reduziert
-
+      rotateTowards(targetDeg, 2);
+      stepForward(SPEED_RETURN);
       drawWorld("Phase 4: return to start (slow)");
+
       requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
@@ -532,7 +645,11 @@ function simReturnHome(){
 }
 
 /* ============================================================
-   MAIN MISSION RUN
+   MAIN RUN BUTTON HANDLER
+   - checks that student code is reasonable
+   - checks that they inserted solution (simulationReady)
+   - runs sim
+   - sendEvent("sim") on success
 ============================================================ */
 async function runMission(){
   if (!simulationReady){
@@ -540,38 +657,41 @@ async function runMission(){
     errorEl.textContent = "⚠️ Please click 'Solution → Insert' first!";
     return;
   }
-  if (running) return;
 
+  const { ok, errors } = validateStudentCode(editorEl.value);
+  if (!ok){
+    setStatus("error","ERROR");
+    outputEl.textContent = "Please fix first:\n" + errors.join("\n");
+    errorEl.textContent  = "";
+    return;
+  }
+
+  if (running) return;
   running = true;
+
   setStatus("running","running…");
   outputEl.textContent = "";
   errorEl.textContent  = "";
 
   resetWorld();
 
-  // Phase 1: langsam zur Linie
   await simApproachLine();
-
-  // Phase 2: langsam Linie folgen
   await simFollowLineToWall();
-
-  // Phase 3: stoppen, piep, LANGSAM zurück, drehen
   await simTouchBackAndTurn();
-
-  // Phase 4: langsam heimfahren
   await simReturnHome();
 
   running = false;
   setStatus("ok","done.");
   outputEl.textContent =
     "Simulation finished (slow profile): approach line → follow line (slow) → touch & slow backup → turn → return.";
+
+  // Fortschritt markieren
+  sendEvent("sim");
 }
 
 /* ============================================================
-   BUTTONS / MODALS
+   OTHER BUTTONS
 ============================================================ */
-runBtn.onclick = runMission;
-
 resetBtn.onclick = ()=>{
   running = false;
   setStatus("","");
@@ -587,47 +707,18 @@ saveBtn.onclick = ()=>{
   a.download="main.py";
   a.click();
   URL.revokeObjectURL(a.href);
+
+  // Fortschritt markieren
+  sendEvent("download");
 };
 
-tipsBtn.onclick = ()=>{
-  if (tipsModal.showModal) tipsModal.showModal();
-  else tipsModal.setAttribute("open","");
-};
-closeTipsBtn.onclick = ()=>{
-  if (tipsModal.close) tipsModal.close();
-  else tipsModal.removeAttribute("open");
-};
-
-solutionBtn.onclick = ()=>{
-  if (solutionModal.showModal) solutionModal.showModal();
-  else solutionModal.setAttribute("open","");
-};
-
-closeSolution.onclick = ()=>{
-  if (solutionModal.close) solutionModal.close();
-  else solutionModal.removeAttribute("open");
-};
-
-copySolution.onclick = ()=>{
-  editorEl.value = document.getElementById("solution-code").textContent;
-  simulationReady = true;
-
-  if (solutionModal.close) solutionModal.close();
-  else solutionModal.removeAttribute("open");
-
-  setStatus("ok","Ready to run");
-  outputEl.textContent = "Slow solution inserted. Now press ▶ Run.";
-  errorEl.textContent  = "";
-
-  resetWorld();
-};
+runBtn.onclick = runMission;
 
 /* ============================================================
    INIT
 ============================================================ */
 resetWorld();
 setStatus("","");
-
 </script>
 </body>
 </html>
