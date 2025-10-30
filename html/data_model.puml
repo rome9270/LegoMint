@@ -1,0 +1,59 @@
+@startuml
+title LegoMint – Datenmodell (User · Tasks · Status)
+
+' Stil (optional, nur für schönere Darstellung)
+hide circle
+skinparam class {
+    BackgroundColor #f9fafb
+    BorderColor #111111
+    ArrowColor #111111
+}
+skinparam ArrowColor #111111
+skinparam linetype ortho
+
+' =========
+' TABELLEN
+' =========
+
+class users {
+    +id : INTEGER [PK]
+    --
+    student_number : TEXT      "z.B. Matrikel/Schüler-ID"
+    name           : TEXT
+    role           : TEXT      "teacher | student"
+    password_hash  : TEXT
+}
+
+class tasks {
+    +id : INTEGER [PK]
+    --
+    title     : TEXT          "Aufgabenname"
+    html_file : TEXT          "passende HTML-Seite"
+    sort_order: INTEGER       "Reihenfolge im Kurs"
+}
+
+class user_task_status {
+    +user_id : INTEGER [FK → users.id]
+    +task_id : INTEGER [FK → tasks.id]
+    --
+    status       : TEXT        "pending | sim_ok | download_ok | correct_ok"
+    updated_at   : TEXT        "ISO timestamp"
+    sim_ok       : INTEGER     "0/1 Simulation korrekt gelaufen?"
+    sim_at       : TEXT        "Wann Simulation ok war"
+    download_ok  : INTEGER     "0/1 Code gespeichert?"
+    download_at  : TEXT        "Wann gespeichert wurde"
+    correct_ok   : INTEGER     "0/1 vom Lehrer bestätigt?"
+    correct_at   : TEXT        "Wann bestätigt wurde"
+}
+
+' =========
+' BEZIEHUNGEN
+' =========
+
+' Ein User hat viele Status-Einträge (pro Aufgabe)
+users "1" -- "0..*" user_task_status : progress
+
+' Eine Aufgabe hat viele Status-Einträge (pro User)
+tasks "1" -- "0..*" user_task_status : attempts/submissions
+
+@enduml
