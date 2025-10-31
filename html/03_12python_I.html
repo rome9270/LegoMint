@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Python · Step 12: The Collatz sequence</title>
+
+  <link rel="stylesheet" href="../CSS/03_python.css" />
+
+  <style>
+    .status.ok { color:#15803d; }
+    .status.error { color:#b91c1c; }
+    .status.running { color:#374151; }
+    #error { color:#b91c1c; white-space:pre-wrap; }
+  </style>
+
+  <!-- Skulpt Runtime -->
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+</head>
+<body>
+  <!-- NAVIGATION -->
+  <nav class="link-grid" aria-label="Topic selection">
+    <a class="btn" href="../app/01_main.php" aria-label="Back to main">⬅️ Main</a>
+    <a class="btn" href="../app/logout.php">🚪 Logout</a>
+    <a class="btn primary" id="next-btn" href="../html/03_13python.html">Next →</a>
+  </nav>
+
+  <header class="row" style="justify-content: space-between;">
+    <div>
+      <h1 id="task-title">Python · Step 12: The Collatz sequence</h1>
+      <p id="task-desc">
+        The Collatz problem is one of the unsolved problems in mathematics.<br>
+        It says that every sequence of numbers defined by the following rules will eventually reach 1:<br><br>
+        • The sequence starts with any positive integer.<br>
+        • If the current number <code>n</code> is even, the next number is <code>n / 2</code>.<br>
+        • If <code>n</code> is odd, the next number is <code>3n + 1</code>.<br><br>
+        Example for 23:<br>
+        <code>23, 70, 35, 106, 53, 160, 80, 40, 20, 10, 5, 16, 8, 4, 2, 1</code><br><br>
+        Write a Python program that asks the user for a number and prints the full Collatz sequence until 1 is reached.
+      </p>
+    </div>
+    <div class="row">
+      <button class="btn" id="tips-btn">💡 Tips</button>
+      <button class="btn" id="solution-btn">✅ Solution</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- EDITOR -->
+    <section class="card">
+      <h2>Editor</h2>
+      <div class="row">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+        <span id="status" class="status" aria-live="polite"></span>
+      </div>
+
+<textarea id="editor" spellcheck="false">
+# Ask the user for a starting number
+n = int(input("Enter a number: "))
+
+print("Collatz sequence:")
+
+# Print the sequence until we reach 1
+while n != 1:
+    print(n, end=", ")
+    if n % 2 == 0:
+        n = n // 2
+    else:
+        n = 3 * n + 1
+
+print(1)
+</textarea>
+    </section>
+
+    <!-- OUTPUT -->
+    <section class="card">
+      <h2>Output</h2>
+      <pre id="output"></pre>
+      <div id="error"></div>
+    </section>
+  </main>
+
+  <!-- Tips modal -->
+  <dialog id="tips-modal">
+    <div class="modal-header">Tips</div>
+    <div class="modal-body">
+      <ul id="tips-list"></ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Solution modal -->
+  <dialog id="solution-modal">
+    <div class="modal-header">Solution</div>
+    <div class="modal-body">
+      <pre id="solution-code" style="white-space:pre-wrap;"></pre>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution">Insert</button>
+      <button class="btn" id="close-solution">Close</button>
+    </div>
+  </dialog>
+
+  <script>
+    // === TASK ===
+    const TASK = {
+      taskId: 24, // Step 12
+      title: "Python · Step 12: The Collatz sequence",
+      description: `
+        The Collatz problem is one of the unsolved problems in mathematics.<br>
+        It says that every sequence of numbers defined by the following rules will eventually reach 1:<br><br>
+        • The sequence starts with any positive integer.<br>
+        • If the current number <code>n</code> is even, the next number is <code>n / 2</code>.<br>
+        • If <code>n</code> is odd, the next number is <code>3n + 1</code>.<br><br>
+        Example for 23:<br>
+        <code>23, 70, 35, 106, 53, 160, 80, 40, 20, 10, 5, 16, 8, 4, 2, 1</code><br><br>
+        Write a Python program that asks the user for a number and prints the full Collatz sequence until 1 is reached.
+      `,
+      starterCode:
+`# Ask the user for a starting number
+n = int(input("Enter a number: "))
+
+print("Collatz sequence:")
+
+# Print the sequence until we reach 1
+while n != 1:
+    print(n, end=", ")
+    if n % 2 == 0:
+        n = n // 2
+    else:
+        n = 3 * n + 1
+
+print(1)`,
+      tips: [
+        'Use a while loop until n == 1.',
+        'Use n // 2 for even numbers (integer division).',
+        'For odd numbers use 3 * n + 1.',
+        'Use print(n, end=", ") to print on one line.'
+      ],
+      solution:
+`# Solution example
+n = int(input("Enter a number: "))
+
+print("Collatz sequence:")
+
+while n != 1:
+    print(n, end=", ")
+    if n % 2 == 0:
+        n = n // 2
+    else:
+        n = 3 * n + 1
+
+print(1)`,
+      filename: "task12_collatz_sequence.py",
+      nextUrl: "03_13python.html"
+    };
+
+    // === DOM handles ===
+    const els = {
+      title:  document.getElementById("task-title"),
+      desc:   document.getElementById("task-desc"),
+      editor: document.getElementById("editor"),
+      run:    document.getElementById("run-btn"),
+      reset:  document.getElementById("reset-btn"),
+      save:   document.getElementById("save-btn"),
+      output: document.getElementById("output"),
+      error:  document.getElementById("error"),
+      status: document.getElementById("status"),
+      tipsBtn: document.getElementById("tips-btn"),
+      tipsModal: document.getElementById("tips-modal"),
+      tipsList: document.getElementById("tips-list"),
+      closeTips: document.getElementById("close-tips"),
+      solutionBtn: document.getElementById("solution-btn"),
+      solutionModal: document.getElementById("solution-modal"),
+      solutionCode: document.getElementById("solution-code"),
+      copySolution: document.getElementById("copy-solution"),
+      closeSolution: document.getElementById("close-solution"),
+      next: document.getElementById("next-btn")
+    };
+
+    // === INIT ===
+    document.title = TASK.title;
+    els.title.textContent = TASK.title;
+    els.desc.innerHTML = TASK.description;
+    els.solutionCode.textContent = TASK.solution;
+    els.tipsList.innerHTML = (TASK.tips || []).map(t => "<li>" + t + "</li>").join("");
+    els.editor.value = TASK.starterCode;
+    if (TASK.nextUrl && els.next) {
+      els.next.href = "../html/" + TASK.nextUrl;
+    }
+
+    function setStatus(cls, txt){
+      els.status.className = "status " + cls;
+      els.status.textContent = txt;
+    }
+
+    // --- Progress report ---
+    function sendEvent(ev){
+      fetch("../app/event_update.php", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          task_id: String(TASK.taskId),
+          event:   ev
+        })
+      }).catch(err => console.warn("sendEvent failed:", err));
+    }
+
+    // === Skulpt run ===
+    function builtinRead(x){
+      if (!Sk.builtinFiles || !Sk.builtinFiles["files"][x]) throw "File not found: '" + x + "'";
+      return Sk.builtinFiles["files"][x];
+    }
+
+    async function runCode(){
+      els.output.textContent = "";
+      els.error.textContent  = "";
+      setStatus("running","running…");
+
+      Sk.configure({
+        output: (t) => els.output.textContent += t,
+        read: builtinRead,
+        __future__: Sk.python3,
+        inputfun: (p) => window.prompt(p || "Input:") ?? "",
+        inputfunTakesPrompt: true,
+        execLimit: 20000
+      });
+
+      try {
+        await Sk.misceval.asyncToPromise(() =>
+          Sk.importMainWithBody("<stdin>", false, els.editor.value, true)
+        );
+        setStatus("ok","done.");
+        sendEvent("sim");
+      } catch (e) {
+        setStatus("error","ERROR");
+        els.error.textContent = String(e);
+      }
+    }
+
+    function reset(){
+      els.editor.value = TASK.starterCode;
+      els.output.textContent = "";
+      els.error.textContent = "";
+      setStatus("", "");
+    }
+
+    function save(){
+      const b = new Blob([els.editor.value], {type:"text/plain"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(b);
+      a.download = TASK.filename || "solution.py";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      sendEvent("download");
+    }
+
+    // Modals
+    function openDialog(d){ if(d?.showModal) d.showModal(); else d?.setAttribute("open",""); }
+    function closeDialog(d){ if(d?.close) d.close(); else d?.removeAttribute("open"); }
+
+    els.tipsBtn.onclick = () => openDialog(els.tipsModal);
+    els.closeTips.onclick = () => closeDialog(els.tipsModal);
+    els.solutionBtn.onclick = () => openDialog(els.solutionModal);
+    els.closeSolution.onclick = () => closeDialog(els.solutionModal);
+    els.copySolution.onclick = () => {
+      els.editor.value = els.solutionCode.textContent;
+      closeDialog(els.solutionModal);
+      els.output.textContent = "";
+      els.error.textContent = "";
+      setStatus("","");
+    };
+
+    els.run.onclick = runCode;
+    els.reset.onclick = reset;
+    els.save.onclick = save;
+  </script>
+</body>
+</html>
