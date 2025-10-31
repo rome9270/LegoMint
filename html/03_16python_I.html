@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Task 12: The Collatz sequence</title>
+  <title>Python · Step 17: Greeting and input as functions</title>
 
   <link rel="stylesheet" href="../CSS/03_python.css" />
 
@@ -23,21 +23,23 @@
   <nav class="link-grid" aria-label="Topic selection">
     <a class="btn" href="../app/01_main.php" aria-label="Back to main">⬅️ Main</a>
     <a class="btn" href="../app/logout.php">🚪 Logout</a>
-    <a class="btn primary" id="next-btn" href="../html/03_13python.html">Next →</a>
+    <a class="btn primary" id="next-btn" href="../html/03_18python.html">Next →</a>
   </nav>
 
   <header class="row" style="justify-content: space-between;">
     <div>
-      <h1 id="task-title">Python · Step 12: The Collatz sequence</h1>
+      <h1 id="task-title">Python · Step 17: Greeting and input as functions</h1>
       <p id="task-desc">
-        The Collatz problem is one of the unsolved problems in mathematics.<br>
-        It says that every sequence of numbers defined by the following rules will eventually reach 1:<br><br>
-        • The sequence starts with any positive integer.<br>
-        • If the current number <code>n</code> is even, the next number is <code>n / 2</code>.<br>
-        • If <code>n</code> is odd, the next number is <code>3n + 1</code>.<br><br>
-        Example for 23:<br>
-        <code>23, 70, 35, 106, 53, 160, 80, 40, 20, 10, 5, 16, 8, 4, 2, 1</code><br><br>
-        Write a Python program that asks the user for a number and prints the full Collatz sequence until 1 is reached.
+        Write a Python program that:<br>
+        1. defines a function <code>welcome()</code> that prints a short greeting<br>
+        2. defines a function <code>get_points()</code> that asks the user for two coordinate pairs (<code>x1, y1, x2, y2</code>)<br>
+        3. calls both functions and prints the entered points.<br><br>
+        Example:<br>
+        <code>Enter x1: 2</code><br>
+        <code>Enter y1: 3</code><br>
+        <code>Enter x2: 6</code><br>
+        <code>Enter y2: 11</code><br>
+        Output → <code>You entered: (2.0, 3.0) and (6.0, 11.0)</code>
       </p>
     </div>
     <div class="row">
@@ -58,20 +60,22 @@
       </div>
 
 <textarea id="editor" spellcheck="false">
-# Ask the user for a starting number
-n = int(input("Enter a number: "))
+# Define a function that prints a welcome message
+def welcome():
+    print("Welcome to the program for entering coordinate pairs!")
 
-print("Collatz sequence:")
+# Define a function that asks for two points and returns them
+def get_points():
+    x1 = float(input("Enter x1: "))
+    y1 = float(input("Enter y1: "))
+    x2 = float(input("Enter x2: "))
+    y2 = float(input("Enter y2: "))
+    return x1, y1, x2, y2
 
-# Print the sequence until we reach 1
-while n != 1:
-    print(n, end=", ")
-    if n % 2 == 0:
-        n = n // 2
-    else:
-        n = 3 * n + 1
-
-print(1)
+# Call both functions
+welcome()
+x1, y1, x2, y2 = get_points()
+print("You entered:", (x1, y1), "and", (x2, y2))
 </textarea>
     </section>
 
@@ -109,67 +113,63 @@ print(1)
   <script>
     // === TASK ===
     const TASK = {
-      taskId: 24, // Step 12
-      title: "Python · Step 12: The Collatz sequence",
+      taskId: 29, // Step 17
+      title: "Python · Step 17: Greeting and input as functions",
       description: `
-        The Collatz problem is one of the unsolved problems in mathematics.<br>
-        It says that every sequence of numbers defined by the following rules will eventually reach 1:<br><br>
-        • The sequence starts with any positive integer.<br>
-        • If the current number <code>n</code> is even, the next number is <code>n / 2</code>.<br>
-        • If <code>n</code> is odd, the next number is <code>3n + 1</code>.<br><br>
-        Example for 23:<br>
-        <code>23, 70, 35, 106, 53, 160, 80, 40, 20, 10, 5, 16, 8, 4, 2, 1</code><br><br>
-        Write a Python program that asks the user for a number and prints the full Collatz sequence until 1 is reached.
+        Write a Python program that:<br>
+        1. defines a function <code>welcome()</code> that prints a greeting<br>
+        2. defines a function <code>get_points()</code> that asks for two coordinate pairs (<code>x1, y1, x2, y2</code>)<br>
+        3. calls both functions and prints the entered values.
       `,
       starterCode:
-`# Ask the user for a starting number
-n = int(input("Enter a number: "))
+`def welcome():
+    print("Welcome to the program for entering coordinate pairs!")
 
-print("Collatz sequence:")
+def get_points():
+    x1 = float(input("Enter x1: "))
+    y1 = float(input("Enter y1: "))
+    x2 = float(input("Enter x2: "))
+    y2 = float(input("Enter y2: "))
+    return x1, y1, x2, y2
 
-# Print the sequence until we reach 1
-while n != 1:
-    print(n, end=", ")
-    if n % 2 == 0:
-        n = n // 2
-    else:
-        n = 3 * n + 1
-
-print(1)`,
+welcome()
+x1, y1, x2, y2 = get_points()
+print("You entered:", (x1, y1), "and", (x2, y2))`,
       tips: [
-        'Use a while loop until n == 1.',
-        'Use n // 2 for even numbers (integer division).',
-        'For odd numbers use 3 * n + 1.',
-        'Use print(n, end=", ") to print on one line.'
+        'Use def function_name(): to define a function.',
+        'Use return to give values back from the function.',
+        'Call your functions in the correct order: welcome() first, then get_points().',
+        'Remember to convert input to float!'
       ],
       solution:
 `# Solution example
-n = int(input("Enter a number: "))
+def welcome():
+    print("Welcome to the program for entering coordinate pairs!")
 
-print("Collatz sequence:")
+def get_points():
+    x1 = float(input("Enter x1: "))
+    y1 = float(input("Enter y1: "))
+    x2 = float(input("Enter x2: "))
+    y2 = float(input("Enter y2: "))
+    return x1, y1, x2, y2
 
-while n != 1:
-    print(n, end=", ")
-    if n % 2 == 0:
-        n = n // 2
-    else:
-        n = 3 * n + 1
-
-print(1)`,
-      filename: "task12_collatz_sequence.py",
-      nextUrl: "03_13python.html"
+welcome()
+x1, y1, x2, y2 = get_points()
+print("You entered:", (x1, y1), "and", (x2, y2))`,
+      filename: "task17_greeting_and_input_function.py",
+      nextUrl: "03_18python.html"
     };
 
     // === DOM handles ===
     const els = {
-      title:  document.getElementById("task-title"),
-      desc:   document.getElementById("task-desc"),
+      title: document.getElementById("task-title"),
+      desc: document.getElementById("task-desc"),
       editor: document.getElementById("editor"),
-      run:    document.getElementById("run-btn"),
-      reset:  document.getElementById("reset-btn"),
-      save:   document.getElementById("save-btn"),
+      run: document.getElementById("run-btn"),
+      reset: document.getElementById("reset-btn"),
+      save: document.getElementById("save-btn"),
       output: document.getElementById("output"),
-      error:  document.getElementById("error"),
+      error: document.getElementById("error"),
       status: document.getElementById("status"),
       tipsBtn: document.getElementById("tips-btn"),
       tipsModal: document.getElementById("tips-modal"),
@@ -190,16 +190,12 @@ print(1)`,
     els.solutionCode.textContent = TASK.solution;
     els.tipsList.innerHTML = (TASK.tips || []).map(t => "<li>" + t + "</li>").join("");
     els.editor.value = TASK.starterCode;
-    if (TASK.nextUrl && els.next) {
-      els.next.href = "../html/" + TASK.nextUrl;
-    }
 
     function setStatus(cls, txt){
       els.status.className = "status " + cls;
       els.status.textContent = txt;
     }
 
-    // --- Progress report ---
     function sendEvent(ev){
       fetch("../app/event_update.php", {
         method: "POST",
@@ -207,21 +203,21 @@ print(1)`,
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
           task_id: String(TASK.taskId),
-          event:   ev
+          event: ev
         })
       }).catch(err => console.warn("sendEvent failed:", err));
     }
 
-    // === Skulpt run ===
     function builtinRead(x){
-      if (!Sk.builtinFiles || !Sk.builtinFiles["files"][x]) throw "File not found: '" + x + "'";
+      if (!Sk.builtinFiles || !Sk.builtinFiles["files"][x])
+        throw "File not found: '" + x + "'";
       return Sk.builtinFiles["files"][x];
     }
 
     async function runCode(){
       els.output.textContent = "";
-      els.error.textContent  = "";
-      setStatus("running","running…");
+      els.error.textContent = "";
+      setStatus("running", "running…");
 
       Sk.configure({
         output: (t) => els.output.textContent += t,
@@ -229,17 +225,17 @@ print(1)`,
         __future__: Sk.python3,
         inputfun: (p) => window.prompt(p || "Input:") ?? "",
         inputfunTakesPrompt: true,
-        execLimit: 20000
+        execLimit: 10000
       });
 
       try {
         await Sk.misceval.asyncToPromise(() =>
           Sk.importMainWithBody("<stdin>", false, els.editor.value, true)
         );
-        setStatus("ok","done.");
+        setStatus("ok", "done.");
         sendEvent("sim");
       } catch (e) {
-        setStatus("error","ERROR");
+        setStatus("error", "ERROR");
         els.error.textContent = String(e);
       }
     }
@@ -252,7 +248,7 @@ print(1)`,
     }
 
     function save(){
-      const b = new Blob([els.editor.value], {type:"text/plain"});
+      const b = new Blob([els.editor.value], { type: "text/plain" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(b);
       a.download = TASK.filename || "solution.py";
@@ -261,9 +257,8 @@ print(1)`,
       sendEvent("download");
     }
 
-    // Modals
-    function openDialog(d){ if(d?.showModal) d.showModal(); else d?.setAttribute("open",""); }
-    function closeDialog(d){ if(d?.close) d.close(); else d?.removeAttribute("open"); }
+    function openDialog(d){ if (d?.showModal) d.showModal(); else d?.setAttribute("open", ""); }
+    function closeDialog(d){ if (d?.close) d.close(); else d?.removeAttribute("open"); }
 
     els.tipsBtn.onclick = () => openDialog(els.tipsModal);
     els.closeTips.onclick = () => closeDialog(els.tipsModal);
@@ -283,3 +278,4 @@ print(1)`,
   </script>
 </body>
 </html>
+
