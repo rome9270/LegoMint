@@ -190,7 +190,7 @@ function toggleBox(headId, bodyId) {
     </a>
 
     <!-- Advanced-Button: direkt zur ersten Advanced-Aufgabe -->
-    <a class="course-pill" href="../html/03_02python_I.html">
+    <a class="course-pill" href="../html/04_01python_I.html">
         Python Advanced Course (Middle school)
     </a>
 </div>
