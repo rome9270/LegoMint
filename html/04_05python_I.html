@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Task 5: Linear function (import modules)</title>
+
+  <link rel="stylesheet" href="../CSS/03_python.css" />
+
+  <style>
+    .status.ok { color:#15803d; }
+    .status.error { color:#b91c1c; }
+    .status.running { color:#374151; }
+    #error { color:#b91c1c; white-space:pre-wrap; }
+  </style>
+
+  <!-- Skulpt -->
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+</head>
+<body>
+  <!-- NAVIGATION -->
+  <nav class="link-grid" aria-label="Topic selection">
+    <a class="btn" href="../app/01_main.php">⬅️ Main</a>
+    <a class="btn" href="../app/logout.php">🚪 Logout</a>
+    <a class="btn primary" id="next-btn" href="../html/04_20python_I.html">Next →</a>
+  </nav>
+
+  <header class="row" style="justify-content: space-between;">
+    <div>
+      <h1 id="task-title">Python · Step 19: Linear function (import modules)</h1>
+      <p id="task-desc">
+        We want to work exactly like in Visual Studio Code:<br>
+        <code>from welcome_func import welcome</code><br>
+        <code>from points_func import get_points</code><br>
+        <code>from slope_func import calculate_slope</code><br>
+        <code>from intercept_func import calculate_intercept</code><br><br>
+        Because the browser cannot load real <code>.py</code> files, we create these 4 modules
+        <strong>in Python itself</strong> before your code runs.
+      </p>
+    </div>
+    <div class="row">
+      <button class="btn" id="tips-btn">💡 Tips</button>
+      <button class="btn" id="solution-btn">✅ Solution</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- EDITOR -->
+    <section class="card">
+      <h2>Editor</h2>
+      <div class="row">
+        <button class="btn primary" id="run-btn">▶ Run</button>
+        <button class="btn" id="reset-btn">⟲ Reset</button>
+        <button class="btn" id="save-btn">💾 Save</button>
+        <span id="status" class="status" aria-live="polite"></span>
+      </div>
+
+<textarea id="editor" spellcheck="false">
+from welcome_func import welcome
+from points_func import get_points
+from slope_func import calculate_slope
+from intercept_func import calculate_intercept
+
+welcome()
+x1, y1, x2, y2 = get_points()
+m = calculate_slope(x1, y1, x2, y2)
+t = calculate_intercept(x1, y1, m)
+
+if m is not None and t is not None:
+    if m == 0 and t == 0:
+        print("f(x) = y = 0")
+    elif m == 0:
+        print(f"f(x) = y = {t}")
+    elif t == 0:
+        print(f"f(x) = y = {m} * x")
+    elif t > 0:
+        print(f"f(x) = y = {m} * x + {t}")
+    else:
+        print(f"f(x) = y = {m} * x - {abs(t)}")
+</textarea>
+    </section>
+
+    <!-- OUTPUT -->
+    <section class="card">
+      <h2>Output</h2>
+      <pre id="output"></pre>
+      <div id="error"></div>
+    </section>
+  </main>
+
+  <!-- Tips modal -->
+  <dialog id="tips-modal">
+    <div class="modal-header">Tips</div>
+    <div class="modal-body">
+      <ul id="tips-list"></ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="close-tips">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Solution modal -->
+  <dialog id="solution-modal">
+    <div class="modal-header">Solution</div>
+    <div class="modal-body">
+      <pre id="solution-code" style="white-space:pre-wrap;"></pre>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="copy-solution">Insert</button>
+      <button class="btn" id="close-solution">Close</button>
+    </div>
+  </dialog>
+
+  <script>
+    const TASK = {
+      taskId: 19,
+      title: "Python · Step 19: Linear function (import modules)",
+      description: "Import 4 modules and print f(x) = y = m * x + t.",
+      starterCode: document.getElementById("editor").value,
+      solution: document.getElementById("editor").value,
+      filename: "task19_import_modules.py"
+    };
+
+    const els = {
+      editor: document.getElementById("editor"),
+      output: document.getElementById("output"),
+      error: document.getElementById("error"),
+      status: document.getElementById("status"),
+      run: document.getElementById("run-btn"),
+      reset: document.getElementById("reset-btn"),
+      save: document.getElementById("save-btn"),
+      tipsBtn: document.getElementById("tips-btn"),
+      tipsModal: document.getElementById("tips-modal"),
+      closeTips: document.getElementById("close-tips"),
+      solutionBtn: document.getElementById("solution-btn"),
+      solutionModal: document.getElementById("solution-modal"),
+      closeSolution: document.getElementById("close-solution"),
+      copySolution: document.getElementById("copy-solution"),
+      solutionCode: document.getElementById("solution-code"),
+      tipsList: document.getElementById("tips-list")
+    };
+
+    els.solutionCode.textContent = TASK.solution;
+    els.tipsList.innerHTML = "<li>We create the 4 modules in Python before your code runs.</li><li>Then imports work like in VS Code.</li>";
+
+    function setStatus(cls, txt){
+      els.status.className = "status " + cls;
+      els.status.textContent = txt;
+    }
+
+    // Python "preamble" that creates 4 modules in sys.modules
+    const PY_PRELUDE = `
+import sys, types
+
+# --- welcome_func.py ---
+welcome_func = types.ModuleType("welcome_func")
+def _init_welcome(m):
+    def welcome():
+        print("Welcome to the program for calculating a linear function!")
+        print("We will read two points and build f(x) = y = m * x + t.")
+        print()
+    m.welcome = welcome
+_init_welcome(welcome_func)
+sys.modules["welcome_func"] = welcome_func
+
+# --- points_func.py ---
+points_func = types.ModuleType("points_func")
+def _init_points(m):
+    def get_points():
+        x1 = float(input("Enter x1: "))
+        y1 = float(input("Enter y1: "))
+        x2 = float(input("Enter x2: "))
+        y2 = float(input("Enter y2: "))
+        return x1, y1, x2, y2
+    m.get_points = get_points
+_init_points(points_func)
+sys.modules["points_func"] = points_func
+
+# --- slope_func.py ---
+slope_func = types.ModuleType("slope_func")
+def _init_slope(m):
+    def calculate_slope(x1, y1, x2, y2):
+        if x1 == x2:
+            print("The line is vertical - slope is undefined.")
+            return None
+        return (y2 - y1) / (x2 - x1)
+    m.calculate_slope = calculate_slope
+_init_slope(slope_func)
+sys.modules["slope_func"] = slope_func
+
+# --- intercept_func.py ---
+intercept_func = types.ModuleType("intercept_func")
+def _init_intercept(m):
+    def calculate_intercept(x1, y1, mval):
+        if mval is None:
+            return None
+        return y1 - mval * x1
+    m.calculate_intercept = calculate_intercept
+_init_intercept(intercept_func)
+sys.modules["intercept_func"] = intercept_func
+
+# --- end of prelude ---
+`;
+
+    function builtinRead(x){
+      if (Sk.builtinFiles && Sk.builtinFiles["files"][x]) {
+        return Sk.builtinFiles["files"][x];
+      }
+      throw "File not found: '" + x + "'";
+    }
+
+    async function runCode(){
+      els.output.textContent = "";
+      els.error.textContent = "";
+      setStatus("running","running…");
+
+      const fullCode = PY_PRELUDE + "\n" + els.editor.value;
+
+      Sk.configure({
+        output: (t)=> els.output.textContent += t,
+        read: builtinRead,
+        __future__: Sk.python3,
+        inputfun: (p)=> window.prompt(p || "Input:") ?? "",
+        inputfunTakesPrompt: true,
+        execLimit: 10000
+      });
+
+      try{
+        await Sk.misceval.asyncToPromise(() =>
+          Sk.importMainWithBody("<stdin>", false, fullCode, true)
+        );
+        setStatus("ok","done.");
+      }catch(e){
+        setStatus("error","ERROR");
+        els.error.textContent = String(e);
+      }
+    }
+
+    function reset(){
+      els.editor.value = TASK.starterCode;
+      els.output.textContent = "";
+      els.error.textContent = "";
+      setStatus("","");
+    }
+
+    function save(){
+      const b = new Blob([els.editor.value], {type:"text/plain"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(b);
+      a.download = TASK.filename || "solution.py";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    // modals
+    els.tipsBtn.onclick = () => els.tipsModal.showModal();
+    els.closeTips.onclick = () => els.tipsModal.close();
+    els.solutionBtn.onclick = () => els.solutionModal.showModal();
+    els.closeSolution.onclick = () => els.solutionModal.close();
+    els.copySolution.onclick = () => {
+      els.editor.value = els.solutionCode.textContent;
+      els.solutionModal.close();
+      els.output.textContent = "";
+      els.error.textContent = "";
+      setStatus("","");
+    };
+
+    els.run.onclick = runCode;
+    els.reset.onclick = reset;
+    els.save.onclick = save;
+  </script>
+</body>
+</html>

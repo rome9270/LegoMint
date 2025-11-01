@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Python · Step 16: Welcome function</title>
+  <title>Task 18: Functions for greeting, input, and slope</title>
 
   <link rel="stylesheet" href="../CSS/03_python.css" />
 
@@ -23,17 +23,24 @@
   <nav class="link-grid" aria-label="Topic selection">
     <a class="btn" href="../app/01_main.php" aria-label="Back to main">⬅️ Main</a>
     <a class="btn" href="../app/logout.php">🚪 Logout</a>
-    <a class="btn primary" id="next-btn" href="../html/03_17python.html">Next →</a>
+    <a class="btn primary" id="next-btn" href="../html/03_19python.html">Next →</a>
   </nav>
 
   <header class="row" style="justify-content: space-between;">
     <div>
-      <h1 id="task-title">Python · Step 16: Welcome function</h1>
+      <h1 id="task-title">Python · Step 18: Functions for greeting, input, and slope</h1>
       <p id="task-desc">
-        Write a Python program that defines and calls a function <code>welcome()</code>.<br>
-        The function should simply print a friendly English message like:<br>
-        <code>"Welcome to the calculation of a linear function."</code><br><br>
-        No user input is needed.
+        Write a Python program that:<br>
+        1. defines a function <code>welcome()</code> that prints a greeting<br>
+        2. defines a function <code>get_points()</code> that asks the user for two points (<code>x1, y1, x2, y2</code>)<br>
+        3. defines a function <code>calculate_slope(x1, y1, x2, y2)</code> that calculates and returns the slope m<br>
+        4. calls all three functions and prints the slope.<br><br>
+        Example:<br>
+        <code>Enter x1: 2</code><br>
+        <code>Enter y1: 3</code><br>
+        <code>Enter x2: 6</code><br>
+        <code>Enter y2: 11</code><br>
+        Output → <code>The slope m is: 2.0</code>
       </p>
     </div>
     <div class="row">
@@ -56,10 +63,31 @@
 <textarea id="editor" spellcheck="false">
 # Define a function that prints a welcome message
 def welcome():
-    print("Welcome to the calculation of a linear function.")
+    print("Welcome to the program for calculating the slope of a line!")
 
-# Call the function
+# Define a function that asks for two points and returns them
+def get_points():
+    x1 = float(input("Enter x1: "))
+    y1 = float(input("Enter y1: "))
+    x2 = float(input("Enter x2: "))
+    y2 = float(input("Enter y2: "))
+    return x1, y1, x2, y2
+
+# Define a function that calculates the slope
+def calculate_slope(x1, y1, x2, y2):
+    if x1 == x2:
+        print("The line is vertical — slope is undefined.")
+        return None
+    m = (y2 - y1) / (x2 - x1)
+    return m
+
+# --- Main program ---
 welcome()
+x1, y1, x2, y2 = get_points()
+m = calculate_slope(x1, y1, x2, y2)
+
+if m is not None:
+    print("The slope m is:", m)
 </textarea>
     </section>
 
@@ -97,32 +125,70 @@ welcome()
   <script>
     // === TASK ===
     const TASK = {
-      taskId: 28, // Step 16
-      title: "Python · Step 16: Welcome function",
+      taskId: 30, // Step 18
+      title: "Python · Step 18: Functions for greeting, input, and slope",
       description: `
-        Write a Python program that defines and calls a function <code>welcome()</code>.<br>
-        The function should print the message:<br>
-        <code>"Welcome to the calculation of a linear function."</code><br><br>
-        No user input is needed.
+        Write a Python program that:<br>
+        1. defines a function <code>welcome()</code> that prints a greeting<br>
+        2. defines a function <code>get_points()</code> that asks for two points<br>
+        3. defines a function <code>calculate_slope(x1, y1, x2, y2)</code> that returns the slope m<br>
+        4. calls all three functions and prints the slope.
       `,
       starterCode:
 `def welcome():
-    print("Welcome to the calculation of a linear function.")
+    print("Welcome to the program for calculating the slope of a line!")
 
-welcome()`,
+def get_points():
+    x1 = float(input("Enter x1: "))
+    y1 = float(input("Enter y1: "))
+    x2 = float(input("Enter x2: "))
+    y2 = float(input("Enter y2: "))
+    return x1, y1, x2, y2
+
+def calculate_slope(x1, y1, x2, y2):
+    if x1 == x2:
+        print("The line is vertical — slope is undefined.")
+        return None
+    m = (y2 - y1) / (x2 - x1)
+    return m
+
+welcome()
+x1, y1, x2, y2 = get_points()
+m = calculate_slope(x1, y1, x2, y2)
+if m is not None:
+    print("The slope m is:", m)`,
       tips: [
-        'Use def to define a function.',
-        'Remember to call the function after defining it.',
-        'No input() is required here.'
+        'Use multiple def blocks to organize your code.',
+        'Use return to send values back from a function.',
+        'Check for vertical lines (x1 == x2) to avoid division by zero.',
+        'Call functions in the correct order.'
       ],
       solution:
 `# Solution example
 def welcome():
-    print("Welcome to the calculation of a linear function.")
+    print("Welcome to the program for calculating the slope of a line!")
 
-welcome()`,
-      filename: "task16_welcome_function.py",
-      nextUrl: "03_17python.html"
+def get_points():
+    x1 = float(input("Enter x1: "))
+    y1 = float(input("Enter y1: "))
+    x2 = float(input("Enter x2: "))
+    y2 = float(input("Enter y2: "))
+    return x1, y1, x2, y2
+
+def calculate_slope(x1, y1, x2, y2):
+    if x1 == x2:
+        print("The line is vertical — slope is undefined.")
+        return None
+    m = (y2 - y1) / (x2 - x1)
+    return m
+
+welcome()
+x1, y1, x2, y2 = get_points()
+m = calculate_slope(x1, y1, x2, y2)
+if m is not None:
+    print("The slope m is:", m)`,
+      filename: "task18_functions_slope.py",
+      nextUrl: "03_19python.html"
     };
 
     // === DOM handles ===
@@ -188,6 +254,8 @@ welcome()`,
         output: (t) => els.output.textContent += t,
         read: builtinRead,
         __future__: Sk.python3,
+        inputfun: (p) => window.prompt(p || "Input:") ?? "",
+        inputfunTakesPrompt: true,
         execLimit: 10000
       });
 

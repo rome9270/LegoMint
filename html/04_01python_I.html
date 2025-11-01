@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Python · Step 17: Greeting and input as functions</title>
+  <title>Task 1: Welcome function</title>
 
   <link rel="stylesheet" href="../CSS/03_python.css" />
 
@@ -23,23 +23,17 @@
   <nav class="link-grid" aria-label="Topic selection">
     <a class="btn" href="../app/01_main.php" aria-label="Back to main">⬅️ Main</a>
     <a class="btn" href="../app/logout.php">🚪 Logout</a>
-    <a class="btn primary" id="next-btn" href="../html/03_18python.html">Next →</a>
+    <a class="btn primary" id="next-btn" href="../html/03_17python.html">Next →</a>
   </nav>
 
   <header class="row" style="justify-content: space-between;">
     <div>
-      <h1 id="task-title">Python · Step 17: Greeting and input as functions</h1>
+      <h1 id="task-title">Python · Step 16: Welcome function</h1>
       <p id="task-desc">
-        Write a Python program that:<br>
-        1. defines a function <code>welcome()</code> that prints a short greeting<br>
-        2. defines a function <code>get_points()</code> that asks the user for two coordinate pairs (<code>x1, y1, x2, y2</code>)<br>
-        3. calls both functions and prints the entered points.<br><br>
-        Example:<br>
-        <code>Enter x1: 2</code><br>
-        <code>Enter y1: 3</code><br>
-        <code>Enter x2: 6</code><br>
-        <code>Enter y2: 11</code><br>
-        Output → <code>You entered: (2.0, 3.0) and (6.0, 11.0)</code>
+        Write a Python program that defines and calls a function <code>welcome()</code>.<br>
+        The function should simply print a friendly English message like:<br>
+        <code>"Welcome to the calculation of a linear function."</code><br><br>
+        No user input is needed.
       </p>
     </div>
     <div class="row">
@@ -62,20 +56,10 @@
 <textarea id="editor" spellcheck="false">
 # Define a function that prints a welcome message
 def welcome():
-    print("Welcome to the program for entering coordinate pairs!")
+    print("Welcome to the calculation of a linear function.")
 
-# Define a function that asks for two points and returns them
-def get_points():
-    x1 = float(input("Enter x1: "))
-    y1 = float(input("Enter y1: "))
-    x2 = float(input("Enter x2: "))
-    y2 = float(input("Enter y2: "))
-    return x1, y1, x2, y2
-
-# Call both functions
+# Call the function
 welcome()
-x1, y1, x2, y2 = get_points()
-print("You entered:", (x1, y1), "and", (x2, y2))
 </textarea>
     </section>
 
@@ -113,51 +97,32 @@ print("You entered:", (x1, y1), "and", (x2, y2))
   <script>
     // === TASK ===
     const TASK = {
-      taskId: 29, // Step 17
-      title: "Python · Step 17: Greeting and input as functions",
+      taskId: 28, // Step 16
+      title: "Python · Step 16: Welcome function",
       description: `
-        Write a Python program that:<br>
-        1. defines a function <code>welcome()</code> that prints a greeting<br>
-        2. defines a function <code>get_points()</code> that asks for two coordinate pairs (<code>x1, y1, x2, y2</code>)<br>
-        3. calls both functions and prints the entered values.
+        Write a Python program that defines and calls a function <code>welcome()</code>.<br>
+        The function should print the message:<br>
+        <code>"Welcome to the calculation of a linear function."</code><br><br>
+        No user input is needed.
       `,
       starterCode:
 `def welcome():
-    print("Welcome to the program for entering coordinate pairs!")
+    print("Welcome to the calculation of a linear function.")
 
-def get_points():
-    x1 = float(input("Enter x1: "))
-    y1 = float(input("Enter y1: "))
-    x2 = float(input("Enter x2: "))
-    y2 = float(input("Enter y2: "))
-    return x1, y1, x2, y2
-
-welcome()
-x1, y1, x2, y2 = get_points()
-print("You entered:", (x1, y1), "and", (x2, y2))`,
+welcome()`,
       tips: [
-        'Use def function_name(): to define a function.',
-        'Use return to give values back from the function.',
-        'Call your functions in the correct order: welcome() first, then get_points().',
-        'Remember to convert input to float!'
+        'Use def to define a function.',
+        'Remember to call the function after defining it.',
+        'No input() is required here.'
       ],
       solution:
 `# Solution example
 def welcome():
-    print("Welcome to the program for entering coordinate pairs!")
+    print("Welcome to the calculation of a linear function.")
 
-def get_points():
-    x1 = float(input("Enter x1: "))
-    y1 = float(input("Enter y1: "))
-    x2 = float(input("Enter x2: "))
-    y2 = float(input("Enter y2: "))
-    return x1, y1, x2, y2
-
-welcome()
-x1, y1, x2, y2 = get_points()
-print("You entered:", (x1, y1), "and", (x2, y2))`,
-      filename: "task17_greeting_and_input_function.py",
-      nextUrl: "03_18python.html"
+welcome()`,
+      filename: "task16_welcome_function.py",
+      nextUrl: "03_17python.html"
     };
 
     // === DOM handles ===
@@ -223,8 +188,6 @@ print("You entered:", (x1, y1), "and", (x2, y2))`,
         output: (t) => els.output.textContent += t,
         read: builtinRead,
         __future__: Sk.python3,
-        inputfun: (p) => window.prompt(p || "Input:") ?? "",
-        inputfunTakesPrompt: true,
         execLimit: 10000
       });
 
@@ -278,4 +241,3 @@ print("You entered:", (x1, y1), "and", (x2, y2))`,
   </script>
 </body>
 </html>
-

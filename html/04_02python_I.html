@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Python · Step 19: Functions for slope and intercept</title>
+  <title>Task 2: Greeting and input as functions</title>
 
   <link rel="stylesheet" href="../CSS/03_python.css" />
 
@@ -23,25 +23,23 @@
   <nav class="link-grid" aria-label="Topic selection">
     <a class="btn" href="../app/01_main.php" aria-label="Back to main">⬅️ Main</a>
     <a class="btn" href="../app/logout.php">🚪 Logout</a>
-    <a class="btn primary" id="next-btn" href="../html/03_20python.html">Next →</a>
+    <a class="btn primary" id="next-btn" href="../html/03_18python.html">Next →</a>
   </nav>
 
   <header class="row" style="justify-content: space-between;">
     <div>
-      <h1 id="task-title">Python · Step 19: Functions for slope and intercept</h1>
+      <h1 id="task-title">Python · Step 17: Greeting and input as functions</h1>
       <p id="task-desc">
         Write a Python program that:<br>
-        1. defines a function <code>welcome()</code> that prints a greeting<br>
-        2. defines a function <code>get_points()</code> that asks for two points (<code>x1, y1, x2, y2</code>)<br>
-        3. defines a function <code>calculate_slope(x1, y1, x2, y2)</code> that calculates and returns m<br>
-        4. defines a function <code>calculate_intercept(x1, y1, m)</code> that calculates and returns t<br>
-        5. prints the complete linear function in the form <code>f(x) = y = m * x + t</code>.<br><br>
+        1. defines a function <code>welcome()</code> that prints a short greeting<br>
+        2. defines a function <code>get_points()</code> that asks the user for two coordinate pairs (<code>x1, y1, x2, y2</code>)<br>
+        3. calls both functions and prints the entered points.<br><br>
         Example:<br>
         <code>Enter x1: 2</code><br>
         <code>Enter y1: 3</code><br>
         <code>Enter x2: 6</code><br>
         <code>Enter y2: 11</code><br>
-        Output → <code>f(x) = y = 2.0 * x - 1.0</code>
+        Output → <code>You entered: (2.0, 3.0) and (6.0, 11.0)</code>
       </p>
     </div>
     <div class="row">
@@ -62,11 +60,11 @@
       </div>
 
 <textarea id="editor" spellcheck="false">
-# Function that prints a welcome message
+# Define a function that prints a welcome message
 def welcome():
-    print("Welcome to the program for calculating a linear function!")
+    print("Welcome to the program for entering coordinate pairs!")
 
-# Function that asks the user for two points
+# Define a function that asks for two points and returns them
 def get_points():
     x1 = float(input("Enter x1: "))
     y1 = float(input("Enter y1: "))
@@ -74,37 +72,10 @@ def get_points():
     y2 = float(input("Enter y2: "))
     return x1, y1, x2, y2
 
-# Function that calculates the slope m
-def calculate_slope(x1, y1, x2, y2):
-    if x1 == x2:
-        print("The line is vertical — slope is undefined.")
-        return None
-    return (y2 - y1) / (x2 - x1)
-
-# Function that calculates the intercept t
-def calculate_intercept(x1, y1, m):
-    if m is None:
-        return None
-    return y1 - m * x1
-
-# --- Main program ---
+# Call both functions
 welcome()
 x1, y1, x2, y2 = get_points()
-m = calculate_slope(x1, y1, x2, y2)
-t = calculate_intercept(x1, y1, m)
-
-if m is not None and t is not None:
-    # Format the function nicely
-    if m == 0 and t == 0:
-        print("f(x) = y = 0")
-    elif m == 0:
-        print(f"f(x) = y = {t}")
-    elif t == 0:
-        print(f"f(x) = y = {m} * x")
-    elif t > 0:
-        print(f"f(x) = y = {m} * x + {t}")
-    else:
-        print(f"f(x) = y = {m} * x - {abs(t)}")
+print("You entered:", (x1, y1), "and", (x2, y2))
 </textarea>
     </section>
 
@@ -142,19 +113,17 @@ if m is not None and t is not None:
   <script>
     // === TASK ===
     const TASK = {
-      taskId: 31,
-      title: "Python · Step 19: Functions for slope and intercept",
+      taskId: 29, // Step 17
+      title: "Python · Step 17: Greeting and input as functions",
       description: `
-        Write a Python program that defines:<br>
-        - <code>welcome()</code> → prints greeting<br>
-        - <code>get_points()</code> → asks for two points<br>
-        - <code>calculate_slope(x1, y1, x2, y2)</code> → returns m<br>
-        - <code>calculate_intercept(x1, y1, m)</code> → returns t<br>
-        and then prints <code>f(x) = y = m * x + t</code>.
+        Write a Python program that:<br>
+        1. defines a function <code>welcome()</code> that prints a greeting<br>
+        2. defines a function <code>get_points()</code> that asks for two coordinate pairs (<code>x1, y1, x2, y2</code>)<br>
+        3. calls both functions and prints the entered values.
       `,
       starterCode:
 `def welcome():
-    print("Welcome to the program for calculating a linear function!")
+    print("Welcome to the program for entering coordinate pairs!")
 
 def get_points():
     x1 = float(input("Enter x1: "))
@@ -163,43 +132,19 @@ def get_points():
     y2 = float(input("Enter y2: "))
     return x1, y1, x2, y2
 
-def calculate_slope(x1, y1, x2, y2):
-    if x1 == x2:
-        print("The line is vertical — slope is undefined.")
-        return None
-    return (y2 - y1) / (x2 - x1)
-
-def calculate_intercept(x1, y1, m):
-    if m is None:
-        return None
-    return y1 - m * x1
-
 welcome()
 x1, y1, x2, y2 = get_points()
-m = calculate_slope(x1, y1, x2, y2)
-t = calculate_intercept(x1, y1, m)
-
-if m is not None and t is not None:
-    if m == 0 and t == 0:
-        print("f(x) = y = 0")
-    elif m == 0:
-        print(f"f(x) = y = {t}")
-    elif t == 0:
-        print(f"f(x) = y = {m} * x")
-    elif t > 0:
-        print(f"f(x) = y = {m} * x + {t}")
-    else:
-        print(f"f(x) = y = {m} * x - {abs(t)}")`,
+print("You entered:", (x1, y1), "and", (x2, y2))`,
       tips: [
-        'Each function should do one thing only.',
-        'The intercept t = y1 - m * x1.',
-        'Return None if the slope is undefined.',
-        'Format output correctly for positive and negative t.'
+        'Use def function_name(): to define a function.',
+        'Use return to give values back from the function.',
+        'Call your functions in the correct order: welcome() first, then get_points().',
+        'Remember to convert input to float!'
       ],
       solution:
 `# Solution example
 def welcome():
-    print("Welcome to the program for calculating a linear function!")
+    print("Welcome to the program for entering coordinate pairs!")
 
 def get_points():
     x1 = float(input("Enter x1: "))
@@ -208,35 +153,11 @@ def get_points():
     y2 = float(input("Enter y2: "))
     return x1, y1, x2, y2
 
-def calculate_slope(x1, y1, x2, y2):
-    if x1 == x2:
-        print("The line is vertical — slope is undefined.")
-        return None
-    return (y2 - y1) / (x2 - x1)
-
-def calculate_intercept(x1, y1, m):
-    if m is None:
-        return None
-    return y1 - m * x1
-
 welcome()
 x1, y1, x2, y2 = get_points()
-m = calculate_slope(x1, y1, x2, y2)
-t = calculate_intercept(x1, y1, m)
-
-if m is not None and t is not None:
-    if m == 0 and t == 0:
-        print("f(x) = y = 0")
-    elif m == 0:
-        print(f"f(x) = y = {t}")
-    elif t == 0:
-        print(f"f(x) = y = {m} * x")
-    elif t > 0:
-        print(f"f(x) = y = {m} * x + {t}")
-    else:
-        print(f"f(x) = y = {m} * x - {abs(t)}")`,
-      filename: "task19_functions_intercept.py",
-      nextUrl: "03_20python.html"
+print("You entered:", (x1, y1), "and", (x2, y2))`,
+      filename: "task17_greeting_and_input_function.py",
+      nextUrl: "03_18python.html"
     };
 
     // === DOM handles ===
@@ -357,3 +278,4 @@ if m is not None and t is not None:
   </script>
 </body>
 </html>
+

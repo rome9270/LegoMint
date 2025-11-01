@@ -23,10 +23,16 @@ INSERT INTO tasks (title, html_file, category, level) VALUES
   ('Task 7: Find min and max from a list',          '03_07python_I.html',         'python', 'basic'),
   ('Task 8: Check if a year is a leap year',        '03_08python_I.html',         'python', 'basic'),
   ('Task 9: Check if a number is prime',            '03_09python_I.html',         'python', 'basic'),
-  ('Task 10: All prime numbers up to a limit',      '03_10python_I.html',         'python', 'basic'),  
+  ('Task 10: All prime numbers up to a limit',      '03_10python_I.html',         'python', 'basic'),
   ('Task 11: Lottery – draw 6 numbers from 49',     '03_11python_I.html',         'python', 'basic'),
   ('Task 12: The Collatz sequenc',                  '03_12python_I.html',         'python', 'basic'),
-  ('Task 1: Shuffle letters inside words',          '03_13python_I.html',         'python', 'advanced'),
-  ('Task 2: Linear function f(x) = y = m·x + t',    '03_14python_I.html',         'python', 'advanced'),
-  ('Task 3: The Collatz sequenc',                  '03_15python_I.html',         'python', 'advanced'),
-  ('Task 4: The Collatz sequenc',                  '03_16python_I.html',         'python', 'advanced');
+  ('Task 13: Shuffle letters inside words',         '03_13python_I.html',         'python', 'basic'),
+  ('Task 14: Linear function f(x) = y = m·x + t',   '03_14python_I.html',         'python', 'basic'),
+  ('Task 1: Welcome function',                      '04_01python_I.html',         'python', 'advanced'),
+  ('Task 2: Greeting an input as functions',        '04_02python_I.html',         'python', 'advanced'),
+  ('Task 3: Functions for greeting, input, and slope ','04_03python_I.html',      'python', 'advanced'),
+  ('Task 4: Functions for slope and intercept',     '04_04python_I.html',         'python', 'advanced'),
+  ('Task 5: Task 5: Linear function (import modules)','04_05python_I.html',        'python', 'advanced');
+ 
+
+  

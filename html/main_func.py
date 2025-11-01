@@ -1,22 +1,14 @@
-# main.py
-
 from welcome_func import welcome
 from points_func import get_points
 from slope_func import calculate_slope
 from intercept_func import calculate_intercept
 
 def main():
-    # Step 1: Welcome
     welcome()
-
-    # Step 2: Input points
     x1, y1, x2, y2 = get_points()
-
-    # Step 3: Calculate slope and intercept
     m = calculate_slope(x1, y1, x2, y2)
     t = calculate_intercept(x1, y1, m)
 
-    # Step 4: Print final linear function
     if m is not None and t is not None:
         if m == 0 and t == 0:
             print("f(x) = y = 0")
@@ -29,6 +21,5 @@ def main():
         else:
             print(f"f(x) = y = {m} * x - {abs(t)}")
 
-# Run the program
 if __name__ == "__main__":
     main()
