@@ -1,0 +1,48 @@
+@startuml
+title Aktivitätsdiagramm – Schülerarbeit in LegoMint
+
+start
+
+:Browser öffnen;
+:URL von LegoMint aufrufen;
+:Login mit Benutzerkonto;
+if (Login erfolgreich?) then (ja)
+  :Dashboard / Aufgabenübersicht anzeigen;
+else (nein)
+  :Fehlermeldung anzeigen;
+  stop
+endif
+
+:Aufgabe aus Liste wählen;
+:Aufgaben-Seite wird geladen (HTML + JS);
+:Editor und Simulation werden angezeigt;
+
+partition "Schüler" {
+  :Aufgabenbeschreibung lesen;
+  :Code im Editor bearbeiten;
+}
+
+partition "Browser (JS)" {
+  :Run-Button klicken;
+  :Client führt Prüfungen aus (validate / stripComments);
+  if (Code ok?) then (ja)
+    :Simulation starten;
+    :Ausgabe/Output anzeigen;
+    :Status = "done.";
+    :sendEvent("sim") an Server senden;
+  else (nein)
+    :Fehlermeldung anzeigen;
+    :Status = "error";
+  endif
+}
+
+if (Schüler möchte speichern?) then (ja)
+  :Save-Button klicken;
+  :Datei main.py herunterladen;
+  :sendEvent("download") an Server senden;
+endif
+
+:Evtl. nächste Aufgabe über "Next →" öffnen;
+
+stop
+@enduml

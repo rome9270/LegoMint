@@ -22,7 +22,7 @@ $users = [
 
 /* SQLite-UPSERT:
    - Wenn student_number bereits existiert, werden name/role/password_hash aktualisiert.
-   - Voraussetzung: in users ist student_number UNIQUE (ist bei dir der Fall).
+   - Voraussetzung: in users ist student_number UNIQUE (ist hier der Fall).
 */
 $sql = "
 INSERT INTO users (student_number, name, role, password_hash)
