@@ -62,3 +62,9 @@
 2025-11-01T18:14:02+01:00 {"task_id":"21","event":"download"}
 2025-11-01T18:31:37+01:00 {"task_id":"10","event":"download"}
 2025-11-02T10:13:26+01:00 {"task_id":"11","event":"download"}
+2025-11-07T11:22:08+01:00 {"task_id":"1","event":"sim"}
+2025-11-07T11:22:11+01:00 {"task_id":"1","event":"download"}
+2025-11-07T11:22:30+01:00 {"task_id":"28","event":"sim"}
+2025-11-07T11:22:33+01:00 {"task_id":"28","event":"download"}
+2025-11-07T11:22:52+01:00 {"task_id":"15","event":"sim"}
+2025-11-07T11:22:55+01:00 {"task_id":"15","event":"download"}
